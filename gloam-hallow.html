@@ -8360,7 +8360,9 @@ window.GLOAM_HALLOW_MUSIC_2 = "SUQzAwAAAAAvZUdFT0IAABfbAAAAYXBwbGljYXRpb24vYzJwY
    and bound on the plaque line; Lantern Ward's flare; the scroll on Night's path; the second loop's place cards and its win; the echo
    stolen on the win.
    Step 5e-7 (kit 0.18.0; design system version 14): loot drawn 1.4 times its old size; the second loop's win pays 20 a lantern; The Grave
-   Refuses' rising drawn (the pieces edged in hot gold, the lantern's flare, the rise); the bolt's strike on cover and its crack. */
+   Refuses' rising drawn (the pieces edged in hot gold, the lantern's flare, the rise); the bolt's strike on cover and its crack.
+   With it, Barney's fixes from playing (8 November 2026): the fireball cast in mid-air during a jump, as the design's loopFire throws it;
+   the Moor Mother's legs take three quarters of a blow; the walker's low sweep counted from the ground under it on a slope. */
 
 const PLACES = ['night', 'storm', 'dawn', 'mist'];
 const TRACK = { night: 0, storm: 0, dawn: 1, mist: 1 };   // The Long Vigil, then Lantern in the Moor from Dawn's place card
@@ -8530,6 +8532,10 @@ const ACID_PATCH_AT = 0.25, ACID_PATCH_T = 1.5, ACID_TICK = 0.25;   // from 0.25
 const FIRE_SPEED = 420;          // the fireball, lines a second, straight at chest height until it hits a monster or leaves the screen
 const FIRE_LOW = 14;             // step 5e-6c: its flames reach this far under its middle (52 over his feet), so it bursts on a piece 38 high or more
 const CAST_BUF = 0.15;           // cast pressed this long before he is free still casts
+// the fireball cast in mid-air during a jump (design system 8's loopFire, "cast in mid-air, at a flyer"; Barney, 8 November 2026): the kit's
+// jumpCast poses from its rise (step 3) through its throw at the top (4 and 5), the fireball leaving half a step into the throw; once a
+// jump, the fireball only (not heal, the bolt or the acid, which wait for the ground as before)
+const AIR_CAST_FROM = 3, AIR_CAST_THR = 4.5, AIR_CAST_TO = 6;
 const POTION = { health: 0.35, mana: 0.5 };   // what a potion refills
 const LOOT_SIZE = 1.4;           // loot drawn 1.4 times its old size, and reached as far (Barney, 8 November 2026: too small, too easy to miss; 1.2 to start,
                                  // then 1.4, chosen on his phone: design system 14's LOOT_SIZE)
@@ -8547,7 +8553,8 @@ const LINES = { heal: ['Heal mastered', 'Heal: restores deeper'], fire: ['Fireba
 const BOSS = {
   night: { hp: 40, at: 260, body: [-50, 50, -236, -5], rest: [0.9, 1.5], dmg: { lunge: 0.2, behind: 0.2, wail: 0.25 } },
   storm: { hp: 45, at: 240, body: [-60, 60, -182, -40], rest: [1.0, 1.6], dmg: { slam: 0.25, snap: 0.2, call: 0 } },
-  dawn:  { hp: 50, at: 300, body: [-55, 60, -210, -40], rest: [0.8, 1.3], dmg: { leap: 0.25, sickle: 0.25, bolts: 0.2 } },
+  dawn:  { hp: 50, at: 300, body: [-55, 60, -210, -40], rest: [0.8, 1.3], dmg: { leap: 0.25, sickle: 0.25, bolts: 0.2 },
+    legs: [-135, 140, -125, 0] },   // Barney, 8 November 2026: her four spider legs can be struck too, for three quarters of a blow (LEG_HIT)
   mist:  { hp: 55, at: 200, body: [-60, 75, -230, 0], rest: [1.0, 1.5], dmg: { roots: 0.25, branch: 0.3, splinters: 0.2 } },
 };
 const BOSS_WISPS = 25;
@@ -8832,6 +8839,7 @@ LanternBox.game({
     g.spells = { heal: t.all ? 3 : 0 }; g.spells[g.attack] = t.all ? 3 : 0; g.spellList = t.all ? ['heal', g.attack] : [];
     g.zaps = []; g.sprays = []; g.patches = [];   // step 5e-2: the bolts, the sprays and the patches on the ground
     g.strikes = []; g.flareT = 9; g.riseHp = null;   // step 5e-7: the bolt's strikes on cover; The Grave Refuses' flare and health stepping up
+    g.airCast = null; g.airCastUsed = false;        // the fireball's throw in mid-air, and whether this jump has had one
     g.graces = {}; g.warded = false;              // step 5e-3: the Graces held this run, and Lantern Ward used in this place
     g.bound = []; g.justBound = null; g.graveSpent = false; g.wardT = 9;   // step 5e-6b: the order bound, The Grave Refuses spent, the ward's flare
     g.teach = t.teach === 'always' || (!rec.played && !rec.hintsHidden); g.taught = {};   // step 5e-4: teaching in play on a first run
@@ -9078,11 +9086,12 @@ function stepTo(g, xn) {
 }
 
 /* ---------- moves ---------- */
-function jump(g, lb) { g.mode = 'air'; g.air = 'jump'; g.airT = 0; g.vy = -JUMP_V; g.on = null; g.mt = 0; lb.sfx('jump'); }
-function startDrop(g) { g.mode = 'air'; g.air = 'drop'; g.airT = 0; g.vy = 0; g.on = null; g.mt = 0; }
+function jump(g, lb) { g.mode = 'air'; g.air = 'jump'; g.airT = 0; g.vy = -JUMP_V; g.on = null; g.mt = 0; g.airCast = null; g.airCastUsed = false; lb.sfx('jump'); }
+function startDrop(g) { g.mode = 'air'; g.air = 'drop'; g.airT = 0; g.vy = 0; g.on = null; g.mt = 0; g.airCast = null; }
 function airUpdate(g, lb, dt, dir, i) {
   g.airT += dt;
   if (g.air === 'drop' && g.airT < COYOTE && i.pressed.jump) return jump(g, lb);
+  airCast(g, lb, dt);
   if (dir) g.facing = dir;
   // across: stopped by ground or a piece's side above his feet
   if (dir) {
@@ -9103,8 +9112,29 @@ function airUpdate(g, lb, dt, dir, i) {
     if (pit && g.y > g.L.ground(g.x) + 20) return startLost(g, lb, 'pit', pit);
   }
 }
+// the fireball in mid-air (Barney, 8 November 2026): cast pressed in a jump with the fireball chosen and mana for it starts the throw; the
+// mana goes as it leaves his hand, from where he is then, at chest height. Landing before it leaves turns it into a cast on the ground.
+function airCast(g, lb, dt) {
+  const c = g.airCast;
+  if (!c) {
+    if (g.air !== 'jump' || g.airCastUsed || g.castBuf <= 0 || g.spellList[g.sel] !== 'fire' || g.mana < spellCost(g, 'fire') - 1e-6) return;
+    g.castBuf = 0; g.airCastUsed = true; g.airCast = { t: 0, done: false };
+    return;
+  }
+  c.t += dt;
+  if (!c.done && AIR_CAST_FROM + c.t * lb.world.stepRate >= AIR_CAST_THR) {
+    c.done = true;
+    if (g.mana < spellCost(g, 'fire') - 1e-6) return;
+    g.mana -= spellCost(g, 'fire'); hudMana(g, lb, true);
+    const from = { x: g.x, y: g.y, f: g.facing, on: null };
+    throwSpell(g, lb, 'fire', from);
+    if (g.graces.reverb) lb.after(GRACE.reverb, () => { if (G === g && g.mode !== 'lost' && g.mode !== 'return' && g.mode !== 'over' && g.mode !== 'card') throwSpell(g, lb, 'fire', from); });   // Reverberate, as on the ground
+  }
+}
 function land(g, lb, y, p) {
   const hard = g.vy > 300;
+  if (g.airCast && !g.airCast.done) g.castBuf = CAST_BUF;   // landed before the fireball left his hand: cast it on the ground
+  g.airCast = null; g.airCastUsed = false;
   g.y = y; g.on = p; g.vy = 0; g.mode = 'ground'; g.landT = hard ? 0 : 9; g.mt = 0;
   if (hard) lb.sfx('land');
   checkpoints(g, lb);
@@ -9236,9 +9266,14 @@ function swordHits(g, lb) {
     hits++;
     damage(g, lb, m, swordBite(g), f);
   }
-  const bb = bossBody(g);
-  if (bb && !(bb[1] < x0 || bb[0] > x1 || bb[3] < y0 || bb[2] > y1)) { hits++; bossDamage(g, lb, swordBite(g)); }
+  const share = bossShare(g, (b) => !(b[1] < x0 || b[0] > x1 || b[3] < y0 || b[2] > y1));
+  if (share) { hits++; bossDamage(g, lb, swordBite(g) * share); }
   if (hits) lb.sfx('hit');
+}
+// how much of a hit the boss takes, where meets(box) says it reaches: all of it on its body, LEG_HIT on the Moor Mother's legs, else nothing
+function bossShare(g, meets) {
+  const bb = bossBody(g); if (bb && meets(bb)) return 1;
+  const lg = bossLegs(g); return lg && meets(lg) ? LEG_HIT : 0;
 }
 function damage(g, lb, m, n, dir) {    // a blow or a fireball: it flares and jolts (the kit's)
   m.awake = true; m.hp -= n; m.hitT = 0;
@@ -9301,9 +9336,11 @@ function shotsUpdate(g, lb, dt) {     // each fireball flies on until it hits a 
     if (s.burst != null) { s.burst += dt; if (s.burst >= 0.4) s.gone = true; continue; }
     s.x += s.f * FIRE_SPEED * dt;
     const m = g.mons.find((q) => { if (!alive(q)) return false; const b = monBox(q); return !(b[1] < s.x - 10 || b[0] > s.x + 10 || b[3] < s.y - 10 || b[2] > s.y + 10); });
-    const bb = m ? null : bossBody(g);
+    const bb = m ? null : bossBody(g), lg = m || !bb ? null : bossLegs(g);
     if (m) { s.burst = 0; lb.sfx('burst'); damage(g, lb, m, SPELL.fire.dmg[s.level], s.f); }
     else if (bb && !(bb[1] < s.x - 10 || bb[0] > s.x + 10 || bb[3] < s.y - 10 || bb[2] > s.y + 10)) { s.burst = 0; lb.sfx('burst'); bossDamage(g, lb, SPELL.fire.dmg[s.level]); }
+    // Barney, 8 November 2026: the Moor Mother's legs, only where the fireball flies under her body (it would miss it), for LEG_HIT
+    else if (lg && s.y - 10 > bb[3] && !(lg[1] < s.x - 10 || lg[0] > s.x + 10 || lg[3] < s.y - 10 || lg[2] > s.y + 10)) { s.burst = 0; lb.sfx('burst'); bossDamage(g, lb, SPELL.fire.dmg[s.level] * LEG_HIT); }
     else if (solidAt(g, s.x + s.f * 10, s.y + FIRE_LOW, null)) { s.burst = 0; lb.sfx('burst'); }   // step 5e-6c: it bursts on a hill or a piece
     else if (s.x < camX - 60 || s.x > camX + lb.W + 60) s.gone = true;
   }
@@ -9385,7 +9422,8 @@ function acidHit(g, lb, s) {
   const meets = (b) => b && !(b[1] < x0 || b[0] > x1 || b[3] < y0 || b[2] > y1) && !lineBlock(g, s.x, s.y, (b[0] + b[1]) / 2, (b[2] + b[3]) / 2, b, s.on);
   let any = false;
   for (const m of g.mons) if (alive(m) && meets(monBox(m))) { any = true; damage(g, lb, m, s.dmg * 0.5, s.f); }
-  if (meets(bossBody(g))) { any = true; bossDamage(g, lb, s.dmg * 0.5); }
+  const share = bossShare(g, meets);   // Barney, 8 November 2026: the Moor Mother's legs too, for LEG_HIT
+  if (share) { any = true; bossDamage(g, lb, s.dmg * 0.5 * share); }
 }
 function patchHit(g, lb, p) {
   for (const m of g.mons) {
@@ -9393,8 +9431,9 @@ function patchHit(g, lb, p) {
     const b = monBox(m), py = p.slope ? g.L.ground(Math.max(p.x0, Math.min(p.x1, (b[0] + b[1]) / 2))) : p.y;   // step 5e-6a: along a slope
     if (b[1] >= p.x0 && b[0] <= p.x1 && Math.abs(b[3] - py) < 24) damage(g, lb, m, p.dmg, p.f);
   }
-  const bb = bossBody(g);
+  const bb = bossBody(g), lg = bossLegs(g);
   if (bb && bb[1] >= p.x0 && bb[0] <= p.x1 && Math.abs(bb[3] - p.y) < 40) bossDamage(g, lb, p.dmg);
+  else if (lg && lg[1] >= p.x0 && lg[0] <= p.x1 && Math.abs(lg[3] - p.y) < 24) bossDamage(g, lb, p.dmg * LEG_HIT);   // her feet in the patch (Barney, 8 November 2026)
 }
 function spellsUpdate(g, lb, dt) {
   for (const z of g.zaps) z.t += dt;
@@ -9479,10 +9518,15 @@ function endBossMove(g, lb, b) {
 function bossMir(b, name) { const d = (DESIGN_FACING[b.place] && DESIGN_FACING[b.place][name]) || 1; return b.f !== d; }
 function bossLand(b, m) { const mir = bossMir(b, 'leap'), wx = mir ? 2 * b.bx - m.at : m.at, land = wx - 30; return mir ? 2 * b.bx - land : land; }
 // where the boss's body is now (for blows and fireballs), or null while it can't be struck (arriving, faded, in the air, beaten)
-function bossBody(g) {
+const LEG_HIT = 0.75;             // a blow, a spell or the acid on the Moor Mother's legs (not her body): three quarters of its damage (Barney, 8 November 2026; starting figure)
+const bossBody = (g) => bossBox(g, 'body');
+const bossLegs = (g) => bossBox(g, 'legs');   // null for a boss without legs to strike (all but the Moor Mother)
+// what of the boss can be struck: its body, or its legs, wherever its move has taken it (null while it is faded, in the air or beaten)
+function bossBox(g, part) {
   const b = g.boss;
   if (!b || b.st !== 'fight') return null;
-  const B = BOSS[b.place].body, m = b.move, u = m ? m.t : 0;
+  const B = BOSS[b.place][part], m = b.move, u = m ? m.t : 0;
+  if (!B) return null;
   let x = b.bx, flipped = b.f === -1;
   if (m && b.place === 'night') {
     const mir = bossMir(b, m.name), wx = mir ? 2 * b.bx - m.at : m.at, M = (v) => (mir ? 2 * b.bx - v : v);
@@ -9813,12 +9857,13 @@ function atkMove(a) {
 }
 // where a ghoul's claw or a walker's arm sweeps, while it sweeps (the kit's drawing), in the path's lines; null at other times
 // Its heights count from the higher of the ground under the monster and under the sweep, so on a slope a roll still gets under a
-// claw and a standing wanderer under a high sweep, as on the flat
+// claw and a standing wanderer under a high sweep, as on the flat. The walker's low sweep (at his knees: jump it) counts from the ground
+// under the sweep, so it still reaches him standing below the walker on a slope (Barney, 8 November 2026: a third of them missed there)
 function atkZone(m, g) {
   const z = m.atk && MON[m.kind].zone && MON[m.kind].zone[m.atk.name];
   if (!z || m.atk.t < z[0] || m.atk.t > z[1]) return null;
   const x0 = m.f === 1 ? m.px - z[3] : m.px + z[2], x1 = m.f === 1 ? m.px - z[2] : m.px + z[3];
-  const base = Math.min(m.py, g.L.ground((x0 + x1) / 2));
+  const gs = g.L.ground((x0 + x1) / 2), base = m.atk.name === 'low' ? gs : Math.min(m.py, gs);
   return [x0, x1, base + z[4], base + z[5]];
 }
 // a ground monster's stretch: between the pits, steep banks and pieces either side of x, its feet kept clear of their edges
@@ -10039,6 +10084,7 @@ function drawWanderer(g, lb, w) {
     }
     case 'air': {
       if (g.air === 'drop') return w.wanderer(g.x, o({ move: 'drop', step: g.airT < 1 / R ? 0 : 1.5 }));
+      if (g.airCast && AIR_CAST_FROM + g.airCast.t * R < AIR_CAST_TO) return w.wanderer(g.x, o({ move: 'jumpCast', step: AIR_CAST_FROM + g.airCast.t * R }));   // the throw in mid-air
       const step = g.airT < 1 / R ? 1 : g.vy < -250 ? 2.5 : g.vy <= 250 ? 4 : 5.5;   // launch, rising, the top, falling
       return w.wanderer(g.x, o({ move: 'jump', step }));
     }
