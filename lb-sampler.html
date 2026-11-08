@@ -8280,6 +8280,23 @@ const LEGS = [0, 1, 2, 3].map((i) => ({ place: i, label: PLACE_LABEL[PLACE_NAMES
 const CLOUD_MODES = [[false, 'without lit-through-a-cloud', 'off'], [true, 'with lit-through-a-cloud (version 11)', 'v11']];
 const CLOUD_LEGS = [0, 1].flatMap((i) => CLOUD_MODES.map(([thru, what, short]) => ({ place: i, thru, label: PLACE_LABEL[PLACE_NAMES[i]] + ', ' + what,
   short: PLACE_LABEL[PLACE_NAMES[i]].replace('Blood Red Rain', 'Rain') + ' ' + short })));
+// the parts check (Barney, 8 November 2026, after the Amazon Fire HD 8 ran the speed check at 2 to 6 fps): Night up its big hill as the speed
+// check runs it, taken apart: nothing drawn (what the browser costs on its own), the place alone standing still and moving (its layers,
+// weather and flyers, and the wanderer), moving without lit-through-a-cloud, the whole scene (the crowd and the boss too), the whole scene
+// with the HUD hidden; then Blood Red Rain alone and whole. Each leg gives frames a second, a frame drawn in, and the page's own work a frame
+const PARTS_LEGS = [
+  { place: 0, blank: true, label: 'Nothing drawn (the browser alone)', short: 'Blank' },
+  { place: 0, part: 1, still: true, label: 'Night alone, standing still', short: 'Night still' },
+  { place: 0, part: 1, label: 'Night alone, moving', short: 'Night moving' },
+  { place: 0, part: 1, thru: false, label: 'Night alone, moving, no lit-through-a-cloud', short: 'Night no cloud light' },
+  { place: 0, label: 'Night, the whole scene (crowd and boss)', short: 'Night whole' },
+  { place: 0, hud: false, label: 'Night, the whole scene, HUD hidden', short: 'Night no HUD' },
+  { place: 1, part: 1, label: 'Blood Red Rain alone, moving', short: 'Rain moving' },
+  { place: 1, label: 'Blood Red Rain, the whole scene', short: 'Rain whole' },
+];
+const checkLeg = (g) => (g.check ? g.check.legs[Math.min(g.check.i, g.check.legs.length - 1)] : null);
+function hudShown(on) { const h = document.querySelector('.lb-hud-left'); if (h && h.parentElement) h.parentElement.style.visibility = on ? '' : 'hidden'; }
+function applyLeg(lb, leg) { lb.world._thruCloud(leg.thru == null ? true : leg.thru); hudShown(leg.hud !== false); }
 function legStart(lb, leg) { return leg.boss ? lb.world.level(PLACE_NAMES[leg.place]).arena + 120 : checkStart(lb, leg.place); }
 function onLevel(g, lb, x) { // the camera on a level, and where the stand-in wanderer stands (on a piece's top when he is over one)
   const L = levelOf(g, lb), camX = Math.max(0, Math.min(L.length - lb.W, x - lb.W * HOLD));
@@ -8517,14 +8534,14 @@ function device() { // the browser, the system and the graphics chip, as far as 
   return br + (os ? ' on ' + os : '') + (gpu ? ' · ' + gpu : '');
 }
 const pct = (a, p) => { if (!a.length) return 0; const b = a.slice().sort((x, y) => x - y); return b[Math.min(b.length - 1, Math.floor(p * b.length))]; };
-function startCheck(g, lb, cloud) {
+function startCheck(g, lb, kind) {   // kind: nothing for the speed check, true for the cloud check, 'parts' for the parts check
   closePanel();
   Object.assign(g, { part: 0, crowd: true, autoWalk: false, rising: false, monsterAt: null, bossAt: null, ground: true });
-  const legs = cloud ? CLOUD_LEGS : LEGS;
-  g.check = { i: 0, phase: 'warm', t0: performance.now(), res: [], cur: null, legs, cloud: !!cloud };
+  const parts = kind === 'parts', legs = parts ? PARTS_LEGS : kind ? CLOUD_LEGS : LEGS;
+  g.check = { i: 0, phase: 'warm', t0: performance.now(), res: [], cur: null, legs, cloud: kind === true, parts };
   g.place = legs[0].place;
   g.x = legStart(lb, legs[0]);
-  lb.world._thruCloud(legs[0].thru == null ? true : legs[0].thru);
+  applyLeg(lb, legs[0]);
 }
 function checkFrame(g, lb, now, gapMs, cpu) { // called once a frame
   const T = g.check, el = (now - T.t0) / 1000, LEGS = T.legs;
@@ -8543,20 +8560,22 @@ function checkFrame(g, lb, now, gapMs, cpu) { // called once a frame
       c.max = Math.max(...c.gaps);
       c.drawn = gap / 8;
       c.keptUp = gap < 18;   // eight frames fitted inside one screen refresh, so the time is an upper limit
+      c.proc = c.cpu.length ? c.cpu.reduce((a, b) => a + b, 0) / c.cpu.length : 0;   // the page's own work a frame, while it ran
       T.res.push(c);
       T.i++;
-      if (T.i >= LEGS.length) { lb.hud.boss(null); lb.world._thruCloud(true); finishCheck(g, lb); return; }
+      if (T.i >= LEGS.length) { lb.hud.boss(null); lb.world._thruCloud(true); hudShown(true); finishCheck(g, lb); return; }
       T.phase = 'warm';
       T.t0 = now;
       g.place = LEGS[T.i].place;
       g.x = legStart(lb, LEGS[T.i]);
-      lb.world._thruCloud(LEGS[T.i].thru == null ? true : LEGS[T.i].thru);
+      applyLeg(lb, LEGS[T.i]);
       if (LEGS[T.i].boss) lb.hud.boss({ name: BOSS_NAMES[PLACE_NAMES[g.place]], hp: 0.6 });   // at the boss, its bar shows too
       else lb.hud.boss(null);
     }
   }
 }
 function finishCheck(g, lb) {
+  if (g.check.parts) { finishParts(g, lb); return; }
   const R = g.check.res, p = lb.picture, cloud = g.check.cloud;
   g.check = null;
   const ms = (c) => (c.keptUp ? 'under ' : '') + c.drawn.toFixed(1) + ' ms';
@@ -8592,6 +8611,42 @@ function finishCheck(g, lb) {
     face.style.gap = '8px';
     face.style.padding = '12px 16px';
     face.append(h, t, v, l, row);
+  }, Math.min(640, innerWidth - 12));
+  window.__lastCheck = line;
+}
+
+// the parts check's results: each leg's frames a second, a frame drawn in and the page's own work a frame, and a line to copy
+function finishParts(g, lb) {
+  const R = g.check.res, p = lb.picture;
+  g.check = null;
+  const ms = (c) => (c.keptUp ? 'under ' : '') + c.drawn.toFixed(1) + ' ms';
+  const line = 'Lantern Box parts check, kit ' + lb.version + ' (test page ' + TEST_PAGE + ') \u00b7 ' + device() + ' \u00b7 ' + p.width + ' \u00d7 ' + p.height + ' at ' + p.sharpness.toFixed(2) + '\u00d7 \u00b7 Picture ' + lb.settings.picture + ' (' + p.level + ')' +
+    (lb.settings.effects ? '' : ' \u00b7 effects off') + ' \u00b7 ' + R.map((r) => r.short + ' ' + Math.round(r.fps) + ' fps / ' + ms(r) + ' / work ' + r.proc.toFixed(1) + ' ms').join(' \u00b7 ') +
+    ' \u00b7 layers ' + Math.round(lb.world.stats.tileBytes / 1048576) + ' MB';
+  openPanel((face, close) => {
+    const h = document.createElement('h2');
+    h.className = 'lb-heading';
+    h.textContent = 'Parts check';
+    h.style.fontSize = '26px';
+    const t = document.createElement('table');
+    t.className = 'lb-scores ls-table';
+    t.style.fontSize = '14px';
+    t.innerHTML = '<thead><tr><th scope="col">Part</th><th scope="col">Frames a second</th><th scope="col">A frame drawn in</th><th scope="col">The page\u2019s work</th></tr></thead><tbody>' +
+      R.map((r) => '<tr><td>' + r.label + '</td><td>' + Math.round(r.fps) + '</td><td>' + ms(r) + '</td><td>' + r.proc.toFixed(1) + ' ms</td></tr>').join('') + '</tbody>';
+    const l = document.createElement('p');
+    l.className = 'ls-line';
+    l.textContent = line;
+    const row = document.createElement('div');
+    row.className = 'lb-btns';
+    const copy = button('Copy the line', false, () => {
+      const done = () => { copy.textContent = 'Copied'; };
+      const pick = () => { const r = document.createRange(); r.selectNodeContents(l); const s = getSelection(); s.removeAllRanges(); s.addRange(r); copy.textContent = 'Selected: copy it'; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(line).then(done, pick); else pick();
+    });
+    row.append(copy, button('Close', true, close));
+    face.style.gap = '8px';
+    face.style.padding = '12px 16px';
+    face.append(h, t, l, row);
   }, Math.min(640, innerWidth - 12));
   window.__lastCheck = line;
 }
@@ -8843,6 +8898,7 @@ function buildPieces(g, lb) {
     ['Screens', () => screensPanel(g, lb)],
     ['Speed check', () => startCheck(g, lb)],
     ['Cloud check', () => startCheck(g, lb, true)],
+    ['Parts check', () => startCheck(g, lb, 'parts')],   // after the Amazon Fire HD 8's speed check (8 November 2026)
   ].concat([['Hide', () => { g.barHidden = true; }]])   // the whole picture: for the thumbs on a touch device, and to see the ground (since 4c-8, on computers too)
     .forEach(([label, fn]) => bar.append(button(label, false, fn)));
   showBar = button('Test buttons', false, () => { g.barHidden = false; });
@@ -8893,7 +8949,7 @@ LanternBox.game({
   },
 
   update(g, lb) {
-    if (g.check) { lb.ambient(null); g.x += TEST_PACE; g.walking = true; g.facing = 1; return; }   // the speed check runs without the background sound
+    if (g.check) { lb.ambient(null); if (!checkLeg(g).still) g.x += TEST_PACE; g.walking = true; g.facing = 1; return; }   // the speed check runs without the background sound (the parts check's still leg stands)
     const i = lb.input;
     PLACE_NAMES.forEach((p, n) => { if (i.keyPressed('Digit' + (n + 1))) g.place = n; });
     if (i.keyPressed('KeyC')) g.crowd = !g.crowd;
@@ -8948,7 +9004,11 @@ LanternBox.game({
     }
     // while the speed check times a frame, it draws eight in a row, each 1/60 s on from the last, so poses and layers change as often as in play
     const reps = g.check && g.check.phase === 'load' ? 8 : 1, c0 = performance.now();
-    for (let r = 0; r < reps; r++) drawScene(ctx, g, lb, lb.time + r / 60, g.x + r * TEST_PACE);
+    const leg = checkLeg(g), pace = leg && leg.still ? 0 : TEST_PACE;
+    for (let r = 0; r < reps; r++) {
+      if (leg && leg.blank) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); }   // the parts check: nothing drawn
+      else drawScene(ctx, g, lb, lb.time + r / 60, g.x + r * pace);
+    }
     const cpu = (performance.now() - c0) / reps;
     if (!playing) return;
     if (g.check) checkFrame(g, lb, now, gapMs, cpu);
@@ -8971,7 +9031,7 @@ function nextSection(g, lb) { // on a level: on to the start of the next section
 function moveX(g, lb, m) { const v = g.move.x0 + m.dx * g.facing; return g.ground ? Math.max(0, Math.min(levelOf(g, lb).length, v)) : v; }   // where a move has taken him
 function standY(g, lb, x) { return g.ground ? onLevel(g, lb, x).y + 1 : lb.world.ground(x) + 1; }   // the ground, or a piece's top, under him
 function drawScene(ctx, g, lb, t, x) {
-  const w = lb.world, part = g.check ? PARTS[0] : PARTS[g.part];
+  const w = lb.world, leg = checkLeg(g), part = g.check ? PARTS[leg && leg.part != null ? leg.part : 0] : PARTS[g.part];   // the parts check's legs pick their part
   const step = g.move && !g.check ? (t - g.move.t0) * w.stepRate : null, m = step != null ? w.move(g.move.name, step) : null;
   if (m) x = moveX(g, lb, m);   // mid-move, he and the camera are where the move has taken him at this frame's time
   const fx = part.focus && g.ground && !g.check ? part.focus(g, lb) : x;   // a part may hold the camera on its own spot
