@@ -17,6 +17,7 @@
   a.card:hover, a.card:focus-visible { border-color: var(--gold); outline: none; }
   a.card b { display: block; color: var(--gold); font-weight: normal; font-size: 21px; }
   a.card span { color: var(--dim); font-size: 15px; }
+  .ver { color: var(--gold); font-size: 15px; margin: 0 0 6px; }
   h2 { font-weight: normal; color: var(--gold); font-size: 19px; margin: 26px 0 6px; }
   ul { margin: 0; padding-left: 20px; color: var(--dim); }
   li { margin: 0 0 8px; }
@@ -26,6 +27,7 @@
 <main>
   <h1>Lantern Box tests</h1>
   <p>Test builds of Gloam Hallow and the kit's test page, for trying on any device. Not finished, and not for sharing.</p>
+  <p class="ver" id="ver">Kit version: checking…</p>
   <a class="card" href="gloam-hallow.html"><b>Gloam Hallow</b><span>The game, with its Testing screen in Settings.</span></a>
   <a class="card" href="lb-sampler.html"><b>Test page</b><span>Every drawing part and screen, and the speed check.</span></a>
   <h2>On a phone</h2>
@@ -37,6 +39,19 @@
   <ul>
     <li>Open the test page and tap Speed check (or press T). When it finishes, copy the line it gives you.</li>
   </ul>
+  <h2>After an update</h2>
+  <ul>
+    <li>The kit version above is read fresh from the server each time. GitHub lets a phone keep a page for up to 10 minutes, so the links below it carry the version, and open the new files as soon as they are up.</li>
+    <li>On an iPhone, remove the old Home Screen icon and add it again from the link here, so it opens the new version.</li>
+  </ul>
 </main>
+<script>
+  // the version on the server, never a kept copy; the links carry it, so a phone opens the new files at once
+  fetch('version.txt', { cache: 'no-store' }).then((r) => (r.ok ? r.text() : Promise.reject())).then((t) => {
+    const v = t.trim();
+    document.getElementById('ver').textContent = 'Kit version on the server: ' + v;
+    document.querySelectorAll('a.card').forEach((a) => { a.href = a.getAttribute('href').split('?')[0] + '?v=' + encodeURIComponent(v); });
+  }).catch(() => { document.getElementById('ver').textContent = 'Kit version: could not check (offline?)'; });
+</script>
 </body>
 </html>
