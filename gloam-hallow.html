@@ -1088,7 +1088,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 
 </style>
 <script>
-/* Lantern Box 0.18 — runtime
+/* Lantern Box 0.19 — runtime
    One file, no dependencies. Exposes window.LanternBox. Pair it with lantern-box.css.
    Copied from Retro Kit's shell and restyled to the design system (lantern-box/design-system/); the two soundtracks and
    the way settings are saved come from City Nights' copy of it. It owns everything every game shares: the picture
@@ -1098,7 +1098,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.18.0';
+  const VERSION = '0.19.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -1436,6 +1436,23 @@ const FX={
   // version 14 (kit 0.18.0): the lightning bolt striking cover (a crate, a tomb, a hillside) instead of a monster: the bolt's own fork crack, at the strike,
   // at the bolt's gain, so it is as loud as the fork is in the bolt
   boltHit:()=>{noise({ft:"highpass",from:3000,dur:0.03,vol:0.22,wet:0.3});tone({type:"sawtooth",f:150,to:80,dur:0.16,a:0.003,lp:2200,vib:[60,35],vol:0.08,wet:0.35});},
+  // version 15 (kit 0.19.0): the mouth-hat's spit. As it rears back (the signal, 0.45 s): a wet gurgle rising, bubbles climbing in its throat
+  spitGather:()=>{noise({from:260,to:900,dur:0.42,a:0.3,vol:0.2,wet:0.1});
+    for(let i=0;i<9;i++){const u=i/8,f=150+u*260+R()*40;tone({f,to:f*2.1,glide:0.035,dur:0.045,a:0.004,lp:1400,vol:0.07+0.05*u,wet:0.15,at:0.02+u*0.38+R()*0.02});}},
+  // as the gob leaves: a short wet pop and a spray
+  spit:()=>{noise({ft:"bandpass",from:1100,to:700,q:1.6,dur:0.035,a:0.002,vol:0.4,wet:0.1});tone({f:240,to:110,dur:0.06,a:0.002,vol:0.22,wet:0.08});
+    noise({ft:"bandpass",from:2600,to:1400,q:0.9,dur:0.2,a:0.006,tear:34,vol:0.22,wet:0.15,at:0.02});},
+  // where it lands: a wet slap and a brief sizzle
+  splat:()=>{noise({from:1800,to:300,dur:0.11,a:0.002,vol:0.4,wet:0.12});tone({f:150,to:70,dur:0.08,a:0.002,vol:0.2,wet:0.05});
+    noise({ft:"highpass",from:3800,to:2600,dur:0.32,a:0.01,tear:40,vol:0.08,wet:0.2,at:0.04});},
+  // version 15 (kit 0.19.0): The Grave Refuses' rising, from the moment he breaks, in the plaque line's chime's place: his breath drawn back in as his
+  // pieces gather (a rising rush of air), the card pieces ticking back together faster and faster, two tones rising (the life lost's
+  // falling ones turned upwards), then as he forms (1.0 s) a warm, bright chord blooming over a soft low thud as he kneels
+  graveRise:()=>{noise({ft:"bandpass",from:420,to:1900,q:1.1,dur:1.0,a:0.75,vol:0.22,wet:0.45});
+    for(let i=0;i<14;i++){const u=Math.pow(i/13,0.6);noise({ft:"bandpass",from:1800+u*1800,q:3,dur:0.025,vol:0.05+0.07*u,wet:0.3,at:0.12+u*0.86});}
+    tone({f:147,to:392,glide:0.85,dur:1.0,a:0.25,vol:0.07,wet:0.6,at:0.1});tone({f:220,to:587,glide:0.85,dur:0.95,a:0.25,vol:0.04,wet:0.6,at:0.12});
+    [294,440,587,880].forEach((f,i)=>tone({f,dur:1.3-i*0.15,a:0.02,vol:0.08-i*0.012,wet:0.7,at:1.0+i*0.02}));
+    tone({f:90,to:60,dur:0.14,vol:0.16,wet:0.1,at:1.0});bell({f:1175,dur:1.0,vol:0.03,wet:0.8,at:1.02,partials:[[1,1,1],[2.0,0.3,0.5]]});},
   back:()=>tone({type:"triangle",f:440,to:330,dur:0.09,lp:1800,vol:0.15,wet:0.15}),
 };
 // each effect's level, set by measuring how loud it sounds (K-weighted, its loudest 0.4 s) against a target for its kind:
@@ -1443,7 +1460,7 @@ const FX={
 // random draws: the acid's tear varies by up to 8 dB) to stand as version 13 says: the bolt 0.7 dB under the fireball, the acid 1 dB over it,
 // the ward as loud as the plaque line (play.js's 3.5, 4.8 and 1.84 came out 3.3, 3.1 and 1 dB louder here)
 // the big moments loudest, the main actions next, light touches and the menus quieter. GAIN is filled from that measure.
-const GAIN={gameOver: 1.0,bolt: 2.21,boltHit: 2.21,acid: 3.77,acidHiss: 1.3,ward: 1.64,echo: 2.96,swing: 5.24, hit: 3.07, jump: 8, land: 2.52, roll: 5.59, hurt: 0.78, crack: 1.97, defeat: 2.96, pickup: 1.96, heal: 1.56, fireball: 3.7, burst: 3.86, fizzle: 2.01, checkpoint: 2.13, line: 2.25, lifeLost: 2.89, bossArrives: 1.25, bossDefeated: 1.07, placeCard: 1.47, win: 1.36, select: 4.97, confirm: 1.87, back: 3.83, drinkHealth: 2.37, drinkMana: 2.36}; /* round 13: the drinks measured as the heal and the pick-up are (a light touch, -31) */ /* kit 0.10.1 (starting figures; Barney could hardly hear 0.10.0's echo under the tear): the tear back at the old defeat's level, and the echo, a defeat's and a boss's, at its own, measured K-weighted in 100 ms windows: its first note about 5 dB over the tear (-24 against -29), as the old rising note was; tune by ear */
+const GAIN={gameOver: 1.0,spitGather: 1.9,spit: 2.45,splat: 2.24,graveRise: 2.99,bolt: 2.21,boltHit: 2.21,acid: 3.77,acidHiss: 1.3,ward: 1.64,echo: 2.96,swing: 5.24, hit: 3.07, jump: 8, land: 2.52, roll: 5.59, hurt: 0.78, crack: 1.97, defeat: 2.96, pickup: 1.96, heal: 1.56, fireball: 3.7, burst: 3.86, fizzle: 2.01, checkpoint: 2.13, line: 2.25, lifeLost: 2.89, bossArrives: 1.25, bossDefeated: 1.07, placeCard: 1.47, win: 1.36, select: 4.97, confirm: 1.87, back: 3.83, drinkHealth: 2.37, drinkMana: 2.36}; /* round 13: the drinks measured as the heal and the pick-up are (a light touch, -31) */ /* kit 0.10.1 (starting figures; Barney could hardly hear 0.10.0's echo under the tear): the tear back at the old defeat's level, and the echo, a defeat's and a boss's, at its own, measured K-weighted in 100 ms windows: its first note about 5 dB over the tear (-24 against -29), as the old rising note was; tune by ear */
 // ---- the places' background sound: wind, rain, thunder, bats, crows, creaking trees ----
 function loopNoise(ft,f,q,vol,lfoRate,lfoDepth){const s=ctx.createBufferSource();s.buffer=nb;s.loop=true;const fl=ctx.createBiquadFilter();fl.type=ft;fl.frequency.value=f;fl.Q.value=q;
   const g=ctx.createGain();g.gain.value=vol;s.connect(fl);fl.connect(g);g.connect(amb);s.start(0,R()*1.5);const nodes=[s];
@@ -5171,6 +5188,19 @@ function moHot(c,x,y,r,a){if(a<=0||!FX)return; /* the kit: Effects off, no glow 
 // an attack's sweep: an ember crescent along the path the claws or branches have just taken (pts newest last)
 function moSlash(c,pts,w,a){if(pts.length<2||a<=0)return;c.save();c.globalCompositeOperation="screen";c.lineCap="round";c.lineJoin="round";
   for(let i=1;i<pts.length;i++){const u=i/(pts.length-1);c.strokeStyle=rgba(i===pts.length-1?"#ffd9a0":MO.ember,a*(0.25+0.75*u));c.shadowColor=MO.glow;c.shadowBlur=FX?8:0;c.lineWidth=w*(0.25+0.75*u);c.beginPath();c.moveTo(pts[i-1][0],pts[i-1][1]);c.lineTo(pts[i][0],pts[i][1]);c.stroke();}c.restore();}
+// kit 0.19.0 (version 15, play.js 1.5.0): the mouth-hat rearing (P.rear above 0: about the back of its brim, leaning back and stretching taller) or leaning forward
+// (below 0, about the front of its brim)
+const _rear=(x,P)=>{const r=P.rear||0;if(!r)return;const px=r>0?28:-30,py=-5;x.translate(px,py);x.rotate(r*0.26);if(r>0)x.scale(1-0.05*r,1+0.12*r);x.translate(-px,-py);};
+// kit 0.19.0 (version 15): the mouth-hat's mouth sealed for the spit (sl 0 to 1): its lips pressed shut over teeth and throat in the card blacks it is
+// graded in (bundle.js's CH, centred as monsterInto centres a hatmawP's), and a seam between them burning ember from inside, brighter and
+// wider as it gathers. Effects off: the seam without its glow.
+const MO_BLACKS=["#060508","#27232d","#504a5c"];
+function moSealed(c,sl){const fxOff=!FX; /* the kit: Effects off */c.save();c.globalAlpha=Math.min(1,sl*1.6);
+  const g=c.createRadialGradient(-12.8,-72.8,1,-12.8,-72.8,80.6);g.addColorStop(0,MO_BLACKS[2]);g.addColorStop(0.5,MO_BLACKS[1]);g.addColorStop(1,MO_BLACKS[0]);c.fillStyle=g;
+  c.beginPath();[[-23.5,-30.5],[-16,-35.6],[-10,-35.8],[-3.5,-33.2],[2.4,-29],[-1,-22],[-8,-15.4],[-14,-14.2],[-22.6,-16]].forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fill();
+  c.globalAlpha=Math.min(1,sl*1.3);c.lineCap="round";c.lineJoin="round";const seam=[[-23,-24.6],[-16.5,-26.2],[-9.5,-26.4],[-3.5,-25.2],[1.2,-23.8]],path=()=>{c.beginPath();seam.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));};
+  if(!fxOff){c.shadowColor=MO.glow;c.shadowBlur=4+6*sl;}c.strokeStyle=MO.ember;c.lineWidth=1.3+1.5*sl;path();c.stroke();c.shadowBlur=0;
+  c.strokeStyle="#ffc27a";c.lineWidth=0.5+0.7*sl;path();c.stroke();c.restore();}
 const _pivot=(x,P,px,py)=>{x.translate(px,py);x.rotate(P.tilt||0);x.scale(P.sx||1,P.sy||1);x.translate(-px,-py);x.translate(P.dx||0,P.dy||0);};
 Object.assign(MON_BOX,{crawlerP:[-60,-60,52,20],bat2P:[-52,-60,52,40],hatmawP:[-70,-110,60,14],ghoulP:[-95,-140,40,12],walkerP:[-125,-226,70,12]});
 Object.assign(MONSTER,{
@@ -5184,15 +5214,24 @@ Object.assign(MONSTER,{
   // the flyer: the design system's flyer, tilted along its dive; its wings freeze (P.t) when it folds them to dive
   bat2P(x,t,m,rm){const P=m.P||{};x.save();_pivot(x,P,0,-2);const det=MONSTER.bat2(x,P.t!=null?P.t:t,m,rm);x.restore();
     return(c,o)=>{c.save();_pivot(c,P,0,-2);det(c,o);const h=P.hot||0;moHot(c,0,-4,6+h*8,h);moEyes(c,o,[[-1.6,-7.2,0.3],[1.6,-7.2,-0.3]],1.1,0.8,h);c.restore();};},
-  // the mouth-hat: its own hop frozen (P.t), then squash, hop and a mouth that gapes and snaps (P.bite)
-  hatmawP(x,t,m,rm){const P=m.P||{};x.save();_pivot(x,P,0,-8);const det=MONSTER.hatmaw(x,P.t!=null?P.t:t,m,rm);x.restore();
-    return(c,o)=>{c.save();_pivot(c,P,0,-8);det(c,o);const b=P.bite||0,h=P.hot||0;moHot(c,-11,-24,10+h*8,h*0.7);
+  // the mouth-hat: its own hop frozen (P.t), then squash, hop and a mouth that gapes and snaps (P.bite). Kit 0.19.0 (version 15, play.js 1.5.0), the spit: P.rear
+  // rears it up and back about the back of its brim (1: 15 degrees back and 12% taller, the front of the brim lifting; below 0 it leans
+  // forward about the front of its brim, as it spits), P.seal closes its mouth to a seam burning from inside, P.cheek swells its face
+  // round the mouth (a card piece, so its front shows in the outline), P.dim dims its eyes (the spit's recovery)
+  hatmawP(x,t,m,rm){const P=m.P||{},tt=P.t!=null?P.t:t,hopT=c=>{const hop=Math.max(0,Math.sin(tt*(rm?1.4:2.6)+m.ph)),sq=1-hop*0.06;c.translate(0,-hop*(rm?3:9));c.scale(1/sq,sq);};
+    x.save();_rear(x,P);_pivot(x,P,0,-8);const det=MONSTER.hatmaw(x,tt,m,rm);
+    if(P.cheek>0){x.save();hopT(x);x.beginPath();x.ellipse(-15,-25,6+6*P.cheek,10+2.5*P.cheek,0,0,Math.PI*2);cardFill(x);x.restore();}
+    x.restore();
+    return(c,o)=>{c.save();_rear(c,P);_pivot(c,P,0,-8);det(c,o);const b=P.bite||0,h=P.hot||0,sl=P.seal||0;moHot(c,-11,-24,10+h*8,h*0.7);
+      if(sl>0){c.save();hopT(c);moSealed(c,sl);c.restore();}
       if(b>0){const cx=-11,cy=-24,k=1+b*0.55;c.save();c.translate(cx,cy);c.scale(k,1+b*0.95);c.translate(-cx,-cy);
         c.fillStyle="#2a0507";c.strokeStyle=MO.ember;c.lineWidth=0.9;c.shadowColor=MO.glow;c.shadowBlur=FX?5:0;c.beginPath();[[-22,-30],[-16,-34],[-10,-34.2],[-4,-32],[1,-29],[-2,-23],[-8,-17],[-14,-15.8],[-21,-17]].forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fill();c.stroke();c.shadowBlur=0;
         moMouth(c,[[-14,-27],[-8,-28],[-5,-25],[-8,-21],[-13,-21.6]],-9,-24.6,5);
         moTeeth(c,[[-20,-31.4],[-18,-25],[-16,-32],[-14,-32.6],[-12,-26],[-10,-32.8],[-8,-32.2],[-6,-26.4],[-4,-31.4],[-18,-17.2],[-16,-23],[-14,-16.4],[-11.6,-16.6],[-9.6,-22.6],[-7.6,-17.4]]);c.restore();}
-      {const tt=P.t!=null?P.t:t,hop=Math.max(0,Math.sin(tt*(rm?1.4:2.6)+m.ph)),sq=1-hop*0.06;c.save();c.translate(0,-hop*(rm?3:9));c.scale(1/sq,sq); /* version 9: the signal eyes follow the hop, as bundle.js's hatmaw moves its own eyes */
-      moEyes(c,o,[[-13,-41,0.35],[-5,-43,0.15]],3.4,1.4,h);c.restore();}c.restore();};},
+      {c.save();hopT(c); /* version 9: the signal eyes follow the hop, as bundle.js's hatmaw moves its own eyes */
+      moEyes(c,o,[[-13,-41,0.35],[-5,-43,0.15]],3.4,1.4,h);
+      if(P.dim>0){c.fillStyle=rgba("#060508",0.6*P.dim);for(const e of [[-13,-41,0.35],[-5,-43,0.15]]){c.beginPath();c.ellipse(e[0],e[1],3.9,1.9,e[2],0,Math.PI*2);c.fill();}} /* version 15 */
+      c.restore();}c.restore();};},
   // the ghoul, posable: its front arm (P.a: upper arm, forearm angles) can wind up and swipe; P.op opens the jaw; P.slash draws the sweep
   ghoulP(x,t,m,rm){const P=m.P||{},tq=pz(t+m.ph,rm), /* the kit: Reduce motion as ghoul2 */s1=P.s1!=null?P.s1:Math.sin(tq*3),bob=P.bob!=null?P.bob:Math.abs(s1)*2,op=P.op!=null?P.op:3+Math.max(0,Math.sin(tq*1.7))*3,lean=P.lean||0;
     x.save();x.translate(P.dx||0,-bob);
@@ -5250,7 +5289,7 @@ function moSwipe(u){const TAU=Math.PI*2,rest=[-0.4,-0.08],wind=[2.75,3.1],hitA=[
    began; monsters face left, so they attack towards smaller x) and its phase: "signal", "attack", "recover", then "done". */
 const MON_P={crawler:"crawlerP",bat2:"bat2P",hatmaw:"hatmawP",ghoul2:"ghoulP",walker:"walkerP"};     // the game uses the posable ones all the time
 const MON_BASE={crawlerP:"crawler",bat2P:"bat2",hatmawP:"hatmaw",ghoulP:"ghoul2",walkerP:"walker"};  // and their grading is the design system's own monsters'
-const MO_ATTACKS={crawler:["lunge"],bat2:["dive"],hatmaw:["hop","bite"],ghoul2:["swipe"],walker:["high","low"]};
+const MO_ATTACKS={crawler:["lunge"],bat2:["dive"],hatmaw:["hop","bite","spit"],ghoul2:["swipe"],walker:["high","low"]};   // kit 0.19.0: the mouth-hat's spit
 function moLunge(u){ // the crawler: crouches with its mouth burning (0.35 s), lunges low at the feet and carries on past (0.33 s), recovers (0.2 s)
   if(u<0.35){const v=u/0.35,e=ease(v);return{P:{t:1.0,sy:1-0.14*e,sx:1+0.06*e,tilt:0.08*e,hot:e,jaw:0.35*v},dx:5*e,dy:0,phase:"signal"};}
   if(u<0.68){const v=(u-0.35)/0.33;return{P:{t:0.62,sx:1.14,sy:0.9,tilt:-0.12+0.2*v,hot:1-v*0.4,jaw:1},dx:lerpN(5,-162,v),dy:-16*4*v*(1-v),phase:"attack"};}
@@ -5264,11 +5303,6 @@ function moDive(u,d,tx,ty){ // the flyer: rises with its wings folding (0.38 s),
   return{P:{},dx:tx+120*d,dy:ty-80,phase:"done"};}
 function moHop(u){ // the mouth-hat hopping towards you: its own hop frozen, squashing as it lands (a gait, for as long as the game likes)
   const hop=Math.max(0,Math.sin(u*2.6*2.2));return{P:{t:1.9,sy:1-hop*0.06,sx:1/(1-hop*0.06)},dx:0,dy:-hop*9,phase:"attack"};}
-function moBite(u){ // the mouth-hat: squats with its mouth gaping (0.4 s), hops in and bites (0.35 s), recovers (0.25 s)
-  if(u<0.4){const v=ease(u/0.4);return{P:{t:1.9,sy:1-0.16*v,sx:1+0.1*v,hot:v,bite:0.5*v},dx:4*v,dy:0,phase:"signal"};}
-  if(u<0.75){const v=(u-0.4)/0.35;return{P:{t:1.9,sy:1+0.1*Math.sin(v*Math.PI),sx:1-0.05*Math.sin(v*Math.PI),hot:1-v*0.5,bite:v<0.55?0.5+v:Math.max(0,1-(v-0.55)/0.45*1.2)},dx:lerpN(4,-58,v),dy:-24*4*v*(1-v),phase:"attack"};}
-  if(u<1.0){const v=clamp01((u-0.75)/0.25);return{P:{t:1.9,sy:1-0.1*(1-v)*(1-v),sx:1+0.06*(1-v),hot:0.2*(1-v)},dx:-58,dy:0,phase:"recover"};}
-  return{P:{},dx:-58,dy:0,phase:"done"};}
 const MO_WK=(()=>{const rest=(i)=>i?[0.5,0.12,-0.3]:[-0.5,-0.12,0.3],up=(i)=>i?[2.75,2.7,2.45]:[2.4,2.55,2.35],hi=(i)=>i?[-1.15+6.2832,-1.45+6.2832,-1.5+6.2832]:[-1.25+6.2832,-1.55+6.2832,-1.6+6.2832],
   rest2=(i)=>rest(i).map(a=>a+6.2832),back=(i)=>i?[1.1,1.3,1.6]:[0.9,1.2,1.5],lo=(i)=>i?[-1.0,-1.25,-1.45]:[-1.1,-1.35,-1.5];
   return{rest,up,hi,rest2,back,lo,mix:(A,B,v)=>[0,1].map(i=>A(i).map((a,k)=>lerpN(a,B(i)[k],v)))};})();
@@ -5288,12 +5322,75 @@ function moSweepLow(u){const W=MO_WK,mix=W.mix; // the walker: crouches, arms ba
 // and stays there through its recovery, so its swipe outreaches the sword; the arm is moSwipe's, unchanged
 function moSwipeKit(u){const r=moSwipe(u),ph=u<0?"signal":u<0.45?"signal":u<0.7?"attack":u<1.35?"recover":"done",
     dx=u<0.45?0:u<0.7?-30*ease(Math.floor((u-0.45)/0.25*4)/4):-30;return{P:r.P,dx,dy:0,phase:ph};} // the ghoul (mv10.js's moSwipe)
+/* ---------- kit 0.19.0 (design system version 15, play.js 1.5.0's mvspit.js): the mouth-hat's spit, and its bite as a leap ----------
+   Barney, 8 November 2026, from playing kit 0.18.0: the sword out-reached the mouth-hat, so now it spits from range and its bite is a leap
+   from just beyond the sword's reach. The drawing and the timings below are play.js's, word for word; when it spits, where the gob lands
+   and what it hurts are the game's (HANDOVER-design-15.md sections 2 to 6). SPIT and BITE15 are the design's starting figures; the kit
+   draws from SPIT.signal, leave, len, fly, rise, mouth and size, and BITE15.leap. */
+const SPIT={min:160,max:330,signal:0.45,leave:0.5,len:1.1,wait:0.8,fly:0.7,rise:110,dmg:0.10,splashR:24,splashH:30,splashT:0.1,mouth:[-18,-23],size:18};
+const BITE15={from:135,leap:100,hold:150};
+// the spit, u seconds after it begins (SPIT.len): the hatmawP pose and how far it rocks back (dx above 0 is away from him; it keeps its place)
+function moSpit(u){if(u<0||u>=SPIT.len)return{P:{},dx:0};
+  if(u<SPIT.signal){const v=ease(u/SPIT.signal),s=ease(Math.min(1,u/0.25));return{P:{rear:v,seal:s,cheek:v,hot:v},dx:3*v};}
+  if(u<0.55){const w=(u-SPIT.signal)/0.1,v=ease(w);return{P:{rear:lerpN(1,-0.45,v),seal:Math.max(0,1-w*3),cheek:1-v,hot:1,bite:0.85*v},dx:lerpN(3,-2,v)};}
+  const v=ease((u-0.55)/0.55),open=lerpN(0.85,0.3,Math.min(1,v*2))*(1-Math.max(0,(v-0.75)/0.25));
+  return{P:{rear:-0.45*(1-v),sy:1-0.06*Math.sin(Math.PI*Math.min(1,v*1.6)),bite:open,hot:0.5*(1-v),dim:Math.sin(Math.PI*Math.min(1,v*1.25))},dx:-2*(1-v)};}
+// the bite as a leap, u seconds after it begins (1.0 s): the squat (as before), the leap, the recovery. dx below 0 is towards him; dy its lift
+function moLeap(u){if(u<0||u>=1)return{P:{},dx:-BITE15.leap,dy:0};
+  if(u<0.4){const v=ease(u/0.4);return{P:{sy:1-0.16*v,sx:1+0.1*v,hot:v,bite:0.5*v},dx:4*v,dy:0};}
+  if(u<0.75){const w=(u-0.4)/0.35,s=Math.sin(w*Math.PI);return{P:{sy:1+0.12*s,sx:1-0.06*s,tilt:-0.12*s,hot:1-w*0.5,bite:w<0.55?0.5+w:Math.max(0,1-(w-0.55)/0.45*1.2)},dx:lerpN(4,-BITE15.leap,w),dy:-34*4*w*(1-w)};}
+  const v=clamp01((u-0.75)/0.25);return{P:{sy:1-0.1*(1-v)*(1-v),sx:1+0.06*(1-v),hot:0.2*(1-v)},dx:-BITE15.leap,dy:0};}
+// the gob's path from its mouth (x0, y0) to where his feet were (x1, y1), taking SPIT.fly whatever the distance; on the flat it rises
+// SPIT.rise above the mouth at the top of its arc. at(u), u 0 to 1, gives [x, y, vx, vy] in lines and lines a second (y down)
+function spitPath(x0,y0,x1,y1){const T=SPIT.fly,g=8*SPIT.rise/(T*T),vx=(x1-x0)/T,vy=(y1-y0-0.5*g*T*T)/T;
+  return{g,vx,vy,at(u){const t=u*T;return[x0+vx*t,y0+vy*t+0.5*g*t*t,vx,vy+g*t];}};}
+// a small dark drop with an ember edge (the gob's trail, the splash)
+function fxDrop(c,x,y,r){c.save();c.fillStyle="#1e0405";c.strokeStyle=rgba(MO.ember,0.85);c.lineWidth=0.9;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();c.stroke();c.restore();}
+// the gob in flight at (x, y), going (vx, vy): a wet glob, dark as the inside of its mouth, SPIT.size across, with an ember heart glowing
+// through and an ember edge; stretched along its path as it falls (roundest at the top of its arc), wobbling a little, two or three small
+// drops trailing (path and u: its spitPath and how far along). Not a bright dot on a streak (the Moor Mother's bolts), not a shard (the
+// Gaping Tree's splinters). k: the drawing's scale (1 in the game's lines). Effects off: no glow. Reduce motion: no wobble, no drops.
+function fxGob(c,x,y,vx,vy,t,k,rm,fxOff,path,u){const sp=Math.hypot(vx,vy),an=Math.atan2(vy,vx),st=1+Math.min(0.45,sp/1400),wob=rm?0:Math.sin(t*19)*0.06,r=SPIT.size/2*k;
+  if(path&&!rm){for(const [du,rr] of [[0.05,0.32],[0.1,0.24],[0.16,0.17]]){if(u-du<0)continue;const q=path.at(u-du);fxDrop(c,q[0],q[1]+du*6*k,rr*r);}}
+  if(!fxOff)fxGlowAt(c,x,y,r*2.6,0.55,MO.glow);
+  c.save();c.translate(x,y);c.rotate(an);c.scale(st*(1+wob),(1-wob)/st);
+  const g=c.createRadialGradient(-r*0.25,0,0,0,0,r);g.addColorStop(0,"#5a1410");g.addColorStop(0.55,"#2a0507");g.addColorStop(1,"#120304");
+  c.fillStyle=g;c.beginPath();c.arc(0,0,r,0,Math.PI*2);c.fill();
+  c.strokeStyle=rgba(MO.ember,0.95);c.lineWidth=1.3*k;if(!fxOff){c.shadowColor=MO.glow;c.shadowBlur=6*k;}c.stroke();c.shadowBlur=0;
+  const hx=-r*0.12,hr=r*0.62,h=c.createRadialGradient(hx,0,0,hx,0,hr);h.addColorStop(0,"#ffb070");h.addColorStop(0.5,MO.ember);h.addColorStop(1,rgba(MO.ember,0));
+  c.fillStyle=h;c.beginPath();c.arc(hx,0,hr,0,Math.PI*2);c.fill();
+  c.restore();}
+// where the gob will land, u 0 to 1 over its flight: a small low ember glow on the ground (gy its height there, sl its slope), growing and
+// brightening until it lands, as wide as the splash's reach by then; steady, no flicker. Effects off: a flat ember ellipse, solid.
+function fxSpitMark(c,x,gy,u,sl,k,fxOff){if(u<0||u>1)return;const w=(10+14*u)*k,a=0.3+0.6*u;
+  c.save();c.translate(x,gy+k);c.rotate(Math.atan(sl||0));
+  if(fxOff){c.fillStyle=rgba(MO.ember,0.35+0.4*u);c.beginPath();c.ellipse(0,0,w,w*0.2,0,0,Math.PI*2);c.fill();}
+  else{c.globalCompositeOperation="screen";c.scale(1,0.26);const g=c.createRadialGradient(0,0,0,0,0,w*1.3);g.addColorStop(0,rgba("#ffc27a",0.9*a));g.addColorStop(0.4,rgba(MO.ember,0.75*a));g.addColorStop(1,rgba(MO.glow,0));c.fillStyle=g;c.fillRect(-w*1.3,-w*1.3,w*2.6,w*2.6);}
+  c.restore();}
+// the splash, u 0 to 1 over 0.6 s (it hurts for the first 0.1 s): the gob flattens into a splat and throws six small drops out low either
+// side; its ember flares once and dies by 0.3 s (u 0.5), leaving a dark stain that fades by 0.6 s; along the slope (sl).
+// Reduce motion: the drops stay short. Effects off: no glow.
+function fxSplat(c,x,gy,u,sl,k,rm,fxOff){if(u<0||u>1)return;const r=mvRng(23),e=Math.max(0,1-u/0.5),sa=u<0.5?0.9:0.9*(1-(u-0.5)/0.5);
+  c.save();c.translate(x,gy);c.rotate(Math.atan(sl||0));
+  if(!fxOff&&e>0)fxGlowAt(c,0,-4*k,(18+14*Math.min(1,u*5))*k,0.85*e*e,MO.glow);
+  const sw=(16+12*Math.min(1,u*8))*k;c.fillStyle=rgba("#140405",sa);c.beginPath();c.ellipse(0,0.5*k,sw,3.2*k,0,0,Math.PI*2);c.fill();
+  if(e>0){c.fillStyle=rgba(MO.ember,0.9*e);c.beginPath();c.ellipse(0,0,sw*0.55,1.6*k,0,0,Math.PI*2);c.fill();
+    c.fillStyle=rgba("#ffc27a",0.9*e*e);c.beginPath();c.ellipse(0,-0.4*k,sw*0.22,k,0,0,Math.PI*2);c.fill();}
+  const fl=Math.min(1,u/0.45);
+  for(let i=0;i<6;i++){const side=i%2?1:-1,sp=0.6+r()*0.4,reach=(rm?6:12+16*sp)*k,hh=(rm?2:6+8*r())*k,rr=(1.3+r()*1.1)*k;if(u>0.5)continue;
+    const px=side*reach*fl,py=-hh*4*fl*(1-fl);c.save();c.globalAlpha=1-u/0.5;fxDrop(c,px,py,rr);c.fillStyle=rgba(MO.ember,0.9*e);c.beginPath();c.arc(px,py,rr*0.5,0,Math.PI*2);c.fill();c.restore();}
+  c.restore();}
+// the spit and the leap as the kit plays them (world.monster's attack 'spit' and 'bite'), with their phases; the pose holds the hop (t 1.9),
+// as the duels draw them
+function moSpitKit(u){const ph=u<SPIT.signal?"signal":u<0.55?"attack":u<SPIT.len?"recover":"done",r=moSpit(u);return{P:ph==="done"?{}:Object.assign({t:1.9},r.P),dx:r.dx,dy:0,phase:ph};}
+function moLeapKit(u){const ph=u<0.4?"signal":u<0.75?"attack":u<1?"recover":"done",r=moLeap(u);return{P:ph==="done"?{}:Object.assign({t:1.9},r.P),dx:r.dx,dy:r.dy,phase:ph};}
 function moAttack(kind,a){const u=a.t||0;
   switch(kind+":"+a.name){
     case"crawler:lunge":return moLunge(u);
     case"bat2:dive":return moDive(u,a.dir,a.dx,a.dy);
     case"hatmaw:hop":return moHop(u);
-    case"hatmaw:bite":return moBite(u);
+    case"hatmaw:bite":return moLeapKit(u);   // kit 0.19.0 (version 15): the bite is a leap of 100 (it hopped 58)
+    case"hatmaw:spit":return moSpitKit(u);
     case"ghoul2:swipe":return moSwipeKit(u);
     case"walker:high":return moSweepHigh(u);
     case"walker:low":return moSweepLow(u);}
@@ -5605,6 +5702,30 @@ function makeTools(env){
     // 0.3 s; facing, the way the bolt was going): a white-hot point, nine sparks thrown back towards him, a brief scorch glow. Its sound is 'boltHit'.
     boltStrike(x,y,o){
       const f=frame("boltStrike");o=o||{};fxBoltStrike(f.ctx,x-f.camX,y,K132,(o.t||0)/0.3,o.facing||1,f.rm,!FX);
+    },
+    // kit 0.19.0 (design system version 15, play.js 1.5.0): the mouth-hat's spit, as world effects the game places (as it places boltStrike).
+    // spitPath(x0, y0, x1, y1): the gob's flight from the mouth (x0, y0) to where his feet were as it left (x1, y1), in the path's lines:
+    // 0.7 s whatever the distance, rising about 110 above the mouth on the flat; at(u) gives [x, y, vx, vy] at u (0 at the mouth, 1 where it
+    // was aimed, and on past it as it keeps falling). Needs no frame, so a game can use it in its update. The game moves the gob, says where
+    // it bursts and what it hurts (the design's figures: SPIT, the gob a circle of 9 against his body).
+    spitPath(x0,y0,x1,y1){return spitPath(x0,y0,x1,y1);},
+    // the gob in flight, u along its spitPath (path): a wet glob as dark as the inside of its mouth, with an ember heart and edge, stretched
+    // along its path as it falls, wobbling a little, two or three small drops trailing. Effects off: no glow; Reduce motion: no wobble, no drops.
+    gob(path,u){
+      const f=frame("gob"),cx=f.camX,q=path.at(u),P={at:v=>{const p=path.at(v);return[p[0]-cx,p[1],p[2],p[3]];}};
+      fxGob(f.ctx,q[0]-cx,q[1],q[2],q[3],f.t,1,f.rm,!FX,P,u);
+    },
+    // where the gob will land, from the moment it leaves (o: u, 0 to 1 until it lands; y, the surface there, the ground's if left out; slope,
+    // the ground's there if y is left out, else flat): a small low ember glow, growing and brightening, steady, as wide as the splash by then
+    spitMark(x,o){
+      const f=frame("spitMark");o=o||{};const y=o.y==null?f.gy(x):o.y,sl=o.slope!=null?o.slope:o.y==null?(f.gy(x+8)-f.gy(x-8))/16:0;
+      fxSpitMark(f.ctx,x-f.camX,y,Math.max(0,Math.min(1,o.u||0)),sl,1,!FX);
+    },
+    // the splash where the gob burst (o: t, seconds, 0.6 s; y and slope as spitMark's): it flattens into a splat and throws six small drops out
+    // low either side, its ember flaring once and gone by 0.3 s, a dark stain fading by 0.6 s. (It hurts for its first 0.1 s: the game's.)
+    splat(x,o){
+      const f=frame("splat");o=o||{};const y=o.y==null?f.gy(x):o.y,sl=o.slope!=null?o.slope:o.y==null?(f.gy(x+8)-f.gy(x-8))/16:0;
+      fxSplat(f.ctx,x-f.camX,y,(o.t||0)/0.6,sl,1,f.rm,!FX);
     },
     // the acid spray from the hand at (x, y) into a short cone, over 0.35 s (o: facing, t), and the patch it leaves on the ground from x0 to x1,
     // hissing for 1.5 s (o: y, flat at that height; left out, kit 0.16.0: along the ground, slopes too; t)
@@ -6473,7 +6594,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       // the name and the lines share the top middle: a line waits while the boss's name shows
       const naming = !!(h8.name && T - h8.name.t0 < 2.6);
       if (h8.line && T - h8.line.t0 >= 2) h8.line = null;
-      if (!h8.line && !naming && h8.lines.length) { h8.line = Object.assign(h8.lines.shift(), { t0: T }); sfx('line'); }   // its light chime as it shows
+      if (!h8.line && !naming && h8.lines.length) { h8.line = Object.assign(h8.lines.shift(), { t0: T }); if (!h8.line.quiet) sfx('line'); }   // its light chime as it shows (kit 0.19.0: unless asked not to)
       if (h8.line) st.line = { kind: h8.line.kind, text: h8.line.text, u: T - h8.line.t0 };
       if (naming) st.name = { name: h8.name.name, u: T - h8.name.t0 };
       const b = h8.boss;
@@ -6520,7 +6641,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
         if (list.length > 1 && h8.spells.length === list.length && sel % list.length !== h8.sel % list.length) h8.flipFx = { from: h8.spells[h8.sel % h8.spells.length], t0: state.time, len: 0.24 };
         h8.spells = list; h8.sel = sel; if (cost != null) h8.cost = +cost || 0; syncHud();
       },
-      line(kind, text) { h8.lines.push({ kind: kind || null, text: String(text) }); },   // a plaque line at the top middle (kind: a loot picture, or none)
+      line(kind, text, o) { h8.lines.push({ kind: kind || null, text: String(text), quiet: !!(o && o.chime === false) }); },   // a plaque line at the top middle (kind: a loot picture, or none); kit 0.19.0: o { chime: false } shows it without its chime (The Grave Refuses has its own sound)
       bossName(name) {   // the boss's name on the larger plaque as it arrives (2.6 s); a line showing then starts again after it
         if (h8.line) { h8.lines.unshift({ kind: h8.line.kind, text: h8.line.text }); h8.line = null; }
         h8.name = { name: String(name), t0: state.time };
@@ -8227,7 +8348,11 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
          world.boltStrike(x, y, { t, facing }) and the sound 'boltHit' (the bolt ending on cover); lb.win({ lifeBonus }) for this win's bonus
          for each lantern lit (the second loop's 20); the pause the sound's loss caused says why; the iPhone's tip in the design's words, closed
          by a tap outside it too; no full-screen tile in a portal build (build.py --portal crazygames); attacking monsters' poses kept at
-         Fastest only. */
+         Fastest only.
+       Kit 0.19.0 (design system version 15): the mouth-hat's attack 'spit' (world.ATTACKS.hatmaw: rearing, its mouth sealed and burning, its face
+         swelling, 0.45 s; the snap forward, the gob leaving at 0.5 s; the slump, recovered at 1.1 s) and its 'bite' as a leap of 100 (it hopped
+         58); world.spitPath(x0, y0, x1, y1), world.gob(path, u), world.spitMark(x, { u, y, slope }) and world.splat(x, { t, y, slope }); the sounds
+         'spitGather', 'spit', 'splat' and 'graveRise'; lb.hud.line(kind, text, { chime: false }) shows a line without its chime. */
     const api = {
       H: H, version: VERSION, touch: touch, input: input, hud: hud, sfx: sfx, world: world, color: colour,
       get W() { return V.W; },
@@ -8362,7 +8487,10 @@ window.GLOAM_HALLOW_MUSIC_2 = "SUQzAwAAAAAvZUdFT0IAABfbAAAAYXBwbGljYXRpb24vYzJwY
    Step 5e-7 (kit 0.18.0; design system version 14): loot drawn 1.4 times its old size; the second loop's win pays 20 a lantern; The Grave
    Refuses' rising drawn (the pieces edged in hot gold, the lantern's flare, the rise); the bolt's strike on cover and its crack.
    With it, Barney's fixes from playing (8 November 2026): the fireball cast in mid-air during a jump, as the design's loopFire throws it;
-   the Moor Mother's legs take three quarters of a blow; the walker's low sweep counted from the ground under it on a slope. */
+   the Moor Mother's legs take three quarters of a blow; the walker's low sweep counted from the ground under it on a slope.
+   Step 5e-8 (kit 0.19.0; design system version 15): the mouth-hat spits from range (160 to 330, the gob's path clear, the mouth-hat on
+   screen; at him on a piece or across a pit too), holding its ground between spits; the gob, its mark and its splash; its bite is a leap of
+   100 from 135, and it holds off at 150 after it; the spit's sounds; The Grave Refuses' own sound, its line shown without the chime. */
 
 const PLACES = ['night', 'storm', 'dawn', 'mist'];
 const TRACK = { night: 0, storm: 0, dawn: 1, mist: 1 };   // The Long Vigil, then Lantern in the Moor from Dawn's place card
@@ -8412,7 +8540,9 @@ const MON = {
   // the mouth-hat and the ghoul answer a blow (Barney, 5 November 2026: they could be cut down before they got near): struck while coming
   // for him, each strikes back at once, rushing in if it must (answer); struck while it gathers itself after its own attack, it doesn't,
   // so the recovery is still the opening. No push back. Three and four blows.
-  hatmaw:  { dmg: 0.15, hp: 3, wisps: 2, box: [-37, 36, -75, 0], ground: true, speed: 110, range: 75, keep: 100, cd: 0.7, atk: 'bite', answer: true },
+  // Step 5e-8 (design system 15; starting figures): the mouth-hat spits from range (spit, SPIT below) and its bite is a leap of 100 from 135,
+  // just beyond the sword's 120 (it was a hop of 58 from 75); after a bite it holds off 150 (it was 100), after a spit it holds its ground
+  hatmaw:  { dmg: 0.15, hp: 3, wisps: 2, box: [-37, 36, -75, 0], ground: true, speed: 110, range: 135, keep: 150, cd: 0.7, atk: 'bite', answer: true, spit: true },
   // the ghoul lurches in, holds off just beyond the sword's reach while it gathers itself, then swipes over and down at head height
   // (its claw reaches 84 from its middle and comes no lower than 46 above the ground; counted from 56, so a roll gets under it on a
   // slope): roll through under it, then strike while it recovers. Version 11: it lurches about 30 forward as it swipes and stays there,
@@ -8424,7 +8554,14 @@ const MON = {
   walker:  { dmg: 0.25, hp: 5, wisps: 5, box: [-28, 31, -193, 0], ground: true, speed: 32, range: 100, keep: 150, cd: 1.2, atk: 'sweep',
     up: true, through: true, zone: { high: [0.74, 0.92, -106, -25, -200, -112], low: [0.74, 0.92, -104, -45, -42, -12] } },   // the arms reach out from 0.74 s
 };
-const ATK_T = { lunge: 0.88, dive: 1.4, bite: 1.0, swipe: 1.35, high: 1.3, low: 1.25 };   // each attack's length, signal to recovered (the kit's)
+const ATK_T = { lunge: 0.88, dive: 1.4, bite: 1.0, swipe: 1.35, high: 1.3, low: 1.25, spit: 1.1 };   // each attack's length, signal to recovered (the kit's)
+// Step 5e-8 (design system 15, HANDOVER-design-15.md sections 2 to 6; starting figures): the mouth-hat's spit. It spits when he is 160 to
+// 330 from it (beyond the longest sword, 147), the gob's path is clear of hills and pieces and all of it is on screen, at him on its ground,
+// up on a piece or across a pit. The gob leaves its mouth (18 forward of its middle, 23 up) 0.5 s into the 1.1 s spit, flies 0.7 s to
+// where his feet were as it left, and bursts on whatever it meets first: the ground, a piece, or him (the gob a circle of 9 against his
+// body). Its splash hurts for 0.1 s, 24 either side and 30 up. 10% of health either way. Then it holds its ground 0.8 s (wait); on the
+// second loop its waits are 1.2 times shorter, as its hops are faster. The sword and the spells pass through the gob.
+const SPIT = { min: 160, max: 330, leave: 0.5, wait: 0.8, fly: 0.7, dmg: 0.10, r: 9, mouth: [18, 23], splashR: 24, splashH: 30, splashT: 0.1, splatT: 0.6 };
 // The encounters: two or three hand-made patterns for each section shape (where along it, 0 to 1, and which role), one picked at
 // random for each section, each run. S a small ground monster, F a flyer, M a medium one.
 const PATTERNS = {
@@ -8814,7 +8951,7 @@ LanternBox.game({
     { id: 'place', name: 'Start at', choices: [['night', 'Night'], ['storm', 'Blood Red Rain'], ['dawn', 'Dawn'], ['mist', 'Mist']] },
     { id: 'loop', name: 'Loop', choices: [['1', 'The first'], ['2', 'The second, harder']] },   // step 5e-5
     { id: 'where', name: 'From', choices: [['start', 'The start'], ['half', 'Halfway'], ['boss', "The boss's door"]] },
-    { id: 'mons', name: 'Monsters', choices: [['normal', 'Normal'], ['none', 'None'], ['crowd', 'A crowd']] },
+    { id: 'mons', name: 'Monsters', choices: [['normal', 'Normal'], ['none', 'None'], ['crowd', 'A crowd'], ['hatmaw', 'Mouth-hats']] },   // step 5e-8: every ground spot a mouth-hat
     { id: 'safe', name: "Can't be hurt", toggle: true, note: 'Nothing takes health, armour or lives.' },
     { id: 'armour', name: 'Start with 3 armour', toggle: true, note: 'Until armour is found as loot.' },
     { id: 'all', name: 'Every spell and sword upgrade', toggle: true, note: 'All of them from the start (the spells come later).' },
@@ -8839,6 +8976,7 @@ LanternBox.game({
     g.spells = { heal: t.all ? 3 : 0 }; g.spells[g.attack] = t.all ? 3 : 0; g.spellList = t.all ? ['heal', g.attack] : [];
     g.zaps = []; g.sprays = []; g.patches = [];   // step 5e-2: the bolts, the sprays and the patches on the ground
     g.strikes = []; g.flareT = 9; g.riseHp = null;   // step 5e-7: the bolt's strikes on cover; The Grave Refuses' flare and health stepping up
+    g.gobs = []; g.splats = [];                     // step 5e-8: the mouth-hats' gobs in flight, and their splashes
     g.airCast = null; g.airCastUsed = false;        // the fireball's throw in mid-air, and whether this jump has had one
     g.graces = {}; g.warded = false;              // step 5e-3: the Graces held this run, and Lantern Ward used in this place
     g.bound = []; g.justBound = null; g.graveSpent = false; g.wardT = 9;   // step 5e-6b: the order bound, The Grave Refuses spent, the ward's flare
@@ -8882,6 +9020,7 @@ LanternBox.game({
     if (!(g.boss && g.boss.st === 'arrive')) moveUpdate(g, lb, dt);   // play stops while the boss comes in
     bossUpdate(g, lb, dt);
     monstersUpdate(g, lb, dt);
+    spitUpdate(g, lb, dt);   // step 5e-8: the gobs in flight and their splashes
     if (g.teach && !g.taught.roll && g.mons.some((m) => alive(m) && m.atk && Math.abs(m.px - g.x) < ROLL_TEACH)) teachOnce(g, lb, 'roll');   // step 5e-4: roll, the first time a monster comes at him
     shotsUpdate(g, lb, dt);
     spellsUpdate(g, lb, dt);   // step 5e-2: the bolt, the spray and its patch
@@ -8895,11 +9034,13 @@ LanternBox.game({
     g.cps.forEach((cp, k) => { g.glass[k] = w.checkpoint(cp.x, { lit: cp.lit === true ? true : cp.lit != null ? lb.time - cp.lit : undefined, from: g.lantern || undefined }); });
     drawLoot(g, lb, w, camX);
     drawPatches(g, lb, w);   // step 5e-2: the acid's patches, on the ground under everything
+    drawSpitGround(g, lb, w);   // step 5e-8: where each gob will land, and its splash
     drawBoss(g, lb, w);
     drawMonsters(g, lb, w, camX, false);
     const r = drawWanderer(g, lb, w);
     if (r && r.lantern) { g.lantern = r.lantern; g.chest = r.chest; g.hand = r.hand; }
     drawMonsters(g, lb, w, camX, true);   // flyers in front of him
+    for (const b of g.gobs) w.gob(b.path, b.t / SPIT.fly);   // step 5e-8: the gobs in flight, in front of him
     drawShots(g, lb, w);
     w.end();
   },
@@ -9203,7 +9344,7 @@ function lostUpdate(g, lb, dt) {
     g.mode = 'return'; g.mt = 0; g.safeT = 0; g.hurtT = 9;
     // a lost life keeps the armour (Barney, 7 November 2026: pips last until the run ends), and the spells, sword upgrades and kept potions;
     // loot picked up stays picked up
-    g.shots = []; g.cast = null; g.castBuf = 0; g.zaps = []; g.sprays = []; g.patches = []; g.strikes = [];
+    g.shots = []; g.cast = null; g.castBuf = 0; g.zaps = []; g.sprays = []; g.patches = []; g.strikes = []; g.gobs = []; g.splats = [];
     if (g.boss && g.boss.st !== 'done') {   // a life lost in a boss fight: back at its door, the boss whole again, its crawlers gone
       g.boss = newBoss(g); lb.hud.boss(null);
       g.mons = g.mons.filter((m) => !m.summoned);
@@ -9222,7 +9363,10 @@ const REFUSE_GATHER = 1.0, REFUSE_RISE = 3 / 12;   // the kit's out (0.4 s) and 
 const refuseEdge = (g, P) => (P.f > 0 ? P.pit[0] - 24 : P.pit[1] + 24);
 const refuseFrom = (P) => (P.kind === 'pit' ? { x: P.x0 + 26 * P.f * 0.34, y: P.lip + 1 + 0.5 * 980 * 0.34 * 0.34 } : { x: P.x0, y: P.y0 + 1 });   // where he broke
 function refuseUpdate(g, lb, t, P) {
-  if (!P.broke && t >= 0.34) { P.broke = true; g.graveSpent = true; lb.hud.line(null, 'The grave refuses you'); heldToKit(g, lb); }
+  if (!P.broke && t >= 0.34) {
+    P.broke = true; g.graveSpent = true; heldToKit(g, lb);
+    lb.hud.line(null, 'The grave refuses you', { chime: false }); lb.sfx('graveRise');   // step 5e-8 (version 15): its own sound, in the line's chime's place
+  }
   const tForm = 0.34 + REFUSE_GATHER;
   if (t < tForm) return;
   if (!P.formed) {                    // whole again, kneeling where he rises: his health, the second of safety and the lantern's flare begin
@@ -9681,7 +9825,7 @@ function dropLoot(g, lb, m) {
   g.loot.push({ kind, x, y: surfaceAt(g, x), drop: 0, from: { x: m.px, y: m.py + (MON[m.kind].ground ? -30 : 0) }, seed: g.loot.length + 1 });
 }
 function placeLoot(g, lb) {            // the scenery potions made real: on about one piece in three, and on each big hill's crest
-  g.loot = []; g.shots = []; g.zaps = []; g.sprays = []; g.patches = [];
+  g.loot = []; g.shots = []; g.zaps = []; g.sprays = []; g.patches = []; g.gobs = []; g.splats = [];
   g.pieces.forEach((p, k) => {
     if (lb.rand() >= PIECE_POTION || p.x0 > g.L.arena) return;
     const x = (p.x0 + p.x1) / 2; g.loot.push({ kind: 'health', x, y: p.y(x), seed: 100 + k });
@@ -9842,10 +9986,14 @@ function atkMove(a) {
       if (u < 0.7) { const v = E((u - 0.38) / 0.32); return { dx: L(6, a.dx, v), dy: L(-10, a.dy, Math.sin(v * Math.PI / 2)), ph: 'attack' }; }
       if (u < 1.4) { const v = (u - 0.7) / 0.7; return { dx: a.dx - 120 * v, dy: a.dy - Math.sin(v * Math.PI / 2) * 80, ph: 'recover' }; }
       return { dx: a.dx - 120, dy: a.dy - 80, ph: 'done' };
-    case 'bite':
+    case 'bite':                       // step 5e-8 (version 15, the kit's moLeap): the squat, then a leap of 100 rising about 34
       if (u < 0.4) return { dx: 4 * E(u / 0.4), dy: 0, ph: 'signal' };
-      if (u < 0.75) { const v = (u - 0.4) / 0.35; return { dx: L(4, -58, v), dy: -96 * v * (1 - v), ph: 'attack' }; }
-      return { dx: -58, dy: 0, ph: u < 1 ? 'recover' : 'done' };
+      if (u < 0.75) { const v = (u - 0.4) / 0.35; return { dx: L(4, -100, v), dy: -136 * v * (1 - v), ph: 'attack' }; }
+      return { dx: -100, dy: 0, ph: u < 1 ? 'recover' : 'done' };
+    case 'spit':                       // step 5e-8 (the kit's moSpit): it rears, rocking back 3, snaps forward 2, and settles where it stood
+      if (u < 0.45) return { dx: 3 * E(u / 0.45), dy: 0, ph: 'signal' };
+      if (u < 0.55) return { dx: L(3, -2, E((u - 0.45) / 0.1)), dy: 0, ph: 'attack' };
+      return { dx: -2 * (1 - E((u - 0.55) / 0.55)), dy: 0, ph: u < ATK_T.spit ? 'recover' : 'done' };
     case 'swipe':                      // version 11: the ghoul lurches 30 into its swipe, in four steps, and stays there (the kit's moSwipeKit)
       if (u < 0.45) return { dx: 0, dy: 0, ph: 'signal' };
       if (u < 0.7) return { dx: -30 * E(Math.floor((u - 0.45) / 0.25 * 4) / 4), dy: 0, ph: 'attack' };
@@ -9878,7 +10026,7 @@ function spawnMonsters(g, lb) {
   g.walls = g.L.pits.concat(g.L.banks.filter((b) => Math.abs(bankRise(g, b)) >= BANK_MIN), g.pieces.map((p) => [p.x0, p.x1]));
   if (g.monsTest === 'none') return;
   const mix = MIX[PLACES[g.p]];
-  const kindOf = (role) => role === 'S' ? 'crawler' : role === 'F' ? 'bat2' : lb.rand() < mix.big ? 'walker' : lb.pick(mix.M);
+  const kindOf = (role) => g.monsTest === 'hatmaw' ? 'hatmaw' : role === 'S' ? 'crawler' : role === 'F' ? 'bat2' : lb.rand() < mix.big ? 'walker' : lb.pick(mix.M);
   let n = 0;
   for (const s of g.L.sections) {
     const pats = PATTERNS[s.id], pat = pats[Math.floor(lb.rand() * pats.length)].slice();
@@ -9931,21 +10079,24 @@ function monstersUpdate(g, lb, dt) {
     if (m.hitT != null) m.hitT += dt;
     if (!m.awake) { if (m.bx < camX + lb.W + 40 && m.bx > camX - 200) m.awake = true; else continue; }   // it starts once seen
     if (Math.abs(m.bx - g.x) > lb.W * 1.3) continue;   // left far behind, it waits
-    monsterUpdate(m, g, lb, dt, busy);
+    monsterUpdate(m, g, lb, dt, busy, camX);
   }
 }
 function startAttack(m, name, extra) { m.atk = Object.assign({ name, t: 0 }, extra || {}); m.moving = false; }
-function monsterUpdate(m, g, lb, dt, busy) {
+function monsterUpdate(m, g, lb, dt, busy, camX) {
   const K = MON[m.kind];
   if (m.riseT != null && m.riseT < 0.35) { m.riseT += dt; return; }   // a called crawler still rising out of the ground
   if (m.atk) {                         // signal, attack, recover: it moves as the attack moves it, facing the way it began
     m.atk.t += dt;
+    if (m.atk.name === 'spit' && !m.atk.left && m.atk.t >= SPIT.leave) { m.atk.left = true; spitLeave(g, lb, m); }   // step 5e-8: the gob leaves
     const mv = atkMove(m.atk);
     m.wdx = -mv.dx * m.f; m.ody = mv.dy;
     place(m, g, m.bx + m.wdx, mv.dy);
     if (mv.ph === 'done' || m.atk.t >= ATK_T[m.atk.name]) {
       m.bx = m.px; if (!K.ground) m.by = m.py;
-      m.atk = null; m.wdx = 0; m.ody = 0; m.cd = K.cd;
+      // step 5e-8: after a spit the mouth-hat holds its ground (SPIT.wait); on the second loop its waits are 1.2 times shorter
+      const spat = m.atk.name === 'spit';
+      m.atk = null; m.wdx = 0; m.ody = 0; m.cd = K.spit ? (spat ? SPIT.wait : K.cd) / hard(g, 'speed') : K.cd; m.held = spat;
       place(m, g, m.bx, 0);
     }
     return;
@@ -9969,6 +10120,10 @@ function monsterUpdate(m, g, lb, dt, busy) {
   // a ground monster: it comes for him while he is on its stretch of ground; the ghoul and the walker also when he is up on a piece (or
   // past a pit or bank) within their reach of their stretch's end. Otherwise it can't get at him, so it walks up and down its stretch,
   // turning at its ends and before it comes within his sword's reach (Barney, 5 November 2026: no longer waiting at the edge to be struck)
+  // step 5e-8: the mouth-hat spits from 160 to 330 with the gob's path clear and all of it on screen, on its ground or not (up on a piece,
+  // across a pit), before it thinks of biting or walking its stretch
+  if (K.spit && !busy && m.cd <= 0 && spitFits(g, lb, m, ad, camX)) { startAttack(m, 'spit'); lb.sfx('spitGather'); return; }
+  if (m.cd <= 0) m.held = false;
   const off = g.x < m.patch[0] ? m.patch[0] - g.x : g.x > m.patch[1] ? g.x - m.patch[1] : 0;
   const reach = !busy && ((!g.on && off < 30) || (K.up && off <= K.range - 10));
   let goal;
@@ -9990,6 +10145,7 @@ function monsterUpdate(m, g, lb, dt, busy) {
     if (ad < keep && ((away > 0 && m.bx >= m.patch[1] - 6) || (away < 0 && m.bx <= m.patch[0] + 6))) goal = m.bx;   // cornered: it stands
     m.f = goal === m.bx ? m.f : m.pdir;   // it faces the way it walks
   }
+  if (m.held) goal = m.bx;            // step 5e-8: between spits it holds its ground (it never backs away to keep spitting)
   goal = clampTo(goal, m.patch);
   const want = Math.abs(goal - m.bx) > 4;
   let v = 0;
@@ -10018,6 +10174,98 @@ function monsterUpdate(m, g, lb, dt, busy) {
   place(m, g, m.bx, 0);
 }
 const halfW = (m) => Math.max(-MON[m.kind].box[0], MON[m.kind].box[1]);
+
+/* ---------- the mouth-hat's spit (step 5e-8, design system 15) ---------- */
+// where the gob is aimed: his feet as it leaves (not where he will be): where he stands; in the air, the ground or the piece under him
+// (over a pit, his feet), as the design's loop aims at the ground under him
+function spitAim(g) {
+  if (g.mode !== 'air') return [g.x, g.y];
+  const s = surfaceAt(g, g.x), open = g.L.pit(g.x) && !g.pieces.some((p) => g.x >= p.x0 && g.x <= p.x1);
+  return [g.x, open || s < g.y ? g.y : s];
+}
+// whether he can be hurt now, as hurtCheck asks
+const canHurt = (g) => !(g.safe || g.safeT > 0) && ['ground', 'air', 'roll', 'sword', 'cast'].indexOf(g.mode) >= 0;
+// the gob, a circle of SPIT.r at (x, y), against his body (13 either side of his middle, 88 high, 38 rolling)
+function gobMeets(g, x, y) {
+  const h = g.mode === 'roll' ? ROLL_H : BODY_H, nx = Math.max(g.x - BODY_W, Math.min(g.x + BODY_W, x)), ny = Math.max(g.y - h, Math.min(g.y, y));
+  return (x - nx) * (x - nx) + (y - ny) * (y - ny) < SPIT.r * SPIT.r;
+}
+// it spits when he is 160 to 330 from it, all of it is on screen, and the gob's arc reaches him (or where it was aimed) before it meets a
+// hill, the ground or a piece; otherwise it comes nearer (or walks its stretch) as before
+function spitFits(g, lb, m, ad, camX) {
+  if (ad < SPIT.min || ad > SPIT.max) return false;
+  const hw = halfW(m);
+  if (m.bx - hw < camX || m.bx + hw > camX + lb.W) return false;
+  const back = atkMove({ name: 'spit', t: SPIT.leave }).dx, x0 = m.bx + m.f * (SPIT.mouth[0] - back), aim = spitAim(g);
+  const path = lb.world.spitPath(x0, g.L.ground(x0 - m.f * SPIT.mouth[0]) - SPIT.mouth[1], aim[0], aim[1]);
+  const s = spitSolid(g, path, 0.97);   // as its flight will find it, if he stays where he is
+  if (s == null) return true;
+  for (let u = SPIT_DU; u < s; u += SPIT_DU) { const q = path.at(u); if (gobMeets(g, q[0], q[1])) return true; }
+  return false;
+}
+// the gob leaves its mouth, aimed at his feet; where it will land (the ground or a piece, he aside) is worked out now, for its mark
+function spitLeave(g, lb, m) {
+  const x0 = m.px + m.f * SPIT.mouth[0], y0 = m.py - SPIT.mouth[1], aim = spitAim(g), path = lb.world.spitPath(x0, y0, aim[0], aim[1]);
+  g.gobs.push({ path, t: 0, from: m.px, land: spitLand(g, path), fresh: true });   // fresh: it starts its flight next update, from the mouth
+  lb.sfx('spit');
+}
+// where along its flight (u, up to u1) the gob first meets the ground or a piece, every 0.005 of its flight and then narrowed down; null
+// if it meets nothing by u1 or falls into a pit. The spit's test and its landing both use it, so a path found clear is clear.
+const SPIT_DU = 0.005;
+function spitSolid(g, path, u1) {
+  let a = 0;
+  for (let u = SPIT_DU; u < u1; u += SPIT_DU) {
+    const q = path.at(u);
+    if (q[1] > g.L.ground(q[0]) + 400) return null;   // down a pit
+    if (!solidAt(g, q[0], q[1])) { a = u; continue; }
+    let b = u;
+    for (let k = 0; k < 12; k++) { const c = (a + b) / 2, p = path.at(c); if (solidAt(g, p[0], p[1])) b = c; else a = c; }
+    return b;
+  }
+  return null;
+}
+// where the gob will land, he aside: its time, the point on the surface (a piece's top or side, or the ground) and the slope there
+function spitLand(g, path) {
+  const b = spitSolid(g, path, 3.5);
+  if (b == null) return null;
+  const p = path.at(b), x = p[0], pc = g.pieces.find((s) => x >= s.x0 && x <= s.x1 && p[1] >= s.y(x) - 1);
+  if (pc) return { t: b * SPIT.fly, x, y: p[1] - pc.y(x) < 6 ? pc.y(x) : p[1], slope: 0 };   // a piece's top, or its side
+  return { t: b * SPIT.fly, x, y: g.L.ground(x), slope: (g.L.ground(x + 8) - g.L.ground(x - 8)) / 16 };
+}
+// the gobs fly on (three looks an update, so a fast one can't pass through him), burst on him or where they land, and splash; the splash
+// hurts for its first 0.1 s, the stain it leaves never. One hit at most: the second of safety covers the rest.
+function spitUpdate(g, lb, dt) {
+  for (const b of g.gobs) {
+    if (b.fresh) { b.fresh = false; continue; }
+    const t0 = b.t; b.t += dt;
+    if (canHurt(g)) for (let k = 1; k <= 3 && !b.done; k++) {
+      const t = t0 + (b.t - t0) * k / 3;
+      if (b.land && t > b.land.t) break;
+      const q = b.path.at(t / SPIT.fly);
+      if (gobMeets(g, q[0], q[1])) {   // it bursts on him
+        b.done = true; g.splats.push({ x: q[0], y: q[1], slope: 0, t: 0, from: b.from, hurts: false }); lb.sfx('splat');
+        hurt(g, lb, SPIT.dmg, b.from);
+      }
+    }
+    if (b.done) continue;
+    if (b.land && b.t >= b.land.t) { b.done = true; g.splats.push({ x: b.land.x, y: b.land.y, slope: b.land.slope, t: 0, from: b.from, hurts: true }); lb.sfx('splat'); }
+    else if (!b.land && b.t > 2.5) b.done = true;   // gone down a pit
+  }
+  g.gobs = g.gobs.filter((b) => !b.done);
+  for (const s of g.splats) {
+    s.t += dt;
+    if (s.hurts && s.t > SPIT.splashT) s.hurts = false;
+    if (s.hurts && canHurt(g)) {
+      const h = g.mode === 'roll' ? ROLL_H : BODY_H;
+      if (!(s.x + SPIT.splashR < g.x - BODY_W || s.x - SPIT.splashR > g.x + BODY_W || s.y < g.y - h || s.y - SPIT.splashH > g.y)) { s.hurts = false; hurt(g, lb, SPIT.dmg, s.from); }
+    }
+  }
+  g.splats = g.splats.filter((s) => s.t < SPIT.splatT);
+}
+function drawSpitGround(g, lb, w) {
+  for (const b of g.gobs) if (b.land) w.spitMark(b.land.x, { u: b.t / b.land.t, y: b.land.y, slope: b.land.slope });
+  for (const s of g.splats) w.splat(s.x, { t: s.t, y: s.y, slope: s.slope });
+}
 // drawn where they are, within sight: flyers after the wanderer (in front of him), the ground ones before
 function drawMonsters(g, lb, w, camX, flyers) {
   for (const m of g.mons) {
