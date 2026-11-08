@@ -1093,7 +1093,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.17.3';
+  const VERSION = '0.17.4';
   const H = 540;              // the picture's height in lines, whatever the window
   const STEP = 1 / 60;
   const PHONE_H = 520;        // a window shorter than this, or narrower than PHONE_W, gets the phone layouts
@@ -2704,6 +2704,14 @@ class Scene{
   monster(ctx,s,m,t,o,flare){ // version 8 (4c-5a): flare, the hit's ember rim flaring once (a second rim in a hotter ember, as play.js's moDraw)
     const into=(c,dx,dy)=>{this.monsterInto(c,s,m,t,o,dx,dy);if(flare)this.monsterInto(c,s,m,t,Object.assign({},o,{dcol:"#ffb070",dglow:MO.glow}),dx,dy);};
     if(!this.kit){into(ctx,Math.round((m.X-130)*s),Math.round((m.Y-230)*s));return;}
+    if(m.pk!=null&&!flare){ // kit 0.17.4: at Faster and Fastest an attack's pose, stepped 12 times a second, painted once and kept for every monster of its kind
+      const bb=MON_BOX[m.kind]||[-128,-228,128,18],G=18,key=m.kind+"|"+(FX?1:0)+"|"+m.pk;if(!this.atk)this.atk=new Map();
+      let A=this.atk.get(key);
+      if(A){this.atk.delete(key);this.atk.set(key,A);}   // the most recently used last, so the oldest goes first
+      else{A=mk((bb[2]-bb[0]+2*G)*s,(bb[3]-bb[1]+2*G)*s);const c=A.getContext("2d");into(c,Math.round((G-130-bb[0])*s),Math.round((G-230-bb[1])*s));KIT.poses++;
+        this.atk.set(key,A);if(this.atk.size>ATK_KEEP)this.atk.delete(this.atk.keys().next().value);}
+      ctx.drawImage(A,Math.round((m.X+bb[0]-G)*s)/s,Math.round((m.Y+bb[1]-G)*s)/s,A.width/s,A.height/s);
+      return;}
     const bb=MON_BOX[m.kind]||[-128,-228,128,18],G=18,id=m.id||(m.kind+"|"+m.ph),bk=(typeof MON_BASE!=="undefined"&&MON_BASE[m.kind])||m.kind,moving=flare||(m.P&&Object.keys(m.P).length>0),r=moving?0:POSE_RATE[bk];
     const step=(r&&!o.rm)?Math.floor((r*t+m.ph)*8):-KIT.frame;
     let E=this.poses.get(id);
@@ -2737,7 +2745,7 @@ class Scene{
    top: lights that twinkle, eyes that blink, flames, splashes, monsters and the wanderer. A puppet monster changes
    pose only in steps (8 a second at its own pace), so each pose is painted once and reused until the next step. */
 const TWP=1024,TMP=840;                    // a tile's width, and the margin drawn round it so glows and wide shapes join up (device pixels)
-const POSE_RATE={crawler:1.3,bat2:1.6,ghoul2:1,walker:0.6}; // the pace of each puppet monster's steps (see pz)
+const POSE_RATE={crawler:1.3,bat2:1.6,ghoul2:1,walker:0.6},ATK_KEEP=72; // the pace of each puppet monster's steps (see pz)
 const KIT={frame:0,built:false,builds:0,buildMs:0,poses:0,bytes:0,thru:true,thruN:0};   // thru: version 10's lit-through-a-cloud (off only for the test page's comparison); thruN: composites last frame
 // version 10: how high a layer tile's own picture reaches, in strips THRU_CH device pixels wide: for each strip the highest row with anything
 // in it, two blocks (16 rows) higher to be safe. Read once, when the tile is built, from an eighth-size copy made by halving three times, so
@@ -2786,7 +2794,7 @@ function drawFairyKit(x,fl,t,lv,s){ // as drawFairy, but each light is the paint
   x.globalAlpha=1;
 }
 Object.assign(Scene.prototype,{
-  kitReset(key){this.kitKey=key;this.tiles={};this.playKey=null;this.poses=new Map();this.sky=null;this.vig=null;this.scr=null;this.bossC=null;},
+  kitReset(key){this.kitKey=key;this.tiles={};this.playKey=null;this.poses=new Map();this.atk=new Map();this.sky=null;this.vig=null;this.scr=null;this.bossC=null;},
   scratch(s){ // two working canvases, a tile plus its margins wide
     const w=TWP+2*TMP,h=Math.ceil(LH*s);
     if(!this.scr||this.scr.w!==w||this.scr.h!==h)this.scr={w,h,a:mk(w,h),b:mk(w,h)};
@@ -5424,6 +5432,8 @@ function bsSignals(x,lv,X,Y,st,r){const hot=r.hot,sg=BS_SIG[lv];
    Version 8: world.level(place, order) gives a place's whole level (its rolling ground, banks, pits, pieces and checkpoints),
    and world.begin(ctx, { level, camX, rise }) draws it in place of the flat strip. Then y left out means standing on the level's
    ground, and rise left out is the level's own camera rise where the wanderer is held (32% across the picture, as play.js). */
+// kit 0.17.4: a pose's key, its numbers rounded, so the same pose gets the same key
+function poseKey(P){return JSON.stringify(P,(k,v)=>typeof v==="number"?Math.round(v*1000)/1000:v);}
 function makeTools(env){
   const PLACE_SET={night:"village5",storm:"town",dawn:"moor",mist:"forest"};
   const STAND={crawler:3,ghoul2:2};          // how far a monster's feet sit below the ground line, as on the directions page
@@ -5592,6 +5602,11 @@ function makeTools(env){
       const at=o.attack?moAttack(o.kind,o.attack):null,hit=o.hit!=null&&o.hit>=0&&o.hit<0.13;
       let dx=(at?at.dx:0)*flip,dy=at?at.dy:0;if(hit){dx+=8*flip;if(o.kind==="bat2")dy-=6;}
       const x=o.x+dx,X=x-f.camX,Y=(o.y==null?f.gy(x)+(STAND[o.kind]||0):o.y)+dy,m={kind:MON_P[o.kind],X,Y,ph:o.ph||0,id:o.id,P:at?at.P:{}};
+      // kit 0.17.4 (after the Amazon Fire HD 8's parts check, 8 November 2026): at Faster and Fastest an attacking monster's pose is taken at
+      // its time stepped to 12 a second, the puppet's own rate, and painted once for every monster of its kind (scene.monster's store);
+      // where it is, its movement, stays smooth. At Best it is repainted every frame, as before.
+      if(at&&!hit&&o.rise==null&&env.quick&&env.quick()){const aq=moAttack(o.kind,Object.assign({},o.attack,{t:Math.floor((o.attack.t||0)*MV_RATE)/MV_RATE}));
+        m.P=aq.P;m.pk=poseKey(aq.P);}
       const out=at?{phase:at.phase,dx,dy}:{phase:null,dx,dy};
       const c=f.ctx,Xs=Math.round(X*s)/s;   // mirrored about a whole device pixel, so its painted picture stays sharp
       if(fc===1){c.save();c.translate(Xs,0);c.scale(-1,1);c.translate(-Xs,0);}
@@ -8043,6 +8058,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       t: () => (state.inGame ? state.time : state.t),
       rm: () => !!settings.reduceMotion,
       fx: () => !!settings.effects && pictureLevel() !== 'fastest',
+      quick: () => pictureLevel() !== 'best',   // kit 0.17.4: Faster and Fastest keep attacking monsters' poses (world.monster)
       socket: (k) => {   // kit 0.9.0: a potion socket's centre in picture lines, or null without one
         const b = hudNodes && hudNodes.full && hudNodes.full.querySelector('.lb-potion.is-' + k);
         if (!b) return null;
