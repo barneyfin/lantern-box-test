@@ -1098,7 +1098,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.20.1';
+  const VERSION = '0.20.2';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -1702,6 +1702,15 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
      page at round 12 (design-system/components/bundle.js), word for word, so it stays as it was drawn. The changes are the
      speed test's switches (speed-test/build.py), which draw the same shapes at different moments, and the Effects switch (FX).
      "the kit way" is the speed test's way of drawing; "the tools" at the end are what a game calls, as lb.world. */
+// kit 0.20.2 (the plan for slow devices, step 2, Barney: "proceed step 2"): trials, the look's trade-offs switched on only by the page's
+// address (?trial=cloud,boss12,lines540,lines432,few,nohud), so a slow device can time each in the play check before anything is
+// decided. cloud: no lit-through-a-cloud; boss12: the bosses' sweeps (the moor mother's sickle, the tree's branch) repainted 12 times a
+// second, their movement smooth; lines540, lines432: the picture at Faster and Fastest never more lines tall than that; few: the far
+// flyers and the leaves as many as Reduce motion has (about half), at their full speed; nohud: the HUD not shown. Without ?trial,
+// nothing changes.
+const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
+  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud")};})();
+const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden"].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -2788,7 +2797,7 @@ function poolTake(w,h){const p=TILE_POOL.get(w+"x"+h);return p&&p.length?p.pop()
 function poolGive(cv){if(!cv)return;const k=cv.width+"x"+cv.height;let p=TILE_POOL.get(k);if(!p)TILE_POOL.set(k,p=[]);if(p.length<POOL_N)p.push(cv);}
 function copyInto(cv,src,sx,w,h){const x=cv.getContext("2d");x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.globalCompositeOperation="copy";x.drawImage(src,sx,0,w,h,0,0,w,h);x.globalCompositeOperation="source-over";return cv;}
 const POSE_RATE={crawler:1.3,bat2:1.6,ghoul2:1,walker:0.6},ATK_KEEP=72; // the pace of each puppet monster's steps (see pz)
-const KIT={frame:0,built:false,builds:0,buildMs:0,poses:0,bytes:0,thru:true,thruN:0};   // thru: version 10's lit-through-a-cloud (off only for the test page's comparison); thruN: composites last frame
+const KIT={frame:0,built:false,builds:0,buildMs:0,poses:0,bytes:0,thru:!TRIAL.cloud,thruN:0};   // thru: version 10's lit-through-a-cloud (off only for the test page's comparison, or the cloud trial); thruN: composites last frame
 // version 10: how high a layer tile's own picture reaches, in strips THRU_CH device pixels wide: for each strip the highest row with anything
 // in it, two blocks (16 rows) higher to be safe. Read once, when the tile is built, from an eighth-size copy made by halving three times, so
 // every pixel counts (shrunk in one step, a thin spire could fall between the pixels sampled and be missed)
@@ -3189,7 +3198,8 @@ function crowSide(x,X,Y,k,ph,col){if(KIT.fly)return drawFlyerKit(x,'crowSide',X,
   x.beginPath();x.moveTo(-5.6,-1.3);x.lineTo(-13,-2.6);x.quadraticCurveTo(-14.2,0.6,-12.6,3.8);x.lineTo(-5.6,1.5);x.closePath();x.fill();   // tail
   wing(1,-1,lift(c));x.restore();}                                                    // the near wing
 // flocks of crows, as the night's bat swarms are made: two flocks, close and wheeling, every crow beating its wings, crossing left to right
-function drawCrowFlocks(x,W,t,lx,rm,col){const span=W+800,v=rm?22:50,N=rm?11:22;
+function drawCrowFlocks(x,W,t,lx,rm,col){const span=W+800,v=rm?22:50,N=rm||TRIAL.few?11:22;   // kit 0.20.2: the few trial
+
   for(let f=0;f<2;f++){const cx=-400+((t*v+f*span*0.55-lx)%span+span)%span,cy=165+f*50+Math.sin(t*0.4+f*2)*16;
     if(cx<-260||cx>W+260)continue;
     for(let i=0;i<N;i++){const h=(m,q)=>{const r=Math.sin((f*97+i*13.7)*m)*q;return r-Math.floor(r);},a=h(12.9898,43758.5453),b=h(78.233,24658.37),c=h(39.42,9658.1);
@@ -3199,7 +3209,7 @@ function drawCrowFlocks(x,W,t,lx,rm,col){const span=W+800,v=rm?22:50,N=rm?11:22;
 function leafShape(x,X,Y,k,ang,turn,col){x.save();x.translate(X,Y);x.rotate(ang);x.scale(k,k*Math.max(0.15,Math.abs(Math.cos(turn))));x.fillStyle=col;
   x.beginPath();x.moveTo(-6,0);x.quadraticCurveTo(-1,-3.6,6,0);x.quadraticCurveTo(-1,3.6,-6,0);x.closePath();x.fill();x.fillRect(-8.5,-0.45,3,0.9);x.restore();}
 // leaves on the wind: depth 0 far (small, slow, tinted), 1 nearer; gusts come and go
-function drawLeaves(x,W,t,lx,rm,col,depth){const N=depth?(rm?4:9):(rm?7:16),sp=depth?(rm?70:190):(rm?40:110),span=W+300,H=420;
+function drawLeaves(x,W,t,lx,rm,col,depth){const fw=rm||TRIAL.few,N=depth?(fw?4:9):(fw?7:16),   /* kit 0.20.2: the few trial */sp=depth?(rm?70:190):(rm?40:110),span=W+300,H=420;
   for(let i=0;i<N;i++){const r1=Math.sin((depth*53+i*17.1)*12.9898)*43758.5453,a=r1-Math.floor(r1),r2=Math.sin((depth*29+i*5.7)*78.233)*24658.37,b=r2-Math.floor(r2);
     const gust=1+0.45*Math.sin(t*0.37+i*0.21)+0.25*Math.sin(t*1.1+depth),v=sp*(0.75+a*0.5)*gust;
     const X=-150+(((t*v+a*span*3-lx)%span)+span)%span,Y=(depth?120:90)+b*H*(depth?0.7:0.75)+Math.sin(t*(1.3+a)+i)*(depth?18:10)+X*0.05*(b-0.4);
@@ -3330,7 +3340,7 @@ function drawRain(x,W,t,layer,rm){
 }
 /* bats: a swarm of small ones crossing right to left, and a few bigger ones nearer. Scenery: no glow. */
 function drawSwarm(x,W,t,lx,rm,col){
-  const span=W+760,v=rm?26:68,N=rm?14:28;
+  const span=W+760,v=rm?26:68,N=rm||TRIAL.few?14:28;   // kit 0.20.2: the few trial
   for(let f=0;f<2;f++){
     const cx=W+380-posmod(t*v+f*span*0.55+lx,span),cy=205+f*46+Math.sin(t*0.45+f*2)*18;
     if(cx<-220||cx>W+220)continue;
@@ -5844,6 +5854,10 @@ function makeTools(env){
         const design=name?((BS_DESIGN[lv]&&BS_DESIGN[lv][name])||1):1,mir=fl!==design,X0=o.x,m=x=>mir?2*X0-x:x; // a turned boss: the move mirrored about it
         const at=o.attack&&o.attack.at!=null?o.attack.at:X0-300,tg=o.attack&&o.attack.targets?o.attack.targets.map(m):null;
         _S0=s;const r=name?bsMove(lv,name,u,{bx:X0,wx:m(at),G:f.gy,t:f.t,targets:tg}):{X:X0,st:lv==="night"?{dy:-5*Math.sin(f.t*1.7)}:{},hot:0,fx:[],phase:null};
+        // kit 0.20.2, the boss12 trial: a sweep's pose (the sickle, the branch) taken 12 times a second, so its picture is repainted that often;
+        // where it is, its phase and its warnings stay smooth
+        if(TRIAL.boss12&&name&&name!=="arrive"&&(r.br||r.st.sickle!=null)){const q=bsMove(lv,name,Math.floor(u*12)/12,{bx:X0,wx:m(at),G:f.gy,t:f.t,targets:tg});
+          r.st.sickle=q.st.sickle;r.br=q.br;}
         if(o.hit!=null&&o.hit>=0&&o.hit<0.13){r.st.dx=(r.st.dx||0)+BS_HIT[lv]*(r.st.flip||1);r.st.flare=true;}
         const Y=o.y==null?(lv==="dawn"?f.gy(r.X)+4:f.gy(X0)+4):o.y; // as the fights place them: the moor mother on the ground where she is, the others where they stand
         const c=f.ctx,place=k=>{k.translate(-f.camX,0);if(mir){k.translate(X0,0);k.scale(-1,1);k.translate(-X0,0);}};
@@ -6156,6 +6170,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
     canvas.setAttribute('role', 'img');
     canvas.setAttribute('aria-label', titleText);
     const hudLayer = el('div', 'lb-layer');
+    if (TRIAL.nohud) hudLayer.style.visibility = 'hidden';   // kit 0.20.2: the nohud trial (the touch controls with it: for the play check only)
     const titleScreen = el('div', 'lb-layer');
     const dialogLayer = el('div', 'lb-layer lb-dialog-layer');
     dialogLayer.hidden = true;
@@ -6237,7 +6252,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       const w = root.clientWidth;
       const h = root.clientHeight;
       if (!w || !h) return;
-      const q = pictureLevel() === 'best' ? Math.min(window.devicePixelRatio || 1, MAX_DPR, BEST_LINES / h) : Math.min(1, PLAIN_LINES / h);
+      const q = pictureLevel() === 'best' ? Math.min(window.devicePixelRatio || 1, MAX_DPR, BEST_LINES / h) : Math.min(1, (TRIAL.lines || PLAIN_LINES) / h);   // kit 0.20.2: the lines540 and lines432 trials
       const bw = Math.max(1, Math.round(w * q));
       const bh = Math.max(1, Math.round(h * q));
       if (canvas.width !== bw || canvas.height !== bh) { canvas.width = bw; canvas.height = bh; }
@@ -8405,13 +8420,16 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
          58); world.spitPath(x0, y0, x1, y1), world.gob(path, u), world.spitMark(x, { u, y, slope }) and world.splat(x, { t, y, slope }); the sounds
          'spitGather', 'spit', 'splat' and 'graveRise'; lb.hud.line(kind, text, { chime: false }) shows a line without its chime.
        Kit 0.20.1: Picture Automatic keeps timing play after its first seconds (see Picture); lb.pictureSkip(), called in a frame in which
-         a game times its own drawing, leaves that frame out of Automatic's timing. */
+         a game times its own drawing, leaves that frame out of Automatic's timing.
+       Kit 0.20.2: trials, the look's trade-offs switched on only by the page's address (?trial=, see TRIAL); lb.trials names those on, in
+         words, for a check's result (an empty list without ?trial). */
     const api = {
       H: H, version: VERSION, touch: touch, input: input, hud: hud, sfx: sfx, world: world, color: colour,
       get W() { return V.W; },
       get settings() { return Object.assign({}, settings, { picture: own.picture }); },
       get picture() { return { level: pictureLevel(), width: canvas.width, height: canvas.height, sharpness: V.k }; },
       pictureSkip: () => { auto.skip = true; },   // kit 0.20.1
+      trials: TRIAL_WORDS.slice(),   // kit 0.20.2
       get screen() { return state.screen; },
       get time() { return state.time; },
       get t() { return state.t; },
@@ -8880,7 +8898,7 @@ function finishCheck(g, lb) {
   const ms = (c) => (c.keptUp ? 'under ' : '') + c.drawn.toFixed(1) + ' ms';
   const phone = R.every((r) => r.fps >= 29.5 && r.drawn <= 25), computer = R.every((r) => r.fps >= 58);
   const line = 'Lantern Box ' + (cloud ? 'cloud check' : 'speed check') + ', kit ' + lb.version + ' (test page ' + TEST_PAGE + ') · ' + device() + ' · ' + p.width + ' × ' + p.height + ' at ' + p.sharpness.toFixed(2) + '× · Picture ' + lb.settings.picture + ' (' + p.level + ')' +
-    (lb.settings.reduceMotion ? ' · reduce motion' : '') + (lb.settings.effects ? '' : ' · effects off') + (cloud ? ' · without and with lit-through-a-cloud (version 11), up the big hill · ' : ' · up the big hill, then the Mist at its boss · ') +
+    (lb.settings.reduceMotion ? ' · reduce motion' : '') + (lb.settings.effects ? '' : ' · effects off') + (lb.trials && lb.trials.length ? ' · trial: ' + lb.trials.join(', ') : '') + (cloud ? ' · without and with lit-through-a-cloud (version 11), up the big hill · ' : ' · up the big hill, then the Mist at its boss · ') +
     R.map((r) => r.short + ' ' + Math.round(r.fps) + ' fps / ' + ms(r) + (r.level && r.level !== p.level ? ' (' + r.level + ')' : '')).join(' · ') +
     ' · slowest 5% ' + Math.round(Math.max(...R.map((r) => r.slow))) + ' ms · longest ' + Math.round(Math.max(...R.map((r) => r.max))) + ' ms · layers ' + Math.round(lb.world.stats.tileBytes / 1048576) + ' MB';
   openPanel((face, close) => {
