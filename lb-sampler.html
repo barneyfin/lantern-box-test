@@ -1098,7 +1098,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.20.4';
+  const VERSION = '0.20.5';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -1708,10 +1708,13 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // second, their movement smooth; lines540, lines432: the picture at Faster and Fastest never more lines tall than that; few: the far
 // flyers and the leaves as many as Reduce motion has (about half), at their full speed; nohud: the HUD not shown; hero (kit 0.20.4): the
 // wanderer's cloak and belt ripple to the step of the move he is making, not to a clock that never repeats, and 32 pictures of him are
-// kept, not 8, so a step he has made before is drawn from its kept picture. Without ?trial, nothing changes.
+// kept, not 8, so a step he has made before is drawn from its kept picture; mon (kit 0.20.5): monsters standing or hovering share
+// their pictures by kind, their waiting animation looping every 24 of its steps (the mouth-hat's hop stepped 29 times a hop, about 12
+// a second), so each pose is painted once for all of its kind (attacking, hit or rising monsters, and Reduce motion, as before).
+// Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero")};})();
-const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps"].filter(Boolean);
+  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon")};})();
+const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared"].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -2752,6 +2755,17 @@ class Scene{
         this.atk.set(key,A);if(this.atk.size>ATK_KEEP)this.atk.delete(this.atk.keys().next().value);}
       ctx.drawImage(A,Math.round((m.X+bb[0]-G)*s)/s,Math.round((m.Y+bb[1]-G)*s)/s,A.width/s,A.height/s);
       return;}
+    // kit 0.20.5, the mon trial: a monster standing or hovering drawn from its kind's picture of its waiting animation's step, the
+    // animation looping every 24 of its puppet steps (3 units of its puppet time), the mouth-hat's smooth hop taken 29 times a hop
+    if(TRIAL.mon&&!flare&&!o.rm&&!(m.P&&Object.keys(m.P).length>0)){
+      const tb=(typeof MON_BASE!=="undefined"&&MON_BASE[m.kind])||m.kind,hat=tb==="hatmaw",tr=POSE_RATE[tb];
+      if(hat||tr){const N=hat?29:24,u=hat?(2.6*t+m.ph)/(2*Math.PI):(tr*t+m.ph)/3,sm=((Math.floor(u*N)%N)+N)%N;
+        const tbb=MON_BOX[m.kind]||[-128,-228,128,18],TG=18,key=m.kind+"|"+(FX?1:0)+"|"+sm;if(!this.idleP)this.idleP=new Map();
+        let A=this.idleP.get(key);
+        if(!A){A=mk((tbb[2]-tbb[0]+2*TG)*s,(tbb[3]-tbb[1]+2*TG)*s);const t2=hat?((sm+0.5)/N*2*Math.PI)/2.6:((sm+0.5)/N*3)/tr;
+          this.monsterInto(A.getContext("2d"),s,Object.assign({},m,{ph:0}),t2,o,Math.round((TG-130-tbb[0])*s),Math.round((TG-230-tbb[1])*s));this.idleP.set(key,A);KIT.poses++;}
+        ctx.drawImage(A,Math.round((m.X+tbb[0]-TG)*s)/s,Math.round((m.Y+tbb[1]-TG)*s)/s,A.width/s,A.height/s);
+        return;}}
     const bb=MON_BOX[m.kind]||[-128,-228,128,18],G=18,id=m.id||(m.kind+"|"+m.ph),bk=(typeof MON_BASE!=="undefined"&&MON_BASE[m.kind])||m.kind,moving=flare||(m.P&&Object.keys(m.P).length>0),r=moving?0:POSE_RATE[bk];
     const step=(r&&!o.rm)?Math.floor((r*t+m.ph)*8):-KIT.frame;
     let E=this.poses.get(id);
@@ -2847,7 +2861,7 @@ function drawFairyKit(x,fl,t,lv,s,dx){ // as drawFairy, but each light is the pa
   x.globalAlpha=1;
 }
 Object.assign(Scene.prototype,{
-  kitReset(key){this.kitKey=key;this.tiles={};this.playKey=null;this.poses=new Map();this.atk=new Map();this.sky=null;this.vig=null;this.scr=null;this.bossC=null;},
+  kitReset(key){this.kitKey=key;this.tiles={};this.playKey=null;this.poses=new Map();this.atk=new Map();this.idleP=null;this.sky=null;this.vig=null;this.scr=null;this.bossC=null;},
   scratch(s){ // two working canvases, a tile plus its margins wide
     const m=tileM(s),w=TWP+2*m,h=Math.ceil(LH*s);
     if(!this.scr||this.scr.w!==w||this.scr.h!==h)this.scr={w,h,m,d:TMP-m,a:mk(w,h),b:mk(w,h)};
@@ -8453,7 +8467,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
          a game times its own drawing, leaves that frame out of Automatic's timing.
        Kit 0.20.2: trials, the look's trade-offs switched on only by the page's address (?trial=, see TRIAL); lb.trials names those on, in
          words, for a check's result (an empty list without ?trial). Kit 0.20.3: the Testing screen in one to three columns, to fit.
-         Kit 0.20.4: the hero trial. */
+         Kit 0.20.4: the hero trial. Kit 0.20.5: the mon trial. */
     const api = {
       H: H, version: VERSION, touch: touch, input: input, hud: hud, sfx: sfx, world: world, color: colour,
       get W() { return V.W; },
