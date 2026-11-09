@@ -1098,7 +1098,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.20.0';
+  const VERSION = '0.20.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -6199,14 +6199,20 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
     /* ----- Picture: Best is the device's sharpness, Faster ordinary sharpness, Fastest that with the glows off whatever the
        Effects setting says. Automatic starts at Best and times the first seconds of play, once a visit: after a second to
        settle, two seconds of frames. While they come more than 25 ms apart on average (fewer than 40 a second) it steps down
-       a level and times again. ----- */
+       a level and times again.
+       Kit 0.20.1 (Barney's Doogee, 9 November 2026: on 0.20.0 those first seconds held at Faster, and the Mist's busiest stretch
+       then ran at 26 a second): the first seconds are the lightest of a run, so it then keeps timing play, 4 s at a time, and
+       steps down again whenever 4 s of frames come more than 25 ms apart on average. It never steps back up. A frame in which a
+       game times its own drawing (the play check's eight frames a refresh) calls lb.pictureSkip(), and Automatic leaves it out. ----- */
     const LEVELS = ['best', 'faster', 'fastest'];
-    const AUTO_LIMIT = 0.025;
-    const auto = { level: 0, phase: 'wait', t: 0, n: 0, sum: 0 };   // phase: wait (for play), settle, time, done
+    const AUTO_LIMIT = 0.025, AUTO_SPAN = 4;
+    const auto = { level: 0, phase: 'wait', t: 0, n: 0, sum: 0, skip: false };   // phase: wait (for play), settle, time, watch, done
     const pictureLevel = () => (own.picture === 'auto' ? LEVELS[auto.level] : own.picture);
-    // gap: seconds since the last frame
+    // gap: seconds since the last frame, so the time the last frame took
     function timePicture(gap) {
-      if (own.picture !== 'auto' || auto.phase === 'done' || state.screen !== 'play') return;
+      const skip = auto.skip;
+      auto.skip = false;   // kit 0.20.1: asked for in the last frame only, so a game that stops asking (or quits) can't leave it on
+      if (own.picture !== 'auto' || auto.phase === 'done' || state.screen !== 'play' || skip) return;
       if (auto.phase === 'wait') { Object.assign(auto, { phase: 'settle', t: 0 }); return; }
       if (gap > 0.25) return;   // a hitch (the window resized, the tab hidden), not the drawing
       auto.t += gap;
@@ -6216,12 +6222,13 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       }
       auto.n++;
       auto.sum += gap;
-      if (auto.t < 2) return;
-      if (auto.sum / auto.n > AUTO_LIMIT && auto.level < LEVELS.length - 1) {
+      if (auto.t < (auto.phase === 'watch' ? AUTO_SPAN : 2)) return;
+      const last = auto.level >= LEVELS.length - 1;
+      if (auto.sum / auto.n > AUTO_LIMIT && !last) {
         auto.level++;
         Object.assign(auto, { phase: auto.level < LEVELS.length - 1 ? 'settle' : 'done', t: 0 });
         layout();
-      } else auto.phase = 'done';
+      } else Object.assign(auto, { phase: last ? 'done' : 'watch', t: 0, n: 0, sum: 0 });   // kit 0.20.1: on watching
     }
 
     /* ----- The picture: 540 lines tall, its width following the window ----- */
@@ -8396,12 +8403,15 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
        Kit 0.19.0 (design system version 15): the mouth-hat's attack 'spit' (world.ATTACKS.hatmaw: rearing, its mouth sealed and burning, its face
          swelling, 0.45 s; the snap forward, the gob leaving at 0.5 s; the slump, recovered at 1.1 s) and its 'bite' as a leap of 100 (it hopped
          58); world.spitPath(x0, y0, x1, y1), world.gob(path, u), world.spitMark(x, { u, y, slope }) and world.splat(x, { t, y, slope }); the sounds
-         'spitGather', 'spit', 'splat' and 'graveRise'; lb.hud.line(kind, text, { chime: false }) shows a line without its chime. */
+         'spitGather', 'spit', 'splat' and 'graveRise'; lb.hud.line(kind, text, { chime: false }) shows a line without its chime.
+       Kit 0.20.1: Picture Automatic keeps timing play after its first seconds (see Picture); lb.pictureSkip(), called in a frame in which
+         a game times its own drawing, leaves that frame out of Automatic's timing. */
     const api = {
       H: H, version: VERSION, touch: touch, input: input, hud: hud, sfx: sfx, world: world, color: colour,
       get W() { return V.W; },
       get settings() { return Object.assign({}, settings, { picture: own.picture }); },
       get picture() { return { level: pictureLevel(), width: canvas.width, height: canvas.height, sharpness: V.k }; },
+      pictureSkip: () => { auto.skip = true; },   // kit 0.20.1
       get screen() { return state.screen; },
       get time() { return state.time; },
       get t() { return state.t; },
@@ -10440,7 +10450,8 @@ function drawWanderer(g, lb, w) {
 /* ---------- the play check (step 5f-1; HANDOVER.md, "Left for 5f" and "The speed target") ----------
    The bar for phones: 30 frames a second, each drawn in 25 ms or less. It plays by itself with Can't be hurt on, timing the game as it plays,
    its own code and its drawing. Under Picture Automatic it first walks on from Night's start until the picture has settled (one level for
-   3.2 s, or 10 s at most). Then in each place: the path's busiest stretch for this screen's width (the most of the place's own monsters within
+   3.2 s, or 10 s at most); from kit 0.20.1 Automatic keeps timing play, and a leg it steps down in is begun again. Then in each
+   place: the path's busiest stretch for this screen's width (the most of the place's own monsters within
    one screen, over 30 ways its encounters can fall, so the same on every screen of a width), walked through with them all awake and attacking
    in their own rhythm, as in play; then the boss alone in its arena with what it summons, fought with the sword. Each leg is timed as the test
    page's speed check times its legs: 1.5 s to settle; frames a second, the slowest 5% and the longest frame over 4 s, with the game's own work
@@ -10456,7 +10467,7 @@ function withSeed(seed, fn) { const r = Math.random; Math.random = seeded(seed);
 const pct95 = (a) => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[Math.min(b.length - 1, Math.floor(0.95 * b.length))] : 0; };
 function startCheck(g, lb) {
   Object.assign(g, { safe: true, teach: false, monsTest: 'normal', loop: 1, orders: null });
-  g.check = { legs: [], i: -1, phase: 'settle', t: 0, leadT: 0, inp: noInput(), res: [], work: 0, last: 0, lvl: null, stable: 0, slips: 0, picLost: 0, hooked: false };
+  g.check = { legs: [], i: -1, phase: 'settle', t: 0, leadT: 0, inp: noInput(), res: [], work: 0, last: 0, lvl: null, stable: 0, slips: 0, picLost: 0, hooked: false, redone: 0 };
   PLACES.forEach((p, k) => g.check.legs.push({ p: k, boss: false, n: 0 }, { p: k, boss: true, n: 0 }));
   withSeed(1, () => loadPlace(g, lb, 0, 0));
   lb.hud.health(1); lb.hud.mana(1); lb.hud.armour(g.armour); lb.hud.lives(LIVES); hudSpells(g, lb); lb.hud.potCap(g.potCap.health, g.potCap.mana); lb.hud.potions(0, 0);
@@ -10550,7 +10561,7 @@ function checkUpdate(g, lb) {
   const leg = C.legs[C.i], b = g.boss;
   if (leg && C.phase === 'lead') {
     C.leadT += 1 / 60;
-    if ((leg.boss ? b && b.st === 'fight' : g.x >= C.xWarm) || C.leadT > 15) { C.phase = 'warm'; C.t = 0; }
+    if ((leg.boss ? b && b.st === 'fight' : g.x >= C.xWarm) || C.leadT > 15) { C.phase = 'warm'; C.t = 0; C.legLvl = lb.picture.level; }
   }
   if (leg && leg.boss && b && b.st === 'fight' && b.hp < b.max * 0.3) { b.hp = b.max * 0.6; lb.hud.boss({ name: b.name, hp: b.hp / b.max }); }   // never beaten
   C.work += performance.now() - u0;
@@ -10564,10 +10575,16 @@ function checkDraw(ctx, g, lb) {
   const load = live && C.phase === 'load', pre = C.work, d0 = performance.now();
   playDraw(ctx, g, lb);
   // while its drawing is timed: eight frames a refresh, each a step of play and a frame drawn 1/60 s on from the last
-  if (load) for (let r = 1; r < CHECK.reps; r++) { checkUpdate(g, lb); C.loadPlay += 1 / 60; playDraw(ctx, g, lb, lb.time + r / 60); }
+  if (load) {
+    lb.pictureSkip();                  // kit 0.20.1: so Picture Automatic doesn't take this frame's eight for one slow one
+    for (let r = 1; r < CHECK.reps; r++) { checkUpdate(g, lb); C.loadPlay += 1 / 60; playDraw(ctx, g, lb, lb.time + r / 60); }
+  }
   const work = pre + performance.now() - d0;   // the game's own work for this frame: its steps of play and its drawing
   C.work = 0;
   if (!live) return;
+  // kit 0.20.1: Picture Automatic keeps timing play, so it may step down during a leg's timing; the leg is then begun again at the new
+  // level (so each leg is timed at one level, as its line says)
+  if ((C.phase === 'warm' || C.phase === 'run' || C.phase === 'load') && lb.picture.level !== C.legLvl) { C.redone++; C.i--; nextLeg(g, lb); return; }
   if (C.phase === 'settle') {          // Picture Automatic finding its level
     const lv = lb.picture.level;
     if (lv !== C.lvl) { C.lvl = lv; C.stable = 0; } else C.stable += gap;

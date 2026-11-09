@@ -1098,7 +1098,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.20.0';
+  const VERSION = '0.20.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -6199,14 +6199,20 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
     /* ----- Picture: Best is the device's sharpness, Faster ordinary sharpness, Fastest that with the glows off whatever the
        Effects setting says. Automatic starts at Best and times the first seconds of play, once a visit: after a second to
        settle, two seconds of frames. While they come more than 25 ms apart on average (fewer than 40 a second) it steps down
-       a level and times again. ----- */
+       a level and times again.
+       Kit 0.20.1 (Barney's Doogee, 9 November 2026: on 0.20.0 those first seconds held at Faster, and the Mist's busiest stretch
+       then ran at 26 a second): the first seconds are the lightest of a run, so it then keeps timing play, 4 s at a time, and
+       steps down again whenever 4 s of frames come more than 25 ms apart on average. It never steps back up. A frame in which a
+       game times its own drawing (the play check's eight frames a refresh) calls lb.pictureSkip(), and Automatic leaves it out. ----- */
     const LEVELS = ['best', 'faster', 'fastest'];
-    const AUTO_LIMIT = 0.025;
-    const auto = { level: 0, phase: 'wait', t: 0, n: 0, sum: 0 };   // phase: wait (for play), settle, time, done
+    const AUTO_LIMIT = 0.025, AUTO_SPAN = 4;
+    const auto = { level: 0, phase: 'wait', t: 0, n: 0, sum: 0, skip: false };   // phase: wait (for play), settle, time, watch, done
     const pictureLevel = () => (own.picture === 'auto' ? LEVELS[auto.level] : own.picture);
-    // gap: seconds since the last frame
+    // gap: seconds since the last frame, so the time the last frame took
     function timePicture(gap) {
-      if (own.picture !== 'auto' || auto.phase === 'done' || state.screen !== 'play') return;
+      const skip = auto.skip;
+      auto.skip = false;   // kit 0.20.1: asked for in the last frame only, so a game that stops asking (or quits) can't leave it on
+      if (own.picture !== 'auto' || auto.phase === 'done' || state.screen !== 'play' || skip) return;
       if (auto.phase === 'wait') { Object.assign(auto, { phase: 'settle', t: 0 }); return; }
       if (gap > 0.25) return;   // a hitch (the window resized, the tab hidden), not the drawing
       auto.t += gap;
@@ -6216,12 +6222,13 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       }
       auto.n++;
       auto.sum += gap;
-      if (auto.t < 2) return;
-      if (auto.sum / auto.n > AUTO_LIMIT && auto.level < LEVELS.length - 1) {
+      if (auto.t < (auto.phase === 'watch' ? AUTO_SPAN : 2)) return;
+      const last = auto.level >= LEVELS.length - 1;
+      if (auto.sum / auto.n > AUTO_LIMIT && !last) {
         auto.level++;
         Object.assign(auto, { phase: auto.level < LEVELS.length - 1 ? 'settle' : 'done', t: 0 });
         layout();
-      } else auto.phase = 'done';
+      } else Object.assign(auto, { phase: last ? 'done' : 'watch', t: 0, n: 0, sum: 0 });   // kit 0.20.1: on watching
     }
 
     /* ----- The picture: 540 lines tall, its width following the window ----- */
@@ -8396,12 +8403,15 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
        Kit 0.19.0 (design system version 15): the mouth-hat's attack 'spit' (world.ATTACKS.hatmaw: rearing, its mouth sealed and burning, its face
          swelling, 0.45 s; the snap forward, the gob leaving at 0.5 s; the slump, recovered at 1.1 s) and its 'bite' as a leap of 100 (it hopped
          58); world.spitPath(x0, y0, x1, y1), world.gob(path, u), world.spitMark(x, { u, y, slope }) and world.splat(x, { t, y, slope }); the sounds
-         'spitGather', 'spit', 'splat' and 'graveRise'; lb.hud.line(kind, text, { chime: false }) shows a line without its chime. */
+         'spitGather', 'spit', 'splat' and 'graveRise'; lb.hud.line(kind, text, { chime: false }) shows a line without its chime.
+       Kit 0.20.1: Picture Automatic keeps timing play after its first seconds (see Picture); lb.pictureSkip(), called in a frame in which
+         a game times its own drawing, leaves that frame out of Automatic's timing. */
     const api = {
       H: H, version: VERSION, touch: touch, input: input, hud: hud, sfx: sfx, world: world, color: colour,
       get W() { return V.W; },
       get settings() { return Object.assign({}, settings, { picture: own.picture }); },
       get picture() { return { level: pictureLevel(), width: canvas.width, height: canvas.height, sharpness: V.k }; },
+      pictureSkip: () => { auto.skip = true; },   // kit 0.20.1
       get screen() { return state.screen; },
       get time() { return state.time; },
       get t() { return state.t; },
@@ -8816,13 +8826,23 @@ function startCheck(g, lb, kind) {   // kind: nothing for the speed check, true 
   closePanel();
   Object.assign(g, { part: 0, crowd: true, autoWalk: false, rising: false, monsterAt: null, bossAt: null, ground: true });
   const parts = kind === 'parts', legs = parts ? PARTS_LEGS : kind ? CLOUD_LEGS : LEGS;
-  g.check = { i: 0, phase: 'warm', t0: performance.now(), res: [], cur: null, legs, cloud: kind === true, parts };
+  g.check = { i: 0, phase: 'warm', t0: performance.now(), res: [], cur: null, legs, cloud: kind === true, parts, lvl: lb.picture.level, redone: 0 };
   g.place = legs[0].place;
   g.x = legStart(lb, legs[0]);
   applyLeg(lb, legs[0]);
 }
 function checkFrame(g, lb, now, gapMs, cpu) { // called once a frame
   const T = g.check, el = (now - T.t0) / 1000, LEGS = T.legs;
+  // kit 0.20.1: Picture Automatic keeps timing play, so it may step down mid-leg; the leg is then begun again at the new level
+  if (lb.picture.level !== T.lvl) {
+    T.lvl = lb.picture.level;
+    if (T.phase !== 'warm') T.redone++;
+    T.phase = 'warm';
+    T.t0 = now;
+    g.x = legStart(lb, LEGS[T.i]);
+    applyLeg(lb, LEGS[T.i]);
+    return;
+  }
   if (T.phase === 'warm') {
     if (el >= WARM) { T.phase = 'run'; T.t0 = now; T.cur = { place: PLACE_NAMES[LEGS[T.i].place], label: LEGS[T.i].label, short: LEGS[T.i].short, gaps: [], cpu: [] }; }
   } else if (T.phase === 'run') {
@@ -8839,6 +8859,7 @@ function checkFrame(g, lb, now, gapMs, cpu) { // called once a frame
       c.drawn = gap / 8;
       c.keptUp = gap < 18;   // eight frames fitted inside one screen refresh, so the time is an upper limit
       c.proc = c.cpu.length ? c.cpu.reduce((a, b) => a + b, 0) / c.cpu.length : 0;   // the page's own work a frame, while it ran
+      c.level = T.lvl;                 // kit 0.20.1: Automatic may step down partway through the check
       T.res.push(c);
       T.i++;
       if (T.i >= LEGS.length) { lb.hud.boss(null); lb.world._thruCloud(true); hudShown(true); finishCheck(g, lb); return; }
@@ -8860,7 +8881,7 @@ function finishCheck(g, lb) {
   const phone = R.every((r) => r.fps >= 29.5 && r.drawn <= 25), computer = R.every((r) => r.fps >= 58);
   const line = 'Lantern Box ' + (cloud ? 'cloud check' : 'speed check') + ', kit ' + lb.version + ' (test page ' + TEST_PAGE + ') · ' + device() + ' · ' + p.width + ' × ' + p.height + ' at ' + p.sharpness.toFixed(2) + '× · Picture ' + lb.settings.picture + ' (' + p.level + ')' +
     (lb.settings.reduceMotion ? ' · reduce motion' : '') + (lb.settings.effects ? '' : ' · effects off') + (cloud ? ' · without and with lit-through-a-cloud (version 11), up the big hill · ' : ' · up the big hill, then the Mist at its boss · ') +
-    R.map((r) => r.short + ' ' + Math.round(r.fps) + ' fps / ' + ms(r)).join(' · ') +
+    R.map((r) => r.short + ' ' + Math.round(r.fps) + ' fps / ' + ms(r) + (r.level && r.level !== p.level ? ' (' + r.level + ')' : '')).join(' · ') +
     ' · slowest 5% ' + Math.round(Math.max(...R.map((r) => r.slow))) + ' ms · longest ' + Math.round(Math.max(...R.map((r) => r.max))) + ' ms · layers ' + Math.round(lb.world.stats.tileBytes / 1048576) + ' MB';
   openPanel((face, close) => {
     const h = document.createElement('h2');
@@ -9282,6 +9303,7 @@ LanternBox.game({
     }
     // while the speed check times a frame, it draws eight in a row, each 1/60 s on from the last, so poses and layers change as often as in play
     const reps = g.check && g.check.phase === 'load' ? 8 : 1, c0 = performance.now();
+    if (reps > 1) lb.pictureSkip();    // kit 0.20.1: so Picture Automatic doesn't take this frame's eight for one slow one
     const leg = checkLeg(g), pace = leg && leg.still ? 0 : TEST_PACE;
     for (let r = 0; r < reps; r++) {
       if (leg && leg.blank) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); }   // the parts check: nothing drawn
