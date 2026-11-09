@@ -1098,7 +1098,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.20.3';
+  const VERSION = '0.20.4';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -1706,11 +1706,12 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // address (?trial=cloud,boss12,lines540,lines432,few,nohud), so a slow device can time each in the play check before anything is
 // decided. cloud: no lit-through-a-cloud; boss12: the bosses' sweeps (the moor mother's sickle, the tree's branch) repainted 12 times a
 // second, their movement smooth; lines540, lines432: the picture at Faster and Fastest never more lines tall than that; few: the far
-// flyers and the leaves as many as Reduce motion has (about half), at their full speed; nohud: the HUD not shown. Without ?trial,
-// nothing changes.
+// flyers and the leaves as many as Reduce motion has (about half), at their full speed; nohud: the HUD not shown; hero (kit 0.20.4): the
+// wanderer's cloak and belt ripple to the step of the move he is making, not to a clock that never repeats, and 32 pictures of him are
+// kept, not 8, so a step he has made before is drawn from its kept picture. Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud")};})();
-const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden"].filter(Boolean);
+  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero")};})();
+const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps"].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -4939,7 +4940,7 @@ function mvFigure(s,P,tq,k,edge,rm,f){ // painted facing its way, its feet on a 
   const key=s.toFixed(3)+"|"+k+"|"+f+"|"+edge+"|"+(rm?1:0)+"|"+tq.toFixed(4)+"|"+MV_RED+"|"+JSON.stringify(P);   // kit 0.11.0: and the belt
   for(let i=MVC.length-1;i>=0;i--)if(MVC[i].key===key){const F=MVC[i];if(i!==MVC.length-1){MVC.splice(i,1);MVC.push(F);}return F;}
   const b=MV_BOX,R=k*s,x0=f>0?b[0]:-b[2],x1=f>0?b[2]:-b[0],ox=Math.ceil(-x0*R)+4,oy=Math.ceil(-b[1]*R)+4,w=ox+Math.ceil(x1*R)+4,h=oy+Math.ceil(b[3]*R)+2,e=1.3*k/1.32*s;
-  let F=MVC.length>=8?MVC.shift():null;
+  let F=MVC.length>=(TRIAL.hero?32:8)?MVC.shift():null;   // kit 0.20.4: the hero trial keeps 32
   if(!F||F.E.width!==w||F.E.height!==h)F={E:mk(w,h),I:mk(w,h)};
   F.key=key;F.ox=ox;F.oy=oy;F.w=w;F.h=h;MV_RM=!!rm;
   try{for(const ink of [false,true]){const x=(ink?F.I:F.E).getContext("2d");x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.clearRect(0,0,w,h);
@@ -5699,7 +5700,8 @@ function makeTools(env){
       // he formed again (his lantern flares, 0.5 s). The rise after it is the move 'rise' (kneel, buckle; then standing).
       const f=frame("wanderer");o=o||{};
       const name=o.move||(o.walking===false?"idle":"walk"),step=o.step==null?f.t*MV_RATE:o.step,mv=mvMove(name,step);
-      const lvl=o.sword?{r:o.sword.reach||0,s:o.sword.bite||0}:null,P=lvl?withLvl(mv.P,lvl):mv.P,tq=Math.floor(f.t*MV_RATE)/MV_RATE;
+      const lvl=o.sword?{r:o.sword.reach||0,s:o.sword.bite||0}:null,P=lvl?withLvl(mv.P,lvl):mv.P,
+        tq=TRIAL.hero?(mv.done?mv.steps-1:((Math.floor(step)%mv.steps)+mv.steps)%mv.steps)/MV_RATE:Math.floor(f.t*MV_RATE)/MV_RATE;   // kit 0.20.4: the hero trial
       const c=f.ctx,X=x-f.camX,Y=o.y==null?f.gy(x)+1:o.y,fc=o.facing||1,e=LV[f.level].edge;
       if(o.pit){const p0=o.pit[0],p1=o.pit[1];c.save();c.beginPath();c.rect(-200,-2000,f.W+400,2000+f.gy(p0)-1);c.rect(p0+3-f.camX,-2000,p1-p0-6,4000);c.clip("nonzero");}
       let G=null;
@@ -8450,7 +8452,8 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
        Kit 0.20.1: Picture Automatic keeps timing play after its first seconds (see Picture); lb.pictureSkip(), called in a frame in which
          a game times its own drawing, leaves that frame out of Automatic's timing.
        Kit 0.20.2: trials, the look's trade-offs switched on only by the page's address (?trial=, see TRIAL); lb.trials names those on, in
-         words, for a check's result (an empty list without ?trial). */
+         words, for a check's result (an empty list without ?trial). Kit 0.20.3: the Testing screen in one to three columns, to fit.
+         Kit 0.20.4: the hero trial. */
     const api = {
       H: H, version: VERSION, touch: touch, input: input, hud: hud, sfx: sfx, world: world, color: colour,
       get W() { return V.W; },

@@ -41,7 +41,9 @@
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=lines432"><b>Softer still: 432 lines</b><span>The picture never more than 432 lines tall.</span></a>
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=few"><b>Fewer flyers and leaves</b><span>About half the far bats and crows, and of the Mist's leaves.</span></a>
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=nohud"><b>HUD hidden</b><span>No HUD, to see what it still costs.</span></a>
-  <a class="card trial" href="gloam-hallow.html?check&amp;trial=cloud,boss12,few,lines540"><b>All together</b><span>All of the above but the HUD, at 540 lines: as fast as these trials get it.</span></a>
+  <a class="card trial" href="gloam-hallow.html?check&amp;trial=hero"><b>The wanderer's ripple with his steps</b><span>His cloak and belt ripple with each step of what he's doing, so a step he has made before isn't drawn again.</span></a>
+  <a class="card trial" href="gloam-hallow.html?check&amp;trial=cloud,boss12,few,lines540"><b>All together</b><span>The clouds, the sweeps, fewer flyers and 540 lines (not the HUD or the wanderer).</span></a>
+  <a class="card trial" href="gloam-hallow.html?check&amp;trial=cloud,boss12,few,lines540,hero"><b>All together, with the wanderer</b><span>All together, and the wanderer's ripple with his steps: as fast as these trials get it.</span></a>
   <h2>On a phone</h2>
   <ul>
     <li>Hold it sideways.</li>
@@ -67,7 +69,7 @@
   // the version on the server, never a kept copy; the links carry it, so a phone opens the new files at once
   // this page's own version (kept the same as version.txt with every push): a phone may show a kept copy of this page for up to
   // 10 minutes, so when the server's version is newer the page loads itself afresh at a new address, once for each version
-  const PAGE = '0.20.3';
+  const PAGE = '0.20.4';
   fetch('version.txt', { cache: 'no-store' }).then((r) => (r.ok ? r.text() : Promise.reject())).then((t) => {
     const v = t.trim(), tried = (/[?&]fresh=([^&]*)/.exec(location.search) || [])[1];
     if (v !== PAGE && tried !== encodeURIComponent(v)) { location.replace(location.pathname + '?fresh=' + encodeURIComponent(v)); return; }
