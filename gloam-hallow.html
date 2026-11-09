@@ -1098,7 +1098,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.20.2';
+  const VERSION = '0.20.3';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -7291,23 +7291,51 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       const done = button('Back', true);
       items.push({ el: done, activate: close });
       const note = txt('p', 'lb-note', 'For trying the game out. Start game uses these.');
+      // kit 0.20.3 (Barney's Fire, 1046 by 654: the one column, 1,490 tall, was shrunk to 43%; a phone's two columns, 1,018 tall, to under
+      // 40%): the rows in one, two or three columns of about equal height, whichever shows the plaque nearest its full size in this window
+      // (the fewest that need no shrinking below 0.95); a phone keeps its Back beside the heading and starts at two
+      let top, rows, foot = null;
       if (phone) {
         done.style.padding = '0 24px';
         const head = el('div', 'lb-header');
         head.append(heading('lb-te-t', 'Testing'), done);
-        const cols = el('div');
-        cols.style.cssText = 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:26px';
-        const a = el('div'); a.style.cssText = 'display:flex;flex-direction:column;gap:10px'; a.append(...choiceRows);
-        const b = el('div'); b.style.cssText = 'display:flex;flex-direction:column;gap:10px'; b.append(...toggleRows, note);
-        cols.append(a, b);
-        face.append(head, cols);
+        top = [head];
+        rows = choiceRows.concat(toggleRows, [note]);
       } else {
-        const foot = el('div', '', '<span class="lb-hint">' + kbd('Backspace') + ' back</span>');
+        foot = el('div', '', '<span class="lb-hint">' + kbd('Backspace') + ' back</span>');
         foot.style.cssText = 'display:flex;justify-content:flex-end;align-items:center;gap:12px;padding-top:2px';
         foot.append(done);
         if (touch) foot.firstChild.remove();
-        face.append(heading('lb-te-t', 'Testing'), el('div', '', RULE).firstChild, note, ...choiceRows, ...toggleRows, foot);
+        top = [heading('lb-te-t', 'Testing'), el('div', '', RULE).firstChild, note];
+        rows = choiceRows.concat(toggleRows);
       }
+      const ends = () => (foot ? [foot] : []), pad = phone ? 40 : 44, colW = phone ? { 2: 317, 3: 290 } : { 1: 476, 2: 440, 3: 320 }, colGap = 26;
+      face.append(...top, ...rows, ...ends());
+      const roomW = Math.max(1, root.clientWidth - 12), roomH = Math.max(1, root.clientHeight - 12);
+      panel.style.cssText += ';position:absolute;left:0;top:0;visibility:hidden';
+      root.append(panel);   // measured out of sight, then handed to showDialog
+      const hs = rows.map((r) => r.offsetHeight), total = hs.reduce((a, b) => a + b, 0), gap = parseFloat(getComputedStyle(face).rowGap) || 10;
+      const lay = (n) => {
+        face.innerHTML = '';
+        panel.style.width = (n * colW[n] + (n - 1) * colGap + pad) + 'px';
+        if (n === 1) { face.append(...top, ...rows, ...ends()); return; }
+        const grid = el('div');
+        grid.style.cssText = 'display:grid;grid-template-columns:repeat(' + n + ',minmax(0,1fr));column-gap:' + colGap + 'px;align-items:start';
+        const cols = [];
+        for (let c = 0; c < n; c++) { const col = el('div'); col.style.cssText = 'display:flex;flex-direction:column;gap:' + gap + 'px'; cols.push(col); grid.append(col); }
+        let c = 0, acc = 0;
+        rows.forEach((r, i) => { if (c < n - 1 && acc > 0 && acc + hs[i] / 2 > total * (c + 1) / n) c++; cols[c].append(r); acc += hs[i]; });
+        face.append(...top, grid, ...ends());
+      };
+      let best = 0, bestK = 0, cur = 0;
+      for (let n = phone ? 2 : 1; n <= 3 && bestK < 0.95; n++) {
+        lay(n); cur = n;
+        const k = Math.min(1, roomW / panel.offsetWidth, roomH / panel.offsetHeight);
+        if (k > bestK + 0.01) { best = n; bestK = k; }
+      }
+      if (cur !== best) lay(best);
+      root.removeChild(panel);
+      panel.style.position = ''; panel.style.left = ''; panel.style.top = ''; panel.style.visibility = '';
       return { panel: panel, items: items, opts: { back: close, start: items.length - 1 } };
     }
     function openTesting(from) {
