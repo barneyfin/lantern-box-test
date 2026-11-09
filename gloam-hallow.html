@@ -1088,7 +1088,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 
 </style>
 <script>
-/* Lantern Box 0.19 — runtime
+/* Lantern Box 0.20 — runtime
    One file, no dependencies. Exposes window.LanternBox. Pair it with lantern-box.css.
    Copied from Retro Kit's shell and restyled to the design system (lantern-box/design-system/); the two soundtracks and
    the way settings are saved come from City Nights' copy of it. It owns everything every game shares: the picture
@@ -1098,7 +1098,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.19.0';
+  const VERSION = '0.20.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -1711,7 +1711,9 @@ const lerp=(a,b,t)=>a+(b-a)*t;
 const posmod=(a,n)=>((a%n)+n)%n;
 function rng32(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
 function hsh(){let h=2166136261>>>0;for(let i=0;i<arguments.length;i++){h^=(arguments[i]|0);h=Math.imul(h,16777619)>>>0;}h^=h>>>15;h=Math.imul(h,2246822507)>>>0;h^=h>>>13;return h>>>0;}
-function hx(c){const n=parseInt(c.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255];}
+// kit 0.20.0: each colour read once and kept (rgba() is called many times a frame); the arrays are shared, never changed
+const HXC=new Map();
+function hx(c){let a=HXC.get(c);if(!a){const n=parseInt(c.slice(1),16);a=[(n>>16)&255,(n>>8)&255,n&255];if(HXC.size>500)HXC.clear();HXC.set(c,a);}return a;}
 function mixc(c1,c2,t){const a=hx(c1),b=hx(c2);return"rgb("+Math.round(lerp(a[0],b[0],t))+","+Math.round(lerp(a[1],b[1],t))+","+Math.round(lerp(a[2],b[2],t))+")";}
 function rgba(c,al){const a=hx(c);return"rgba("+a[0]+","+a[1]+","+a[2]+","+al+")";}
 function mk(w,h){const c=document.createElement("canvas");c.width=Math.max(1,Math.ceil(w));c.height=Math.max(1,Math.ceil(h));return c;}
@@ -2540,7 +2542,7 @@ class Scene{
   }
   layer(ctx,off,s,W,t,lx,L,tint,o){
     const Pp=this.pools,x=off.getContext("2d"),air=AIR[o.level],haze=HAZE[o.level];
-    x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,off.width,off.height);x.setTransform(s,0,0,s,0,0);
+    x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,off.width,off.height);x.setTransform(s,0,0,s,-(this.tdx||0),0);   // kit 0.20.0: a tile's shift
     x.fillStyle=INK;
     const houses=[],fairies=[],set=this.ver<5?"village":LV[o.level].set;
     const yfn=set==="moor"?MOORY[L-1]:L===1?RIDGE[set]:L===2?l2Y:L===3?l3Y:l4Y,eyes=[];
@@ -2773,6 +2775,18 @@ class Scene{
    top: lights that twinkle, eyes that blink, flames, splashes, monsters and the wanderer. A puppet monster changes
    pose only in steps (8 a second at its own pace), so each pose is painted once and reused until the next step. */
 const TWP=1024,TMP=840;                    // a tile's width, and the margin drawn round it so glows and wide shapes join up (device pixels)
+// kit 0.20.0, at Fastest only (design system 14: the kit's cheaper ways at Fastest): the working canvas keeps only about TM_W picture lines
+// a side (840 device pixels at Best's sharpest, 1440 lines), so it paints and blurs less round each tile (Fastest is at most 1.5 device
+// pixels a line: about 500 a side). Everything is still drawn from the full margin's left edge, as before (the ridges are sampled from
+// there), shifted left by the pixels cut (d, a whole number of 64). Checked against 0.19.0: no seams; the hazes' blur, worked out on a
+// smaller canvas, differs by a few levels in under 1% of pixels. At Best and Faster the margin is TMP, as before
+const TM_W=315,tileM=s=>QUICK?TMP-Math.max(0,Math.floor((TMP-Math.ceil(TM_W*s))/64)*64):TMP;   // the cut a whole number of 64 pixels, so the hazes' blur lands on the same grid
+// kit 0.20.0: tiles gone off screen give their canvases back to be painted over for the next tile, a few of each size, rather than a new
+// canvas made for every tile (on a slow device making one is a hitch, and the memory dropped a clean-up pause later)
+const TILE_POOL=new Map(),POOL_N=4;
+function poolTake(w,h){const p=TILE_POOL.get(w+"x"+h);return p&&p.length?p.pop():mk(w,h);}
+function poolGive(cv){if(!cv)return;const k=cv.width+"x"+cv.height;let p=TILE_POOL.get(k);if(!p)TILE_POOL.set(k,p=[]);if(p.length<POOL_N)p.push(cv);}
+function copyInto(cv,src,sx,w,h){const x=cv.getContext("2d");x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.globalCompositeOperation="copy";x.drawImage(src,sx,0,w,h,0,0,w,h);x.globalCompositeOperation="source-over";return cv;}
 const POSE_RATE={crawler:1.3,bat2:1.6,ghoul2:1,walker:0.6},ATK_KEEP=72; // the pace of each puppet monster's steps (see pz)
 const KIT={frame:0,built:false,builds:0,buildMs:0,poses:0,bytes:0,thru:true,thruN:0};   // thru: version 10's lit-through-a-cloud (off only for the test page's comparison); thruN: composites last frame
 // version 10: how high a layer tile's own picture reaches, in strips THRU_CH device pixels wide: for each strip the highest row with anything
@@ -2793,6 +2807,7 @@ function swarmBoxes(W,t,lx,rm){const span=W+760,v=rm?26:68,out=[];
   for(let f=0;f<2;f++){const cx=W+380-posmod(t*v+f*span*0.55+lx,span),cy=205+f*46+Math.sin(t*0.45+f*2)*18;if(cx>=-220&&cx<=W+220)out.push([cx-120,cy-56,cx+120,cy+56]);}
   return out;}
 let FX=true;                               // the Effects setting: glow round lights, eyes and splashes
+let QUICK=false;                           // kit 0.20.0: Picture at Fastest, set by world.begin (the tiles' narrower working canvas, the kept posts)
 // a boss's picture moves only with its pose time, pz(t*rate): rate*8 steps a second (night 5.6, storm 6.4, dawn 5.6, mist 4.8),
 // so it is repainted exactly when its pose steps. The rates are the boss functions' own (BOSS.night ... BOSS.mist): keep them in step
 const BOSS_STEP={night:0.7,storm:0.8,dawn:0.7,mist:0.6};
@@ -2815,8 +2830,8 @@ function fairySprite(lv,s){ // one light on a string, with its glow, painted onc
   c.beginPath();c.arc(0,0,1.8,0,Math.PI*2);c.fill();
   return KIT.fs={key,cv,h};
 }
-function drawFairyKit(x,fl,t,lv,s){ // as drawFairy, but each light is the painted sprite, faded by its twinkle
-  const sp=fairySprite(lv,s),hw=sp.h/s,ax=fl[0],ay=fl[1],qx=fl[2],qy=fl[3],bx=fl[4],by=fl[5],seed=fl[6],n=10;
+function drawFairyKit(x,fl,t,lv,s,dx){ // as drawFairy, but each light is the painted sprite, faded by its twinkle (kit 0.20.0: dx, added to its x)
+  const d=dx||0,sp=fairySprite(lv,s),hw=sp.h/s,ax=fl[0]+d,ay=fl[1],qx=fl[2]+d,qy=fl[3],bx=fl[4]+d,by=fl[5],seed=fl[6],n=10;
   for(let i=1;i<n;i++){const u=i/n,v=1-u,px=v*v*ax+2*v*u*qx+u*u*bx,py=v*v*ay+2*v*u*qy+u*u*by;
     x.globalAlpha=0.7+0.3*Math.sin(t*1.1+i*1.7+seed);x.drawImage(sp.cv,px-hw,py-hw,2*hw,2*hw);}
   x.globalAlpha=1;
@@ -2824,14 +2839,14 @@ function drawFairyKit(x,fl,t,lv,s){ // as drawFairy, but each light is the paint
 Object.assign(Scene.prototype,{
   kitReset(key){this.kitKey=key;this.tiles={};this.playKey=null;this.poses=new Map();this.atk=new Map();this.sky=null;this.vig=null;this.scr=null;this.bossC=null;},
   scratch(s){ // two working canvases, a tile plus its margins wide
-    const w=TWP+2*TMP,h=Math.ceil(LH*s);
-    if(!this.scr||this.scr.w!==w||this.scr.h!==h)this.scr={w,h,a:mk(w,h),b:mk(w,h)};
+    const m=tileM(s),w=TWP+2*m,h=Math.ceil(LH*s);
+    if(!this.scr||this.scr.w!==w||this.scr.h!==h)this.scr={w,h,m,d:TMP-m,a:mk(w,h),b:mk(w,h)};
     return this.scr;
   },
-  tileStart(sc,s){const b=sc.b.getContext("2d");b.setTransform(1,0,0,1,0,0);b.globalCompositeOperation="source-over";b.globalAlpha=1;b.shadowBlur=0;b.shadowColor="transparent";b.clearRect(0,0,sc.w,sc.h);b.setTransform(s,0,0,s,0,0);return b;},
+  tileStart(sc,s){const b=sc.b.getContext("2d");b.setTransform(1,0,0,1,0,0);b.globalCompositeOperation="source-over";b.globalAlpha=1;b.shadowBlur=0;b.shadowColor="transparent";b.clearRect(0,0,sc.w,sc.h);b.setTransform(s,0,0,s,-sc.d,0);this.tdx=sc.d;return b;},   /* kit 0.20.0: shifted by d */
   tileFinish(sc,i,t0,extra){ // keep the middle of the working canvas: that's the tile
-    const cv=mk(TWP,sc.h);cv.getContext("2d").drawImage(sc.b,TMP,0,TWP,sc.h,0,0,TWP,sc.h);
-    KIT.builds++;KIT.buildMs+=performance.now()-t0;KIT.built=true;
+    const cv=copyInto(poolTake(TWP,sc.h),sc.b,sc.m,TWP,sc.h);
+    KIT.builds++;KIT.buildMs+=performance.now()-t0;KIT.built=true;this.tdx=0;
     return Object.assign({cv,i,bytes:TWP*sc.h*4,fairies:[],eyes:[]},extra||{});
   },
   buildLayerTile(L,i,s,t,tint,o){
@@ -2843,7 +2858,7 @@ Object.assign(Scene.prototype,{
     // glow and the hazes) down to the clouds' foot, and the highest line it reaches, for the composite in front of the clouds (16 rows
     // spare: under Reduce motion the camera's rise can carry the clouds a few lines further down than layer 1)
     let thru=null;
-    if(L<=2&&this.cache.clB){const rows=Math.min(sc.h,Math.ceil((this.cache.clB+CLOUD_SOFT*2)*s)+16); /* version 11: down to the soft edge's foot */thru=mk(TWP,rows);thru.getContext("2d").drawImage(sc.a,TMP,0,TWP,rows,0,0,TWP,rows);
+    if(L<=2&&this.cache.clB){const rows=Math.min(sc.h,Math.ceil((this.cache.clB+CLOUD_SOFT*2)*s)+16); /* version 11: down to the soft edge's foot */thru=copyInto(poolTake(TWP,rows),sc.a,sc.m,TWP,rows);
       thru.tops=thruTops(thru);thru.top=Math.min(...thru.tops);if(thru.top>=rows)thru=null;}
     const x0=i*TW,x1=x0+TW; // the lights and eyes this tile owns, kept in world positions
     const fairies=col.fairies.map(f=>[f[0]+lx,f[1],f[2]+lx,f[3],f[4]+lx,f[5],f[6]]).filter(f=>f[0]>=x0&&f[0]<x1);
@@ -2866,7 +2881,7 @@ Object.assign(Scene.prototype,{
     const st=this.tiles[key]||(this.tiles[key]=new Map()),TW=TWP/s,i0=Math.floor(lx/TW),i1=Math.floor((lx+W)/TW),out=[];
     for(let i=i0;i<=i1;i++){let tl=st.get(i);if(!tl){tl=build(i);st.set(i,tl);}out.push(tl);}
     if(!KIT.built&&!st.has(i1+1))st.set(i1+1,build(i1+1));
-    for(const k of st.keys())if(k<i0-1||k>i1+1)st.delete(k);
+    for(const k of st.keys())if(k<i0-1||k>i1+1){const d=st.get(k);poolGive(d.cv);poolGive(d.thru);st.delete(k);}   // kit 0.20.0: their canvases kept to paint over
     return out;
   },
   drawTiles(ctx,tiles,lx,s,dy){
@@ -2878,8 +2893,8 @@ Object.assign(Scene.prototype,{
     this.drawTiles(ctx,tiles,lx,s,dy);
     ctx.setTransform(s,0,0,s,0,dy);
     for(const tl of tiles){
-      for(const f of tl.fairies)drawFairyKit(ctx,[f[0]-lx,f[1],f[2]-lx,f[3],f[4]-lx,f[5],f[6]],t,o.level,s);
-      if(tl.eyes.length)drawTreeEyes(ctx,tl.eyes.map(e=>Object.assign({},e,{X:e.X-lx})),t,L,o.rm);
+      for(const f of tl.fairies)drawFairyKit(ctx,f,t,o.level,s,-lx);   // kit 0.20.0: moved by -lx as they're drawn, not copied every frame
+      if(tl.eyes.length)drawTreeEyes(ctx,tl.eyes,t,L,o.rm,-lx);
     }
     return tiles;
   },
@@ -3519,14 +3534,15 @@ function drawBigStump(x,X,Y,v,p){ // a big broken trunk on the path: splintered 
   const sh=H*(0.55+r()*0.15),sy=Y-sh,e=edge(1,sh);x.beginPath();x.moveTo(e-7,sy+7);x.lineTo(e+w*0.7,sy-w*0.35);x.lineTo(e+w*0.75,sy-w*0.2);x.lineTo(e-7,sy+14);x.closePath();x.fill();
   for(let i=0;i<2+v%2;i++){const fh=H*(0.32+i*0.16),right=i%2===0,fx=edge(right?1:-1,fh)+(right?-2:2);x.beginPath();x.ellipse(fx,Y-fh,9,3.4,0,right?-Math.PI/2:Math.PI/2,right?Math.PI/2:Math.PI*1.5);x.closePath();x.fill();}
 }
-function drawTreeEyes(x,eyes,t,L,rm){ // pale, dim eyes in the trees that blink now and then, and slowly come and go
-  const a=[0,0.3,0.4,0.5,0.58][L];
+const EYE_A=[0,0.3,0.4,0.5,0.58];
+function drawTreeEyes(x,eyes,t,L,rm,dx){ // pale, dim eyes in the trees that blink now and then, and slowly come and go (kit 0.20.0: dx, added to their x)
+  const a=EYE_A[L],d=dx||0;
   for(const e of eyes){
     const per=4.5+(e.seed%500)/100,ph=(t+(e.seed%997)/61)%per,open=ph<0.18?Math.abs(ph-0.09)/0.09:1;
     const vis=0.6+0.4*Math.sin(t*(rm?0.15:0.3)+(e.seed%13));if(vis<0.3)continue;
     const sz=clamp(e.s*0.11,1.1,4.2),gap=sz*2.4;
     x.save();x.fillStyle=rgba("#eef1dc",a*vis);x.shadowColor="rgba(238,241,220,0.55)";x.shadowBlur=FX?sz*2.2:0;
-    for(const sd of [-1,1]){x.beginPath();x.ellipse(e.X+sd*gap/2,e.Y,sz,Math.max(0.2,sz*0.5*open),-sd*0.28,0,Math.PI*2);x.fill();}
+    for(let sd=-1;sd<=1;sd+=2){x.beginPath();x.ellipse(e.X+d+sd*gap/2,e.Y,sz,Math.max(0.2,sz*0.5*open),-sd*0.28,0,Math.PI*2);x.fill();}
     x.restore();
   }
 }
@@ -5149,8 +5165,9 @@ function cpLantern(c,X,Y,ang,lit,flare,edge,t){c.save();c.translate(X,Y);c.rotat
   c.save();c.translate(1.3,-1.3);cpFrame(c,lvA(edge,0.85));c.restore();cpFrame(c,INK);c.restore();
   return[X-Math.sin(ang)*30*CP_LK,Y+Math.cos(ang)*30*CP_LK];}
 // a whole checkpoint at (X,Y): post (with its lit edge), lantern, and its light. st = {lit, flare, ring, spark:[from x,y,u]}
-function cpDraw(c,dir,lv,X,Y,st,t){const edge=LV[lv].edge,post=(col)=>cpPostB(c,col,lv); /* the kit: option B only */
-  c.save();c.translate(X,Y);c.scale(CP_PK,CP_PK);c.save();c.translate(1.1,-1.1);post(lvA(edge,0.85));c.restore();const h=post(INK);c.restore();
+// kit 0.20.0: kp { s, ty } (the picture's sharpness and the frame's rise in device pixels): the post is the kept picture, put on whole pixels
+function cpDraw(c,dir,lv,X,Y,st,t,kp){const edge=LV[lv].edge,post=(col)=>cpPostB(c,col,lv); /* the kit: option B only */
+  let h;if(kp)h=cpPostKept(c,lv,X,Y,kp.s,kp.ty);else{c.save();c.translate(X,Y);c.scale(CP_PK,CP_PK);c.save();c.translate(1.1,-1.1);post(lvA(edge,0.85));c.restore();h=post(INK);c.restore();}
   const hx=X+h[0]*CP_PK,hy=Y+h[1]*CP_PK,ang=0.05*Math.sin(t*1.6)+0.025*Math.sin(t*2.9),lit=st.lit||0,fl=st.flare||0;
   if(lit>0&&FX){c.save();c.globalCompositeOperation="screen";c.translate(hx,Y);c.scale(2.6,0.5);const g=c.createRadialGradient(0,0,0,0,0,26);g.addColorStop(0,rgbaS(MV_GOLD,0.34*lit));g.addColorStop(1,rgbaS(MV_GOLD,0));c.fillStyle=g;c.fillRect(-26,-26,52,52);c.restore();} // the pool on the ground
   const gc=[hx-Math.sin(ang)*30*CP_LK,hy+Math.cos(ang)*30*CP_LK];
@@ -5162,6 +5179,22 @@ function cpDraw(c,dir,lv,X,Y,st,t){const edge=LV[lv].edge,post=(col)=>cpPostB(c,
     const r=mvRng(91);for(let i=0;i<10;i++){const a=r()*Math.PI*2,d=(14+r()*36)*u;fxMote(c,gc[0]+Math.cos(a)*d,gc[1]+Math.sin(a)*d-12*u*u,1.5,1-u,i%3?MV_LAMP:"#fff6dc");}}
   if(lit>0.6){for(let i=0;i<3;i++){const ph=((t*0.45+i/3)%1),x=gc[0]+Math.sin(t*1.7+i*2)*5,y=hy+10-ph*52;fxMote(c,x,y,1.3,Math.sin(ph*Math.PI)*0.85*lit,i%2?MV_LAMP:"#fff6dc");}}
   return gc;}
+// kit 0.20.0, at Fastest only (the kit's way): a checkpoint's post, with its lit edge, painted once for each place and sharpness, as a
+// monster's pose is, and put on whole device pixels. CP_BOX holds every place's post and its edge (post units, before CP_PK) with room to spare
+const CP_BOX=[-24,-175,46,8],CPK={};
+function cpPostKept(c,lv,X,Y,s,ty){const key=lv+"@"+s;let P=CPK[key];
+  if(!P){const B=CP_BOX,k=CP_PK*s,ox=Math.ceil(-B[0]*k)+2,oy=Math.ceil(-B[1]*k)+2,cv=mk(ox+Math.ceil(B[2]*k)+2,oy+Math.ceil(B[3]*k)+2),x=cv.getContext("2d");
+    x.setTransform(s,0,0,s,ox,oy);x.scale(CP_PK,CP_PK);x.save();x.translate(1.1,-1.1);cpPostB(x,lvA(LV[lv].edge,0.85),lv);x.restore();const h=cpPostB(x,INK,lv);
+    P=CPK[key]={cv,ox,oy,h};KIT.poses++;}
+  c.save();c.setTransform(1,0,0,1,0,ty);c.drawImage(P.cv,Math.round(X*s)-P.ox,Math.round(Y*s)-P.oy);c.restore();
+  return P.h;}
+// kit 0.20.0: where a checkpoint's glass hangs at time t, worked out as cpDraw does, for a lantern off screen and not drawn
+function cpGlass(lv,X,Y,t){const h=cpHook(lv),hx=X+h[0]*CP_PK,hy=Y+h[1]*CP_PK,ang=0.05*Math.sin(t*1.6)+0.025*Math.sin(t*2.9);return[hx-Math.sin(ang)*30*CP_LK,hy+Math.cos(ang)*30*CP_LK];}
+const CP_HOOK={};
+function cpHook(lv){return CP_HOOK[lv]||(CP_HOOK[lv]=cpPostB(mk(1,1).getContext("2d"),INK,lv));}
+// kit 0.20.0: how far a checkpoint's drawing reaches either side of its post, its widest glow included (the hook up to 39 right of the post,
+// the glass's sway 3, the glows 120), with room to spare: one wholly off screen isn't drawn
+const CP_REACH=[200,130];   // [to the right of the post, to the left]
 // the spark leaping from the wanderer's lantern to the checkpoint's glass, with a short tail
 function cpSpark(c,from,to,u){const [sx,sy]=from,[ex,ey]=to,mx=(sx+ex)/2,my=Math.min(sy,ey)-34;for(let j=0;j<4;j++){const v=Math.max(0,u-j*0.08),m=1-v,x=m*m*sx+2*m*v*mx+v*v*ex,y=m*m*sy+2*m*v*my+v*v*ey;
   fxGlowAt(c,x,y,18-j*3.5,0.9-j*0.18,MV_GOLD);fxMote(c,x,y,3.2-j*0.6,1-j*0.2,"#fff6dc");}}
@@ -5540,9 +5573,12 @@ function bsMove(lv,name,u,A){const bx=A.bx,wx=A.wx,G=A.G,t=A.t,fx=[],r={X:bx,st:
 let BOSS_SW=null;                                   // the moor mother's claw arm, when a move sets it (play.js swapped Math.sin for this)
 const BSK={};
 function bsDrawKit(x,S,lv,X,Y,t,opts,st,br){const a=st.alpha==null?1:st.alpha;if(a<=0.01)return;
-  const step=opts.rm?-KIT.frame:Math.floor(t*(BOSS_STEP[lv]||1)*8),key=step+"|"+(st.flare?1:0)+"|"+(st.sickle==null?"":st.sickle.toFixed(4))+"|"+(br&&br.grow>0?JSON.stringify(br):"")+"|"+FX;
+  const step=opts.rm?-KIT.frame:Math.floor(t*(BOSS_STEP[lv]||1)*8),key=step+"|"+(st.sickle==null?"":st.sickle.toFixed(4))+"|"+(br&&br.grow>0?JSON.stringify(br):"")+"|"+FX;
   let K=BSK[lv];if(!K||K.S!==S){K=BSK[lv]={S,B:mk(Math.ceil(460*S),Math.ceil(330*S)),bcache:{},key:null};}
-  if(K.key!==key){const B=K.B,bc=B.getContext("2d");bc.setTransform(1,0,0,1,0,0);bc.clearRect(0,0,B.width,B.height);
+  // kit 0.20.0: a hit's flare is a second picture of the same pose, kept beside the first, so a blow and its end don't each repaint the boss
+  const fl=!!st.flare;if(fl&&!K.BF){K.BF=mk(K.B.width,K.B.height);K.keyF=null;}
+  const B=fl?K.BF:K.B;
+  if((fl?K.keyF:K.key)!==key){const bc=B.getContext("2d");bc.setTransform(1,0,0,1,0,0);bc.clearRect(0,0,B.width,B.height);
     const one=(o2)=>{BOSS_SW=st.sickle!=null&&lv==="dawn"?-st.sickle:null;try{bossInto(bc,S,lv,t,o2,0,0,BOSS_NOD,true,K.bcache,BOSS_LOOK);}finally{BOSS_SW=null;}};
     if(br&&br.grow>0){const U=K.U&&K.US===S?K.U:(K.US=S,K.U=mk(B.width,B.height)),uc=U.getContext("2d");
       uc.setTransform(1,0,0,1,0,0);uc.clearRect(0,0,U.width,U.height);uc.setTransform(S,0,0,S,230*S,300*S);uc.fillStyle=INK;uc.strokeStyle=INK;uc.lineCap="round";uc.lineJoin="round";
@@ -5551,9 +5587,9 @@ function bsDrawKit(x,S,lv,X,Y,t,opts,st,br){const a=st.alpha==null?1:st.alpha;if
         else hardRim(bc,rgba(o2.dcol,0.95),S,()=>bc.drawImage(U,0,0));}; // the kit: Effects off, the thin hard rim
       rim(opts);if(st.flare)rim(Object.assign({},opts,{dcol:"#ffb070"}));bc.drawImage(U,0,0);bc.save();bc.setTransform(S,0,0,S,230*S,300*S);det(bc,opts);bc.restore();}
     else{one(opts);if(st.flare)one(Object.assign({},opts,{dcol:"#ffb070"}));}
-    K.key=key;KIT.poses++;}
+    if(fl)K.keyF=key;else K.key=key;KIT.poses++;}
   const X1=X+(st.dx||0),Y1=Y+(st.dy||0);if(st.glow!==0&&FX)bossGlow(x,X1,Y1,lv,a*(st.glow==null?1:st.glow));
-  x.save();x.globalAlpha=a;if(st.clipY!=null){x.beginPath();x.rect(X1-400,-2000,800,2000+st.clipY);x.clip();}x.translate(X1,Y1);x.rotate(st.tilt||0);x.scale((st.flip||1)*(st.sx||1),st.sy||1);x.drawImage(K.B,-230,-300,460,330);x.restore();}
+  x.save();x.globalAlpha=a;if(st.clipY!=null){x.beginPath();x.rect(X1-400,-2000,800,2000+st.clipY);x.clip();}x.translate(X1,Y1);x.rotate(st.tilt||0);x.scale((st.flip||1)*(st.sx||1),st.sy||1);x.drawImage(B,-230,-300,460,330);x.restore();}
 // the signals drawn with the boss, as the fights draw them: its eyes, mouth and hands burning hotter, the sickle's edge, the shoulder eyes
 function bsSignals(x,lv,X,Y,st,r){const hot=r.hot,sg=BS_SIG[lv];
   if(hot>0&&(st.alpha==null||st.alpha>0.3)){for(const p of sg.eyes){const w=bsPt(X,Y,st,p[0],p[1]);moHot(x,w[0],w[1],10+12*hot,hot);}if(sg.mouth){const w=bsPt(X,Y,st,sg.mouth[0],sg.mouth[1]);moHot(x,w[0],w[1],14+14*hot,hot*0.8);}
@@ -5619,7 +5655,7 @@ function makeTools(env){
     begin(ctx,o){
       o=o||{};
       const L=o.level&&o.level._T?o.level:null,S=env.k(),level=L?L.place:(o.place||"night");
-      FX=env.fx();
+      FX=env.fx();QUICK=!!(env.quick&&env.quick());
       const rm=env.rm(),t=o.t==null?env.t():o.t,sc=sceneFor(S),W=env.W(),camX=o.camX||0;
       const opt={level,rm,walking:true,facing:1,hud:false,splash:"on",emberMouth:true,defeat:"cardwisp",dcol:EMBER.danger,dglow:EMBER.glow,win:GOLD_LIGHT,litP:LV[level].litP,sample:!!o.sample,lvl:L?L._T:null};
       const rise=o.rise!=null?o.rise:L?L.rise(camX+W*0.32):0;
@@ -5755,7 +5791,9 @@ function makeTools(env){
     checkpoint(x,o){ // the place's checkpoint lantern on its post. o: y; lit: seconds since it began to light (true: lit; left out: unlit); from: the
       // wanderer's lantern ({ x, y }), for the spark that leaps from it as it lights (the first 0.18 s). Returns the glass's centre.
       const f=frame("checkpoint");o=o||{};const c=f.ctx,X=x-f.camX,Y=o.y==null?f.gy(x)+3:o.y,st=o.lit===true?{lit:1}:cpState(o.lit==null||o.lit===false?null:o.lit);
-      const gc=cpDraw(c,"B",f.level,X,Y,st,f.t);
+      // kit 0.20.0: wholly off screen (and not lighting from his lantern), it isn't drawn; where its glass hangs is still given
+      if((X+CP_REACH[0]<0||X-CP_REACH[1]>f.W)&&!(st.spark!=null&&o.from)){const g=cpGlass(f.level,X,Y,f.t);return{x:g[0]+f.camX,y:g[1]};}
+      const gc=cpDraw(c,"B",f.level,X,Y,st,f.t,QUICK?{s:f.s,ty:Math.round(f.camY*f.s)}:null);   // kit 0.20.0: the kept post at Fastest only
       if(st.spark!=null&&o.from)cpSpark(c,[o.from.x-f.camX,o.from.y],gc,st.spark);
       return{x:gc[0]+f.camX,y:gc[1]};
     },
@@ -5922,6 +5960,12 @@ const hexRGB=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
 const mixHex=(a,b,u)=>{const A=hexRGB(a),B=hexRGB(b);return "rgb("+A.map((v,i)=>Math.round(v+(B[i]-v)*u)).join(",")+")";};
 const ease=u=>u<=0?0:u>=1?1:u*u*(3-2*u);
 function setOnce(o,k,v,f){if(o["_"+k]!==v){o["_"+k]=v;f(v);}}
+// kit 0.20.0: an attribute written only when it changes (an SVG attribute set to the value it already has still makes the browser redo the
+// picture, every frame, on a slow device)
+function setAttr(e,k,v){if(e.getAttribute(k)!==v)e.setAttribute(k,v);}
+// kit 0.20.0: the HUD's parts looked up once and kept, for as long as that HUD is shown (its nodes stay; only their insides are rewritten)
+function hq(r,k){const m=r._hq||(r._hq=new Map());let e=m.get(k);if(e===undefined){e=r.querySelector(k);m.set(k,e);}return e;}
+function hqa(r,k){const m=r._hqa||(r._hqa=new Map());let e=m.get(k);if(e===undefined){e=[...r.querySelectorAll(k)];m.set(k,e);}return e;}
 function picFor(svg,kind){const g=!!kind&&typeof kind==="object";   /* kit 0.17.0: kind { pic, strong }: a Grace's picture (30-unit box) */
   setOnce(svg,"pic",g?"g:"+(kind.strong?"*":"")+kind.pic:(kind||""),()=>{svg.setAttribute("viewBox",g?"0 0 30 30":"0 0 24 24");svg.classList.toggle("is-grace",g);svg.classList.toggle("is-strong",g&&!!kind.strong);svg.innerHTML=g?String(kind.pic||""):kind?ICON[kind]:"";});}
 function setLine(ln,line){const on=!!line;if(ln.hidden===on)ln.hidden=!on;if(!on)return;
@@ -5938,42 +5982,42 @@ const OPTS={rm:false,fxOff:false};
 // left the flask shows again at once (the next potion's keep moment can play over it).
 function potCount(st,k){const v=st.potions&&st.potions[k];return typeof v==="number"?v:(v?1:0);}
 function setPotion(b,st){const k=b.dataset.k,n=potCount(st,k),cap=Math.max(1,(st.potCap&&st.potCap[k])||1),has=n>0,topped=(k==="health"?st.hp:st.mp)>=0.999,fx=st.potFx?(st.potFx.k===k?st.potFx:st.potFx[k]||null):null, /* the kit: potFx may hold one for each kind */
-    svg=b.querySelector(".pot"),liq=b.querySelector(".liq"),gl=b.querySelector(".glint"),mk=b.querySelector(".mark"),top=POT[k].top,rm=OPTS.rm;
+    svg=hq(b,".pot"),liq=hq(b,".liq"),gl=hq(b,".glint"),mk=hq(b,".mark"),top=POT[k].top,rm=OPTS.rm;
   const showFull=has||(fx&&fx.kind==="drink");b.classList.toggle("has-potion",showFull);b.classList.toggle("is-topped",has&&topped&&!fx);b.classList.toggle("fx-off",OPTS.fxOff);
   let sc=1,op=1,ly=top,la=1,ga=0,gx=0;
   if(fx&&fx.kind==="keep"){const u=Math.min(1,fx.u);if(rm){op=Math.min(1,u/0.75);}else{sc=0.6+0.4*ease(Math.min(1,u/0.7));op=Math.min(1,u/0.35);if(u>0.35){const g=(u-0.35)/0.65;ga=Math.sin(Math.min(1,g)*Math.PI)*0.85;gx=-14+28*g;}}}
   if(fx&&fx.kind==="drink"){const u=Math.min(1,fx.u);if(rm){la=1-u;}else{ly=top+(22-top)*ease(u);}if(u>=1&&!has){b.classList.remove("has-potion");}}
   svg.style.transform=sc!==1?`scale(${sc.toFixed(3)})`:"";svg.style.opacity=op!==1?op.toFixed(3):"";
-  liq.setAttribute("y",ly.toFixed(2));liq.style.opacity=la!==1?la.toFixed(3):"";mk.style.opacity=fx&&fx.kind==="drink"?String(rm?la:Math.max(0,1-fx.u*1.6)):"";
-  gl.style.opacity=ga>0.01?ga.toFixed(3):"0";gl.setAttribute("transform",`translate(${gx.toFixed(2)} 0)`);
-  const keyTxt=b.parentElement.querySelector(".lb-pkey");if(keyTxt)keyTxt.classList.toggle("is-on",!!(fx&&fx.kind==="drink"&&fx.u<0.5));
+  setAttr(liq,"y",ly.toFixed(2));liq.style.opacity=la!==1?la.toFixed(3):"";mk.style.opacity=fx&&fx.kind==="drink"?String(rm?la:Math.max(0,1-fx.u*1.6)):"";
+  gl.style.opacity=ga>0.01?ga.toFixed(3):"0";setAttr(gl,"transform",`translate(${gx.toFixed(2)} 0)`);
+  const keyTxt=hq(b.parentElement,".lb-pkey");if(keyTxt)keyTxt.classList.toggle("is-on",!!(fx&&fx.kind==="drink"&&fx.u<0.5));
   const name=k==="health"?"Health potion":"Mana potion",how=keyTxt?keyLetter(k==="health"?"Q":"E")+" to drink":"Tap to drink"; /* kit 0.10.0: the player's own letter */ /* the kit: by the keycap, not the size */
-  const pp=b.parentElement.querySelector(".lb-potion-pips");if(pp)setOnce(b,"pp",cap+":"+n,()=>{pp.hidden=cap<2;pp.innerHTML=cap<2?"":Array.from({length:cap},(_,i)=>`<i${i<n?' class="is-on"':""}></i>`).join("");});
+  const pp=hq(b.parentElement,".lb-potion-pips");if(pp)setOnce(b,"pp",cap+":"+n,()=>{pp.hidden=cap<2;pp.innerHTML=cap<2?"":Array.from({length:cap},(_,i)=>`<i${i<n?' class="is-on"':""}></i>`).join("");});
   const many=cap>1?`, ${n} of ${cap}`:"";
   setOnce(b,"lab",has?(topped?`${name}${many} kept. ${k==="health"?"Health":"Mana"} is full`:`${name}${many} kept. ${how}`):`No ${k} potion kept${cap>1?`, ${cap} sockets`:""}`,v=>b.setAttribute("aria-label",v));}
-function set(hud,st){const q=s=>hud.querySelector(s);
+function set(hud,st){const q=s=>hq(hud,s);
   const hp=Math.round(st.hp*100),mp=Math.round(st.mp*100);
   setOnce(hud,"hp",hp,v=>q(".hp").style.setProperty("--v",v+"%"));setOnce(hud,"mp",mp,v=>q(".mp").style.setProperty("--v",v+"%"));
-  const pips=hud.querySelectorAll(".lb-pip");pips.forEach((p,i)=>{const fx=st.pipFx?(Array.isArray(st.pipFx)?st.pipFx.find(f=>f.i===i):st.pipFx.i===i?st.pipFx:null)||null:null; /* kit 0.10.2: several pips at once */p.classList.toggle("is-on",i<st.pips||!!fx);
-    const hl=p.querySelector(".hl"),hr=p.querySelector(".hr"),ck=p.querySelector(".crack"),gl=p.querySelector(".glint");
+  const pips=hqa(hud,".lb-pip");pips.forEach((p,i)=>{const fx=st.pipFx?(Array.isArray(st.pipFx)?st.pipFx.find(f=>f.i===i):st.pipFx.i===i?st.pipFx:null)||null:null; /* kit 0.10.2: several pips at once */p.classList.toggle("is-on",i<st.pips||!!fx);
+    const hl=hq(p,".hl"),hr=hq(p,".hr"),ck=hq(p,".crack"),gl=hq(p,".glint");
     if(fx&&fx.kind==="crack"){const u=fx.u,a=ease(Math.max(0,(u-0.25)/0.75));ck.style.opacity=u<0.25?u/0.25:Math.max(0,1-a*1.6);
       hl.setAttribute("transform",`translate(${-1.6*a} ${3.2*a*a}) rotate(${-16*a} 5 11)`);hr.setAttribute("transform",`translate(${1.6*a} ${3.6*a*a}) rotate(${18*a} 5 11)`);hl.style.opacity=hr.style.opacity=String(1-a);gl.style.opacity=0;}
     else if(fx&&fx.kind==="gain"){const u=fx.u,s=0.35+0.65*ease(Math.min(1,u/0.6));hl.setAttribute("transform",`translate(5 6) scale(${s}) translate(-5 -6)`);hr.setAttribute("transform",`translate(5 6) scale(${s}) translate(-5 -6)`);
       hl.style.opacity=hr.style.opacity=String(Math.min(1,u/0.35));gl.style.opacity=u>0.45?Math.max(0,1-Math.abs(u-0.7)/0.25):0;ck.style.opacity=0;}
     else if(fx&&fx.kind==="glint"){if(hl.getAttribute("transform")){hl.removeAttribute("transform");hr.removeAttribute("transform");}hl.style.opacity=hr.style.opacity="";ck.style.opacity=0;gl.style.opacity=String(Math.sin(Math.PI*fx.u));}   /* kit 0.16.0: version 13's glint across the pips held, as each takes its share of a hit */
     else{if(hl.getAttribute("transform")){hl.removeAttribute("transform");hr.removeAttribute("transform");}hl.style.opacity=hr.style.opacity="";ck.style.opacity=0;gl.style.opacity=0;}});
-  const lives=hud.querySelectorAll(".lb-life");lives.forEach((l,i)=>{const fx=st.lifeFx&&st.lifeFx.i===i?st.lifeFx:null,g=l.querySelector(".glass"),f=l.querySelector(".flame"),pf=l.querySelectorAll(".puff");
+  const lives=hqa(hud,".lb-life");lives.forEach((l,i)=>{const fx=st.lifeFx&&st.lifeFx.i===i?st.lifeFx:null,g=hq(l,".glass"),f=hq(l,".flame"),pf=hqa(l,".puff");
     if(fx){l.classList.remove("is-out");const u=fx.u,a=Math.min(1,u/0.5);g.style.fill=mixHex("#ffcf6a","#1a1218",ease(a));f.style.opacity=String(Math.max(0,1-a*1.4));f.setAttribute("transform",`translate(5 9.8) scale(${Math.max(0.01,1-a)}) translate(-5 -9.8)`);
       pf.forEach((p,j)=>{const v=(u-0.3-j*0.12)/0.55;if(v<=0||v>=1){p.style.opacity=0;return;}p.setAttribute("cy",String(3-9*v));p.setAttribute("cx",String(5+Math.sin(v*5+j*2)*1.6));p.setAttribute("r",String(1+1.4*v));p.style.opacity=String(0.75*(1-v));});}
     else{l.classList.toggle("is-out",i>=st.lives);g.style.fill="";f.style.opacity="";f.removeAttribute("transform");pf.forEach(p=>p.style.opacity=0);}});
-  const sp=q(".lb-spell"),pic=sp.querySelector(".pic"),marks=sp.querySelector(".lb-spell-marks"),n=st.spells.length,kind=n?st.spells[st.sel%n]:null,short=n&&st.mp<st.cost;
+  const sp=q(".lb-spell"),pic=hq(sp,".pic"),marks=hq(sp,".lb-spell-marks"),n=st.spells.length,kind=n?st.spells[st.sel%n]:null,short=n&&st.mp<st.cost;
   sp.classList.toggle("is-empty",!n);sp.classList.toggle("has-two",n>1);sp.classList.toggle("is-short",!!short);
   picFor(pic,st.flipKind||kind);pic.style.transform=st.flip!=null?`translateY(${n>1?-3:0}px) scaleX(${Math.max(0.04,Math.abs(1-2*st.flip))})`:"";
   setOnce(marks,"m",n>1?n+":"+(st.sel%n):"",v=>{marks.innerHTML=n>1?st.spells.map((s,i)=>`<i${i===st.sel%n?' class="is-on"':""}></i>`).join(""):"";});
   setOnce(sp,"lab",kind?`Spell: ${NAME[kind]}${n>1?". Tap to switch":""}${short?". Not enough mana":""}`:"No spell yet",v=>sp.setAttribute("aria-label",v));
-  const cast=q(".b-cast");if(cast){cast.classList.toggle("is-empty",!n);cast.classList.toggle("is-short",!!short);picFor(cast.querySelector(".ic"),kind);}
+  const cast=q(".b-cast");if(cast){cast.classList.toggle("is-empty",!n);cast.classList.toggle("is-short",!!short);picFor(hq(cast,".ic"),kind);}
   setOnce(q(".lb-vitals"),"lab",`Health ${hp} per cent, armour ${st.pips} of 3, mana ${mp} per cent, ${st.lives} ${st.lives===1?"life":"lives"} left`,v=>q(".lb-vitals").setAttribute("aria-label",v));
-  hud.querySelectorAll(".lb-potion").forEach(b=>setPotion(b,st));
+  hqa(hud,".lb-potion").forEach(b=>setPotion(b,st));
   const ctr=q(".lb-counter");if(ctr&&st.wisps!=null)setOnce(ctr,"w",st.wisps,v=>{const s=String(v).padStart(4,"0");ctr.querySelector(".lb-counter-num").textContent=s;ctr.setAttribute("aria-label",v+" echo");});
   const ha=st.hudA==null?1:st.hudA;[".lb-hud-left",".lb-hud-right",".lb-touch"].forEach(sl=>{const e=q(sl);if(e)setOnce(e,"ha",ha.toFixed(2),v=>e.style.opacity=v);});
   const ln=q(".lb-line:not(.is-name)");if(ln)setLine(ln,st.line);const nm=q(".lb-line.is-name");if(nm)setLine(nm,st.name&&st.name.u<2.6?{kind:null,text:st.name.name,u:st.name.u}:null);const cd=q(".lb-card");if(cd)setCard(cd,st.card);
@@ -6126,7 +6170,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
     fpsEl.hidden = true;
     root.append(canvas, fadeEl, titleScreen, hudLayer, fpsEl, dialogLayer, rotateEl, errorEl);
     document.body.append(root);
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false });   // kit 0.20.0: solid, as render() fills it every frame, so the browser needn't blend it with the page
 
     /* ----- Game state ----- */
     const state = {
@@ -6696,7 +6740,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
     function syncPick() {   // the pick's plaque parts, inside the place card, while it shows
       const cardEl = hudNodes && hudNodes.full && hudNodes.full.querySelector('.lb-card');
       const c = h8.card, want = !!(cardEl && c && c.pick);
-      if (!want) { if (pickEl) { pickEl.remove(); pickEl = null; } if (cardEl) cardEl.classList.remove('has-pick'); return; }
+      if (!want) { if (pickEl) { pickEl.remove(); pickEl = null; } if (cardEl && cardEl.classList.contains('has-pick')) cardEl.classList.remove('has-pick'); return; }   // kit 0.20.0: only when it has it (removing a class it hasn't still rewrites the attribute)
       if (pickEl && pickEl.parentElement === cardEl) return;
       const p = c.pick, phone = V.phone;
       pickEl = el('div', 'lb-grace-pick');
@@ -6759,7 +6803,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       const key = V.w + 'x' + V.h + (touch ? 't' : 'k');
       if (!teach.el || !teach.el.isConnected) { teach.el = el('div', 'lb-teach'); teach.el.style.cssText = 'position:absolute;inset:0;pointer-events:none'; hudEl.append(teach.el); teach.dirty = true; }
       const away = state.screen !== 'play' || !!h8.card || !!h8.boss;
-      teach.el.hidden = away || !teach.items.length;
+      { const hide = away || !teach.items.length; if (teach.el.hidden !== hide) teach.el.hidden = hide; }   // kit 0.20.0: written only when it changes
       if (!teach.dirty && teach.shownFor === key) return;
       teach.dirty = false; teach.shownFor = key;
       const box = teach.el, list = teach.items;
@@ -8490,7 +8534,16 @@ window.GLOAM_HALLOW_MUSIC_2 = "SUQzAwAAAAAvZUdFT0IAABfbAAAAYXBwbGljYXRpb24vYzJwY
    the Moor Mother's legs take three quarters of a blow; the walker's low sweep counted from the ground under it on a slope.
    Step 5e-8 (kit 0.19.0; design system version 15): the mouth-hat spits from range (160 to 330, the gob's path clear, the mouth-hat on
    screen; at him on a piece or across a pit too), holding its ground between spits; the gob, its mark and its splash; its bite is a leap of
-   100 from 135, and it holds off at 150 after it; the spit's sounds; The Grave Refuses' own sound, its line shown without the chime. */
+   100 from 135, and it holds off at 150 after it; the spit's sounds; The Grave Refuses' own sound, its line shown without the chime.
+   Step 5f-1 (the playtest, 8 November 2026; no kit change): the play check (HANDOVER.md, "Left for 5f" and "The speed target"), from
+   Testing or the speed test link (?check): it plays by itself, Can't be hurt on, through each place's busiest stretch and then its boss, times
+   it as the test page's speed check times its legs, and shows the result on the title with Email, WhatsApp and Copy; and the playtest's own
+   copy (at its own address, or ?playtest), with no Testing screen.
+   Step 5f-2 (Barney's Pixel: the speed test went black under the HUD after about a minute, the sound playing on): each leg named on the
+   plaque line as it begins; a fall the check's hands don't clear put straight across before any fade, and every leg lifting the fade; no
+   fade at the finish; and the browser resetting the picture's drawing counted in the result. Then the result at once, over the paused
+   scene, with no reload.
+   Step 5f-3 (Barney, 9 November 2026): the screen kept awake during the play check (the browser's wake lock), until its result is left. */
 
 const PLACES = ['night', 'storm', 'dawn', 'mist'];
 const TRACK = { night: 0, storm: 0, dawn: 1, mist: 1 };   // The Long Vigil, then Lantern in the Moor from Dawn's place card
@@ -8881,7 +8934,7 @@ const RUNS = [
   { id: 'infusion', name: 'The Echo Infusion', note: 'Gorged on stolen power. Unleash your full arsenal, but expect no immortalisation.', terms: "Everything you've bought \u00b7 not on the high scores" },
 ];
 function chooseRun(lb, start) {
-  if (!anyBought(lb.progress)) return start('bare');
+  if (!anyBought(lb.progress) || wantCheck(lb)) return start('bare');   // step 5f-1: the play check needs no choice
   const pick = { id: 'infusion' };      // it opens on The Echo Infusion (Barney, 8 November 2026; it was the run last played, at first The Bare Reckoning)
   lb.ui.open((ui) => modesPlaque(lb, ui, start, pick), 1);
 }
@@ -8924,6 +8977,36 @@ const DESIGN_FACING = { dawn: { sickle: -1, bolts: -1 } };   // the kit's: the m
 
 let G = null;                    // the run's state, for the console while testing
 
+// Step 5f-1 (the playtest, Barney, 8 November 2026): friends and family play the playtest's own copy, at its own address (or with ?playtest),
+// which has no Testing screen and no way into it; its speed test link (?check) makes Start game run the play check (below)
+const PLAYTEST = /\/gloam-hallow-playtest\//.test(location.pathname) || /[?&]playtest\b/.test(location.search);
+const CHECK_LINK = /[?&]check\b/.test(location.search);
+const wantCheck = (lb) => CHECK_LINK || !!(lb.test && lb.test.check);
+// the play check's figures (see the play check, at the end): seconds to settle, to time a leg's frames and to time its drawing, as the
+// test page's speed check (WARM, RUN, LOAD), and at most 6 s of play while its drawing is timed; eight frames a refresh then; 30 ways for
+// each place's encounters to fall; the picture settled once at one level for 3.2 s (10 s at most); 150 walked before a stretch's timing;
+// at a boss, the sword swung from within 125 of it and a step back nearer than 90
+const CHECK = { warm: 1.5, run: 4, load: 2.5, loadPlay: 6, reps: 8, seeds: 30, settle: 3.2, settleMax: 10, ahead: 150, reach: 125, near: 90 };
+const CHECK_NAME = 'gh-check:';   // the window's name while a play check's result waits for the title
+const PICTURE_NAMES = { auto: 'Automatic', best: 'Best', faster: 'Faster', fastest: 'Fastest' };
+const PLACE_SHORT = ['Night', 'Blood Red Rain', 'Dawn', 'Mist'];
+const IN = (g, lb) => (g.check ? g.check.inp : lb.input);   // the controls, or the play check's own
+// 5f-3 (Barney, 9 November 2026): the screen kept awake while the play check runs, hands off for about a minute and a half (longer than many
+// phones' sleep timer), from its start until its result is left; asked for again when the page comes back into view (a browser lets go of
+// it whenever the page is hidden); where a browser can't, the check runs as before
+const wake = { lock: null, want: false };
+function wakeHold(on) {
+  wake.want = on;
+  if (!on) { if (wake.lock) { wake.lock.release().catch(() => {}); wake.lock = null; } return; }
+  if (wake.lock || !navigator.wakeLock || document.visibilityState !== 'visible') return;
+  navigator.wakeLock.request('screen').then((l) => {
+    if (!wake.want) { l.release().catch(() => {}); return; }
+    wake.lock = l;
+    l.addEventListener('release', () => { if (wake.lock === l) wake.lock = null; });
+  }).catch(() => { /* refused (low battery, or not allowed here): the check runs on */ });
+}
+document.addEventListener('visibilitychange', () => { if (wake.want) wakeHold(true); });
+
 LanternBox.game({
   id: 'gloam-hallow',
   title: ['Gloam', 'Hallow'],
@@ -8940,12 +9023,15 @@ LanternBox.game({
   save: { version: SAVE_VERSION, fresh: freshRecord, read: readRecord,
     clear: 'Your stolen echo and everything bought at the Echo Shrine will be gone, and the next run starts as a first run, hints and all. High scores and settings stay.' },
   credits: { music: ['Music made with Google Gemini', 'The Long Vigil \u00b7 Lantern in the Moor'], sound: 'Two sound effects from Pixabay; the rest made in code' },
-  onLeave(g, lb) { bankRun(g, lb, false); },   // Restart or Quit to menu: the run's echo is banked all the same
+  onLeave(g, lb) { if (g.check) wakeHold(false); else bankRun(g, lb, false); },   // Restart or Quit to menu: the run's echo is banked all the same (step 5f-1: a play check banks nothing; 5f-3: it lets the screen sleep again)
+  init(lb) { checkShown(lb); },   // step 5f-1: a play check just finished shows its result on the title (5f-2: only if it couldn't in play)
+  onPause(g, lb) { if (g && g.check && g.check.result) lb.ui.open((ui) => checkPlaque(lb, ui, g.check.result, true)); },   // 5f-2: the result, at once, over the paused scene
   onHintsHidden(lb) { lb.progress.hintsHidden = true; lb.saveProgress(); if (G) G.teach = false; },   // step 5e-4: hidden for good
   shrine: { bank: (lb) => lb.progress.echo, open: openShrine },   // kit 0.10.2: on the title's arch; step 5e-1: the Echo Shrine itself
   chooseRun,   // step 5e-1: the choice of run, once anything is bought
-  // Testing (delete for the finished game): where a run starts, and help for trying it out
-  test: { options: [
+  // Testing (delete for the finished game): where a run starts, and help for trying it out; never in the playtest's copy (step 5f-1)
+  test: PLAYTEST ? undefined : { options: [
+    { id: 'check', name: 'Play check', toggle: true, note: 'Start game plays by itself for about two minutes and times each place and its boss. Switch it off to play.' },   // step 5f-1
     { id: 'teach', name: 'Teaching in play', choices: [['saved', 'First run only'], ['always', 'Always']] },   // step 5e-4
     { id: 'spell', name: 'Attack spell', choices: [['shrine', 'As chosen'], ['fire', 'Fireball'], ['bolt', 'Lightning bolt'], ['acid', 'Acid spray']] },   // step 5e-2
     { id: 'place', name: 'Start at', choices: [['night', 'Night'], ['storm', 'Blood Red Rain'], ['dawn', 'Dawn'], ['mist', 'Mist']] },
@@ -8987,6 +9073,7 @@ LanternBox.game({
     const tg = { strong: ['grave', 'reverb', 'marrow'], new: ['quick', 'draught', 'robber', 'steady', 'thief'], ward: ['ward'] }[t.graces] || [];
     tg.forEach((id) => { g.graces[id] = true; g.bound.push(id); }); heldToKit(g, lb);   // Testing: Graces held from the start
     G = g;
+    if (wantCheck(lb)) return startCheck(g, lb);   // step 5f-1: the play check, in place of a run
     loadPlace(g, lb, g.p, { start: 0, half: 1, boss: 2 }[t.where] || 0);
     lb.hud.health(1); lb.hud.mana(1); lb.hud.armour(g.armour); lb.hud.lives(LIVES); hudSpells(g, lb); lb.hud.potCap(g.potCap.health, g.potCap.mana); lb.hud.potions(0, 0);
     lb.fade(1);   // black until the first place card lifts
@@ -8995,56 +9082,61 @@ LanternBox.game({
     return g;
   },
 
-  update(g, lb) {
-    const dt = 1 / 60;
-    g.mt += dt;
-    if (g.mode === 'card') { if (g.out) g.x += WALK * dt; return; }            // play stops for the place card; leaving a place he walks on
-    if (g.mode === 'over') return;
-    if (g.safeT > 0) g.safeT -= dt;
-    g.hurtT += dt; g.wardT += dt; g.flareT += dt;
-    if (g.riseHp) {                    // step 5e-7: The Grave Refuses' health steps up in four as he stands (0.5 s), unless something changes it
-      const r = g.riseHp; r.t += dt;
-      if (g.health !== r.to || r.t >= 0.5) { lb.hud.health(g.health); g.riseHp = null; }
-      else lb.hud.health(r.from + (r.to - r.from) * Math.round(Math.min(1, r.t / 0.5) * 4) / 4);
-    }
-    if (g.atkBuf > 0) g.atkBuf -= dt;
-    if (g.castBuf > 0) g.castBuf -= dt;
-    g.healT += dt;
-    if (lb.input.pressed.attack) g.atkBuf = ATTACK_BUF;   // swings at once on the ground; pressed while busy, as soon as he is free
-    if (lb.input.pressed.cast) g.castBuf = CAST_BUF;      // the same for a cast
-    if (lb.input.pressed.switch) switchSpell(g, lb);
-    if (lb.input.pressed.drinkHealth) drink(g, lb, 'health');   // version 11: a kept potion (a tap on its socket, Q or E)
-    if (lb.input.pressed.drinkMana) drink(g, lb, 'mana');
-    g.drinkT += dt; fillsUpdate(g, lb, dt);
-    if (g.mode !== 'lost' && g.mode !== 'return' && g.mana < 1) { g.mana = Math.min(1, g.mana + MANA_RATE * (g.graces.deep ? GRACE.deep : 1) * dt); hudMana(g, lb, false); }
-    if (!(g.boss && g.boss.st === 'arrive')) moveUpdate(g, lb, dt);   // play stops while the boss comes in
-    bossUpdate(g, lb, dt);
-    monstersUpdate(g, lb, dt);
-    spitUpdate(g, lb, dt);   // step 5e-8: the gobs in flight and their splashes
-    if (g.teach && !g.taught.roll && g.mons.some((m) => alive(m) && m.atk && Math.abs(m.px - g.x) < ROLL_TEACH)) teachOnce(g, lb, 'roll');   // step 5e-4: roll, the first time a monster comes at him
-    shotsUpdate(g, lb, dt);
-    spellsUpdate(g, lb, dt);   // step 5e-2: the bolt, the spray and its patch
-    lootUpdate(g, lb, dt);
-    hurtCheck(g, lb);
-  },
-
-  draw(ctx, g, lb) {
-    const w = lb.world, L = g.L, camX = camAt(g, lb);
-    w.begin(ctx, { level: L, camX });
-    g.cps.forEach((cp, k) => { g.glass[k] = w.checkpoint(cp.x, { lit: cp.lit === true ? true : cp.lit != null ? lb.time - cp.lit : undefined, from: g.lantern || undefined }); });
-    drawLoot(g, lb, w, camX);
-    drawPatches(g, lb, w);   // step 5e-2: the acid's patches, on the ground under everything
-    drawSpitGround(g, lb, w);   // step 5e-8: where each gob will land, and its splash
-    drawBoss(g, lb, w);
-    drawMonsters(g, lb, w, camX, false);
-    const r = drawWanderer(g, lb, w);
-    if (r && r.lantern) { g.lantern = r.lantern; g.chest = r.chest; g.hand = r.hand; }
-    drawMonsters(g, lb, w, camX, true);   // flyers in front of him
-    for (const b of g.gobs) w.gob(b.path, b.t / SPIT.fly);   // step 5e-8: the gobs in flight, in front of him
-    drawShots(g, lb, w);
-    w.end();
-  },
+  // step 5f-1: a play check runs the game's own update and drawing, timed (the play check, below)
+  update(g, lb) { if (g.check) return checkUpdate(g, lb); playUpdate(g, lb); },
+  draw(ctx, g, lb) { if (g.check) return checkDraw(ctx, g, lb); playDraw(ctx, g, lb); },
 });
+
+// a step of play (1/60 s)
+function playUpdate(g, lb) {
+  const dt = 1 / 60, i = IN(g, lb);   // step 5f-1: the controls, or the play check's own
+  g.mt += dt;
+  if (g.mode === 'card') { if (g.out) g.x += WALK * dt; return; }            // play stops for the place card; leaving a place he walks on
+  if (g.mode === 'over') return;
+  if (g.safeT > 0) g.safeT -= dt;
+  g.hurtT += dt; g.wardT += dt; g.flareT += dt;
+  if (g.riseHp) {                    // step 5e-7: The Grave Refuses' health steps up in four as he stands (0.5 s), unless something changes it
+    const r = g.riseHp; r.t += dt;
+    if (g.health !== r.to || r.t >= 0.5) { lb.hud.health(g.health); g.riseHp = null; }
+    else lb.hud.health(r.from + (r.to - r.from) * Math.round(Math.min(1, r.t / 0.5) * 4) / 4);
+  }
+  if (g.atkBuf > 0) g.atkBuf -= dt;
+  if (g.castBuf > 0) g.castBuf -= dt;
+  g.healT += dt;
+  if (i.pressed.attack) g.atkBuf = ATTACK_BUF;   // swings at once on the ground; pressed while busy, as soon as he is free
+  if (i.pressed.cast) g.castBuf = CAST_BUF;      // the same for a cast
+  if (i.pressed.switch) switchSpell(g, lb);
+  if (i.pressed.drinkHealth) drink(g, lb, 'health');   // version 11: a kept potion (a tap on its socket, Q or E)
+  if (i.pressed.drinkMana) drink(g, lb, 'mana');
+  g.drinkT += dt; fillsUpdate(g, lb, dt);
+  if (g.mode !== 'lost' && g.mode !== 'return' && g.mana < 1) { g.mana = Math.min(1, g.mana + MANA_RATE * (g.graces.deep ? GRACE.deep : 1) * dt); hudMana(g, lb, false); }
+  if (!(g.boss && g.boss.st === 'arrive')) moveUpdate(g, lb, dt);   // play stops while the boss comes in
+  bossUpdate(g, lb, dt);
+  monstersUpdate(g, lb, dt);
+  spitUpdate(g, lb, dt);   // step 5e-8: the gobs in flight and their splashes
+  if (g.teach && !g.taught.roll && g.mons.some((m) => alive(m) && m.atk && Math.abs(m.px - g.x) < ROLL_TEACH)) teachOnce(g, lb, 'roll');   // step 5e-4: roll, the first time a monster comes at him
+  shotsUpdate(g, lb, dt);
+  spellsUpdate(g, lb, dt);   // step 5e-2: the bolt, the spray and its patch
+  lootUpdate(g, lb, dt);
+  hurtCheck(g, lb);
+}
+// a frame of the World; t, its time, left out for the kit's own (step 5f-1: the play check draws frames on from it)
+function playDraw(ctx, g, lb, t) {
+  const w = lb.world, L = g.L, camX = camAt(g, lb);
+  w.begin(ctx, { level: L, camX, t });
+  g.cps.forEach((cp, k) => { g.glass[k] = w.checkpoint(cp.x, { lit: cp.lit === true ? true : cp.lit != null ? lb.time - cp.lit : undefined, from: g.lantern || undefined }); });
+  drawLoot(g, lb, w, camX);
+  drawPatches(g, lb, w);   // step 5e-2: the acid's patches, on the ground under everything
+  drawSpitGround(g, lb, w);   // step 5e-8: where each gob will land, and its splash
+  drawBoss(g, lb, w);
+  drawMonsters(g, lb, w, camX, false);
+  const r = drawWanderer(g, lb, w);
+  if (r && r.lantern) { g.lantern = r.lantern; g.chest = r.chest; g.hand = r.hand; }
+  drawMonsters(g, lb, w, camX, true);   // flyers in front of him
+  for (const b of g.gobs) w.gob(b.path, b.t / SPIT.fly);   // step 5e-8: the gobs in flight, in front of him
+  drawShots(g, lb, w);
+  w.end();
+}
 
 function camAt(g, lb) {                // following him, and held at the arena's end while a boss is fought (the camera locks)
   if (g.boss && g.boss.lock) return Math.max(0, g.L.length - lb.W);
@@ -9055,7 +9147,7 @@ function camAt(g, lb) {                // following him, and held at the arena's
 function moveUpdate(g, lb, dt) {
   if (g.mode === 'lost') return lostUpdate(g, lb, dt);
   if (g.mode === 'return') return returnUpdate(g, lb, dt);
-  const i = lb.input, dir = (i.right ? 1 : 0) - (i.left ? 1 : 0);
+  const i = IN(g, lb), dir = (i.right ? 1 : 0) - (i.left ? 1 : 0);
   if (g.mode === 'climb') return climbUpdate(g, lb, dt);
   if (g.mode === 'roll') return rollUpdate(g, lb, dt);
   if (g.mode === 'air') return airUpdate(g, lb, dt, dir, i);
@@ -9853,7 +9945,7 @@ function pathScroll(g) {
   }
 }
 function lootUpdate(g, lb, dt) {
-  const camX = camAt(g, lb), free = g.mode !== 'lost' && g.mode !== 'return';
+  const camX = camAt(g, lb), free = g.mode !== 'lost' && g.mode !== 'return' && !g.check;   // 5f-2: the play check picks nothing up (no plaque lines of its own)
   for (const it of g.loot) {
     if (it.drop != null) { it.drop += dt; if (it.drop >= 0.45) it.drop = null; continue; }   // out of the fallen monster (0.45 s)
     if (it.pick != null) { it.pick += dt; if (it.pick >= 0.5) it.gone = true; continue; }   // lifting into him (0.5 s)
@@ -10338,11 +10430,303 @@ function drawWanderer(g, lb, w) {
     }
     default: {
       if (g.landT < 2 / R) return w.wanderer(g.x, o({ move: 'jump', step: 7 + g.landT * R }));   // landing, then recovering
-      const walking = g.mode === 'ground' && (lb.input.left || lb.input.right) || (g.mode === 'card' && g.out);
+      const walking = g.mode === 'ground' && (IN(g, lb).left || IN(g, lb).right) || (g.mode === 'card' && g.out);
       if (walking) return w.wanderer(g.x, o({ move: 'walk', step: g.out ? g.x / STRIDE : g.walkDist / STRIDE }));
       return w.wanderer(g.x, o({ move: 'idle', step: lb.time * R }));
     }
   }
+}
+
+/* ---------- the play check (step 5f-1; HANDOVER.md, "Left for 5f" and "The speed target") ----------
+   The bar for phones: 30 frames a second, each drawn in 25 ms or less. It plays by itself with Can't be hurt on, timing the game as it plays,
+   its own code and its drawing. Under Picture Automatic it first walks on from Night's start until the picture has settled (one level for
+   3.2 s, or 10 s at most). Then in each place: the path's busiest stretch for this screen's width (the most of the place's own monsters within
+   one screen, over 30 ways its encounters can fall, so the same on every screen of a width), walked through with them all awake and attacking
+   in their own rhythm, as in play; then the boss alone in its arena with what it summons, fought with the sword. Each leg is timed as the test
+   page's speed check times its legs: 1.5 s to settle; frames a second, the slowest 5% and the longest frame over 4 s, with the game's own work
+   a frame; then a frame drawn in, from eight frames played and drawn in each screen refresh, each 1/60 s on (2.5 s, or 6 s of play at most).
+   Its result goes into the window's name and the page reloads to the title (the kit gives a game no way out of a run but its own menus),
+   which shows it with Email, WhatsApp and Copy. It banks nothing, counts as no run and changes nothing saved. */
+const noInput = () => ({ left: false, right: false, up: false, down: false, climb: false, jump: false, attack: false, cast: false, roll: false, pressed: {} });
+function seeded(seed) {                // a small repeatable random number generator (mulberry32)
+  let a = seed >>> 0;
+  return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+function withSeed(seed, fn) { const r = Math.random; Math.random = seeded(seed); try { return fn(); } finally { Math.random = r; } }   // the kit's lb.rand draws on Math.random
+const pct95 = (a) => { const b = a.slice().sort((x, y) => x - y); return b.length ? b[Math.min(b.length - 1, Math.floor(0.95 * b.length))] : 0; };
+function startCheck(g, lb) {
+  Object.assign(g, { safe: true, teach: false, monsTest: 'normal', loop: 1, orders: null });
+  g.check = { legs: [], i: -1, phase: 'settle', t: 0, leadT: 0, inp: noInput(), res: [], work: 0, last: 0, lvl: null, stable: 0, slips: 0, picLost: 0, hooked: false };
+  PLACES.forEach((p, k) => g.check.legs.push({ p: k, boss: false, n: 0 }, { p: k, boss: true, n: 0 }));
+  withSeed(1, () => loadPlace(g, lb, 0, 0));
+  lb.hud.health(1); lb.hud.mana(1); lb.hud.armour(g.armour); lb.hud.lives(LIVES); hudSpells(g, lb); lb.hud.potCap(g.potCap.health, g.potCap.mana); lb.hud.potions(0, 0);
+  lb.fade(0); enterPlace(g, lb); g.mode = 'ground';
+  wakeHold(true);                      // 5f-3: the screen kept awake until its result is left
+  if (lb.settings.picture !== 'auto') nextLeg(g, lb);
+  return g;
+}
+// the most of a place's own monsters within one screen's width, over CHECK.seeds ways its encounters can fall: the seed, how many and where
+function busiest(g, lb, p) {
+  loadPlace(g, lb, p, 0);
+  let best = { seed: 0, n: -1, a: 0, b: 0 };
+  for (let s = 1; s <= CHECK.seeds; s++) {
+    const seed = 1000 * (p + 1) + s;
+    withSeed(seed, () => spawnMonsters(g, lb));
+    const xs = g.mons.map((m) => m.sx).sort((a, b) => a - b);
+    for (let i = 0, j = 0; i < xs.length; i++) {
+      while (j < xs.length && xs[j] - xs[i] <= lb.W) j++;
+      if (j - i > best.n) best = { seed, n: j - i, a: xs[i], b: xs[j - 1] };
+    }
+  }
+  return best;
+}
+function nextLeg(g, lb) {
+  const C = g.check;
+  C.i++;
+  if (C.i >= C.legs.length) return finishCheck(g, lb);
+  const leg = C.legs[C.i], prev = C.legs[C.i - 1];
+  lb.hud.boss(null);
+  if (leg.boss) {                      // at the boss's door: the path's monsters left behind, so it is fought alone, with what it summons
+    withSeed(1000 * (leg.p + 1), () => loadPlace(g, lb, leg.p, 2));
+    g.mons = [];
+  } else {
+    const best = busiest(g, lb, leg.p);
+    leg.n = best.n;
+    withSeed(best.seed, () => spawnMonsters(g, lb));
+    withSeed(best.seed + 500, () => placeLoot(g, lb));
+    g.boss = null;                     // the path only: no boss comes in
+    // the stretch's middle is on screen halfway through the timing (the camera's left edge 0.32 of a screen behind him)
+    C.xWarm = (best.a + best.b) / 2 - 0.18 * lb.W - (CHECK.warm + CHECK.run / 2) * WALK;
+    let x = Math.max(60, C.xWarm - CHECK.ahead);
+    while (g.L.pit(x) || g.L.pit(x + 16) || g.L.pit(x - 16)) x += 8;
+    g.x = x; g.y = surfaceAt(g, x); g.on = pieceUnder(g, g.x, g.y);
+    g.cps.forEach((cp, k) => { if (cp.x < x) { cp.lit = true; g.lastCp = k; } });   // the lanterns behind him already lit
+  }
+  Object.assign(g, { vy: 0, facing: 1, mode: 'ground', mt: 0, walkDist: 0, landT: 9, cast: null, castBuf: 0, atkBuf: 0, lost: null, safeT: 0, hurtT: 9 });
+  lb.fade(0);                          // 5f-2: nothing left black from the leg before
+  if (!prev || prev.p !== leg.p) enterPlace(g, lb);
+  // 5f-2 (Barney's Pixel blacked out under the HUD): each leg named as it begins, under the HUD's top row, without a chime; gone (2 s)
+  // before its timing starts, so a tester sees it working and, if the picture ever goes, which leg it went on
+  lb.hud.line(null, checkWord() + ' ' + (C.i + 1) + ' of ' + C.legs.length + ': ' + (leg.boss ? lb.world.bossNames[PLACES[leg.p]] : PLACE_SHORT[leg.p]), { chime: false });
+  C.phase = 'lead'; C.leadT = 0; C.t = 0;
+}
+const checkWord = () => (PLAYTEST ? 'Speed test' : 'Play check');
+// the play check's hands: on, over a pit and up a face (a jump, or a climb where it is too tall), or at a boss, near enough to strike it
+function drive(g, lb) {
+  const C = g.check, leg = C.legs[C.i], inp = noInput(), b = g.boss;
+  let dir = 1;
+  if (leg && leg.boss && b && b.st !== 'wait') {
+    const d = b.bx - g.x, ad = Math.abs(d), toward = d >= 0 ? 1 : -1;
+    dir = ad > CHECK.reach ? toward : ad < CHECK.near ? -toward : 0;
+    if (b.st === 'fight' && g.mode === 'ground') {
+      if (!dir) g.facing = toward;     // standing, he faces it
+      if (ad <= CHECK.reach + 3 && g.facing === toward) inp.pressed.attack = true;
+    }
+  } else if (leg && !leg.boss && g.x > g.L.length - lb.W) dir = 0;   // a path's stretch never walks on into the boss's arena
+  if (dir > 0) inp.right = true; else if (dir < 0) inp.left = true;
+  if (dir && g.mode === 'ground') {
+    const f0 = g.facing; g.facing = dir; const face = faceAhead(g); g.facing = f0;
+    const pit = g.L.pits.some((q) => { const gap = dir > 0 ? q[0] - g.x : g.x - q[1]; return gap >= 0 && gap <= 8; });
+    if (face || pit) inp.pressed.jump = true;
+  }
+  return inp;
+}
+function checkUpdate(g, lb) {
+  const C = g.check, u0 = performance.now();
+  if (C.done) return;                  // finished: the scene holds still until the page reloads
+  C.inp = drive(g, lb);
+  playUpdate(g, lb);
+  // a fall the hands didn't clear (it shouldn't happen): counted, and he is put straight across, before any fade (5f-2: a fall's fade cut
+  // short by the next leg stayed black)
+  if (g.mode === 'lost') {
+    C.slips++;
+    const P = g.lost, f = P && P.f ? P.f : 1;
+    let x = P && P.pit ? (f > 0 ? P.pit[1] + 12 : P.pit[0] - 12) : g.x;
+    while (g.L.pit(x)) x += 8 * f;
+    Object.assign(g, { x, vy: 0, mode: 'ground', mt: 0, landT: 9, lost: null, facing: f });
+    g.y = surfaceAt(g, x); g.on = pieceUnder(g, g.x, g.y);
+    lb.fade(0);
+  }
+  const leg = C.legs[C.i], b = g.boss;
+  if (leg && C.phase === 'lead') {
+    C.leadT += 1 / 60;
+    if ((leg.boss ? b && b.st === 'fight' : g.x >= C.xWarm) || C.leadT > 15) { C.phase = 'warm'; C.t = 0; }
+  }
+  if (leg && leg.boss && b && b.st === 'fight' && b.hp < b.max * 0.3) { b.hp = b.max * 0.6; lb.hud.boss({ name: b.name, hp: b.hp / b.max }); }   // never beaten
+  C.work += performance.now() - u0;
+}
+function checkDraw(ctx, g, lb) {
+  const C = g.check, now = performance.now(), gap = C.last ? now - C.last : 1000 / 60, live = lb.screen === 'play' && !C.done && gap < 250;
+  C.last = now;
+  // 5f-2: the browser taking the picture's drawing away (a phone's graphics reset: the picture goes black under the HUD, as the kit's
+  // painted layers are lost with it), counted for the result
+  if (!C.hooked) { C.hooked = true; ctx.canvas.addEventListener('contextlost', () => { C.picLost++; }); }
+  const load = live && C.phase === 'load', pre = C.work, d0 = performance.now();
+  playDraw(ctx, g, lb);
+  // while its drawing is timed: eight frames a refresh, each a step of play and a frame drawn 1/60 s on from the last
+  if (load) for (let r = 1; r < CHECK.reps; r++) { checkUpdate(g, lb); C.loadPlay += 1 / 60; playDraw(ctx, g, lb, lb.time + r / 60); }
+  const work = pre + performance.now() - d0;   // the game's own work for this frame: its steps of play and its drawing
+  C.work = 0;
+  if (!live) return;
+  if (C.phase === 'settle') {          // Picture Automatic finding its level
+    const lv = lb.picture.level;
+    if (lv !== C.lvl) { C.lvl = lv; C.stable = 0; } else C.stable += gap;
+    C.t += gap;
+    if (C.stable >= CHECK.settle * 1000 || C.t >= CHECK.settleMax * 1000) nextLeg(g, lb);
+  } else if (C.phase === 'warm') {
+    C.t += gap;
+    if (C.t >= CHECK.warm * 1000) { C.phase = 'run'; C.t = 0; C.cur = { gaps: [], work: [] }; }
+  } else if (C.phase === 'run') {
+    C.cur.gaps.push(gap); C.cur.work.push(work); C.t += gap;
+    if (C.t >= CHECK.run * 1000) { C.phase = 'load'; C.t = 0; C.loadStart = null; C.loadN = 0; C.loadPlay = 0; C.cur.level = lb.picture.level; }
+  } else if (C.phase === 'load') {
+    if (C.loadStart == null) { C.loadStart = now; C.loadN = 0; } else C.loadN++;
+    C.t += gap;
+    if (C.t >= CHECK.load * 1000 || C.loadPlay >= CHECK.loadPlay) {
+      const c = C.cur, leg = C.legs[C.i], sum = c.gaps.reduce((a, b) => a + b, 0), per = (now - C.loadStart) / Math.max(1, C.loadN);
+      C.res.push({ place: leg.p, boss: leg.boss, n: leg.n, fps: c.gaps.length * 1000 / sum, slow: pct95(c.gaps), max: Math.max(...c.gaps),
+        drawn: per / CHECK.reps, keptUp: per < 18, work: c.work.reduce((a, b) => a + b, 0) / c.work.length, level: c.level });   // kept up: eight frames inside one refresh, so the time is an upper limit
+      nextLeg(g, lb);
+    }
+  }
+}
+function finishCheck(g, lb) {
+  const C = g.check, p = lb.picture, s = lb.settings;
+  C.done = true; C.inp = noInput();
+  lb.hud.boss(null);
+  const res = { v: 1, kit: lb.version, day: today(), device: device(), width: p.width, height: p.height, k: p.sharpness, lines: Math.round(lb.W),
+    picture: s.picture, effects: !!s.effects, rm: !!s.reduceMotion, slips: C.slips, picLost: C.picLost, legs: C.res };
+  C.result = readCheck(res);
+  // 5f-2 (Barney's Pixel: the reload to the title left it black for about 10 s): the result shows at once, over the scene paused as P pauses
+  // it (the kit has no call for a game to pause; onPause opens the result in place of the pause plaque, where the menus' keys work and a
+  // switch of app changes nothing); already paused, it opens over the pause plaque. 0.7 s first, so the boss's bar has faded.
+  setTimeout(() => {
+    if (lb.screen === 'play') {
+      const key = (type) => document.dispatchEvent(new KeyboardEvent(type, { code: 'KeyP', key: 'p', bubbles: true }));
+      key('keydown'); key('keyup');
+    } else if (lb.screen === 'paused') lb.ui.open((ui) => checkPlaque(lb, ui, C.result, true));
+    if (lb.screen === 'paused') return;
+    // otherwise, as 5f-1 did: the result kept in the window's name, and the page reloaded to the title, which shows it
+    lb.hud.line(null, checkWord() + ' finished', { chime: false });
+    try { window.name = CHECK_NAME + JSON.stringify(res); } catch (e) { /* the title then shows nothing */ }
+    setTimeout(() => location.reload(), 1000);
+  }, 700);
+}
+// the browser, the system and the graphics chip, as far as the browser says (the test page's)
+function device() {
+  const ua = navigator.userAgent;
+  const m = ua.match(/Silk\/([\d.]+)/) || ua.match(/Edg\/([\d.]+)/) || ua.match(/Firefox\/([\d.]+)/) || ua.match(/Chrome\/([\d.]+)/) || ua.match(/Version\/([\d.]+).*Safari/);
+  const br = m ? (/Silk/.test(m[0]) ? 'Silk' : /Edg/.test(m[0]) ? 'Edge' : /Firefox/.test(m[0]) ? 'Firefox' : /Chrome/.test(m[0]) ? 'Chrome' : 'Safari') + ' ' + m[1].split('.')[0] : 'a browser';
+  const am = ua.match(/Android ([\d.]+)/);
+  const os = am ? 'Android ' + am[1] : /iPhone|iPad/.test(ua) ? 'iOS' : /Windows/.test(ua) ? 'Windows' : /Mac OS X/.test(ua) ? 'macOS' : /CrOS/.test(ua) ? 'ChromeOS' : /Linux/.test(ua) ? 'Linux' : '';
+  let gpu = '';
+  try {
+    const c = document.createElement('canvas').getContext('webgl');
+    if (c) {
+      const e = c.getExtension('WEBGL_debug_renderer_info');
+      gpu = String(e ? c.getParameter(e.UNMASKED_RENDERER_WEBGL) : c.getParameter(c.RENDERER)).replace(/\s+/g, ' ').slice(0, 70);
+      const l = c.getExtension('WEBGL_lose_context');
+      if (l) l.loseContext();
+    }
+  } catch (e) { /* the line goes without it */ }
+  return br + (os ? ' on ' + os : '') + (gpu ? ' · ' + gpu : '');
+}
+// a result waiting in the window's name, read as data (every value checked), or null
+function readCheck(o) {
+  const num = (v, a, b) => (typeof v === 'number' && isFinite(v) ? Math.max(a, Math.min(b, v)) : null), str = (v, n) => (typeof v === 'string' ? v.slice(0, n) : '');
+  if (!o || typeof o !== 'object' || o.v !== 1 || !Array.isArray(o.legs) || !o.legs.length || o.legs.length > 8) return null;
+  const legs = [];
+  for (const q of o.legs) {
+    if (!q || typeof q !== 'object') return null;
+    const r = { place: num(q.place, 0, 3), boss: q.boss === true, n: num(q.n, 0, 99) || 0, fps: num(q.fps, 0, 1000), slow: num(q.slow, 0, 1e5), max: num(q.max, 0, 1e5),
+      drawn: num(q.drawn, 0, 1e5), keptUp: q.keptUp === true, work: num(q.work, 0, 1e5) || 0, level: ['best', 'faster', 'fastest'].indexOf(q.level) >= 0 ? q.level : '' };
+    if (r.place == null || r.fps == null || r.slow == null || r.max == null || r.drawn == null) return null;
+    r.place = Math.round(r.place);
+    legs.push(r);
+  }
+  return { kit: str(o.kit, 20), day: str(o.day, 10), device: str(o.device, 160), width: num(o.width, 0, 1e5) || 0, height: num(o.height, 0, 1e5) || 0, k: num(o.k, 0, 10) || 1,
+    lines: num(o.lines, 0, 1e5) || 0, picture: PICTURE_NAMES[o.picture] ? o.picture : 'auto', effects: o.effects !== false, rm: o.rm === true, slips: num(o.slips, 0, 99) || 0,
+    picLost: num(o.picLost, 0, 99) || 0, legs };
+}
+function checkShown(lb) {
+  let o = null;
+  try {
+    if (typeof window.name === 'string' && window.name.indexOf(CHECK_NAME) === 0) { o = JSON.parse(window.name.slice(CHECK_NAME.length)); window.name = ''; }
+  } catch (e) { o = null; window.name = ''; }
+  const res = readCheck(o);
+  if (res) lb.ui.open((ui) => checkPlaque(lb, ui, res));
+}
+const legName = (lb, r) => PLACE_SHORT[r.place] + (r.boss ? ', ' + lb.world.bossNames[PLACES[r.place]] : ', the path (' + r.n + (r.n === 1 ? ' monster)' : ' monsters)'));
+const drawnIn = (r) => (r.keptUp ? 'under ' : '') + r.drawn.toFixed(1) + ' ms';
+const phonePass = (res) => res.legs.every((r) => r.fps >= 29.5 && r.drawn <= 25);
+const computerPass = (res) => res.legs.every((r) => r.fps >= 58);
+// the result as text, for Email, WhatsApp and Copy
+function checkText(lb, res) {
+  const lvl = res.legs[res.legs.length - 1].level;
+  const lines = [
+    'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + ', ' + res.day + ', kit ' + res.kit,
+    res.device + ' · ' + res.width + ' × ' + res.height + ' at ' + res.k.toFixed(2) + '× · ' + res.lines + ' lines wide · Picture ' + PICTURE_NAMES[res.picture] +
+      (lvl ? ' (' + PICTURE_NAMES[lvl] + ')' : '') + (res.effects ? '' : ' · effects off') + (res.rm ? ' · reduce motion' : '') + (res.slips ? ' · ' + res.slips + ' falls' : '') +
+      (res.picLost ? ' · the picture was lost ' + res.picLost + (res.picLost === 1 ? ' time' : ' times') : ''),
+    'Phone target (30 fps, drawn in 25 ms): ' + (phonePass(res) ? 'passes' : 'does not pass') + '. Computer target (60 fps): ' + (computerPass(res) ? 'passes' : 'does not pass') + '.'];
+  res.legs.forEach((r) => lines.push(legName(lb, r) + ': ' + Math.round(r.fps) + ' fps, drawn in ' + drawnIn(r) + ', slowest 5% ' + Math.round(r.slow) + ' ms, longest ' +
+    Math.round(r.max) + ' ms, work ' + r.work.toFixed(1) + ' ms' + (r.level && r.level !== lvl ? ', Picture ' + PICTURE_NAMES[r.level] : '')));
+  lines.push('', 'My phone, tablet or computer: ');
+  return lines.join('\n');
+}
+// the result on the title (the plaque built from the kit's parts): each place's path and boss, the targets, and the ways to send it
+function checkPlaque(lb, ui, res, inRun) {   // inRun (5f-2): over the paused scene, so Close leaves the run
+  const phone = ui.phone, text = checkText(lb, res), subject = 'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check');
+  const { panel, face } = ui.plaque('gh-ck', 560, 640, phone ? 'gap:6px;padding:12px 16px 12px' : 'gap:10px;padding:18px 20px 14px');
+  const head = ui.heading('gh-ck', PLAYTEST ? 'Speed test' : 'Play check');
+  const t = ui.el('table', 'lb-scores');
+  t.style.fontSize = phone ? '14px' : '15px';
+  const row = (cells, th) => {
+    const tr = document.createElement('tr');
+    cells.forEach((c, k) => { const td = document.createElement(th ? 'th' : 'td'); td.textContent = c; if (th) td.scope = 'col'; if (k === 0) td.style.width = 'auto'; tr.append(td); });
+    return tr;
+  };
+  const thead = document.createElement('thead'), tbody = document.createElement('tbody');
+  thead.append(row(['Place', 'The path', 'Its boss'], true));
+  const cell = (r) => (r ? Math.round(r.fps) + ' fps · ' + drawnIn(r) : '');
+  PLACE_SHORT.forEach((name, p) => {
+    const a = res.legs.find((r) => r.place === p && !r.boss), b = res.legs.find((r) => r.place === p && r.boss);
+    if (a || b) tbody.append(row([name, cell(a), cell(b)]));
+  });
+  t.append(thead, tbody);
+  if (phone) t.querySelectorAll('tr').forEach((tr) => { tr.style.height = '24px'; });
+  const slow = Math.round(Math.max(...res.legs.map((r) => r.slow))), long = Math.round(Math.max(...res.legs.map((r) => r.max)));
+  const key = ui.txt('p', 'lb-note', 'Frames a second · a frame drawn in. Slowest 5% ' + slow + ' ms, longest ' + long + ' ms.');
+  const verdict = ui.txt('p', 'lb-note', 'Phone target (30 fps, drawn in 25 ms): ' + (phonePass(res) ? 'passes' : 'does not pass') + '. Computer target (60 fps): ' + (computerPass(res) ? 'passes' : 'does not pass') + '.');
+  const btns = ui.el('div', 'lb-btns');
+  const email = ui.button('Email', true), whatsapp = ui.button('WhatsApp'), copy = ui.button('Copy'), close = ui.button('Close');
+  btns.append(email, whatsapp, copy, close);
+  if (phone) btns.querySelectorAll('button').forEach((b) => { b.style.minWidth = '0'; });
+  face.append(head, t, key, verdict);
+  if (res.picLost) face.append(ui.txt('p', 'lb-note', 'The picture went black ' + (res.picLost === 1 ? 'once' : res.picLost + ' times') + ' during the test (the browser reset its drawing).'));   // 5f-2
+  face.append(btns);
+  const open = (url) => { lb.sfx('confirm'); location.href = url; };
+  const toEmail = () => open('mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(text.replace(/\n/g, '\r\n')));
+  const toWhatsApp = () => open('whatsapp://send?text=' + encodeURIComponent(text));   // the app's own link (a web address in a game is against the build's rules)
+  const toCopy = () => {
+    lb.sfx('confirm');
+    const done = () => { copy.textContent = 'Copied'; };
+    const pick = () => {               // no clipboard: the text, selected, to copy by hand
+      let box = face.querySelector('textarea');
+      if (!box) {
+        box = document.createElement('textarea');
+        box.readOnly = true; box.value = text; box.setAttribute('aria-label', 'The result');
+        box.style.cssText = 'width:100%;height:' + (phone ? 64 : 96) + 'px;font:400 12px/1.35 var(--font-text);color:var(--text);background:transparent;border:1px solid var(--brass);padding:6px;resize:none';
+        face.insertBefore(box, btns);
+      }
+      box.focus(); box.select(); copy.textContent = 'Selected: copy it';
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, pick); else pick();
+  };
+  // Close: on the title, back to it; over the paused scene (5f-2), out of the run: the playtest's own page (small, so at once), or in
+  // Barney's copies the page reloaded to the title (the kit has no call for a game to leave a run)
+  const shut = () => { lb.sfx('back'); wakeHold(false); if (!inRun) ui.close(); else if (PLAYTEST) location.href = './'; else location.reload(); };   // 5f-3: the screen may sleep again
+  return { panel, items: [{ el: email, activate: toEmail }, { el: whatsapp, activate: toWhatsApp }, { el: copy, activate: toCopy }, { el: close, activate: shut }], opts: { back: shut } };
 }
 </script>
 </body>

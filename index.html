@@ -29,11 +29,17 @@
   <p>Test builds of Gloam Hallow and the kit's test page, for trying on any device. Not finished, and not for sharing.</p>
   <p class="ver" id="ver">Kit version: checking…</p>
   <a class="card" href="gloam-hallow.html"><b>Gloam Hallow</b><span>The game, with its Testing screen in Settings.</span></a>
+  <a class="card" href="gloam-hallow.html?check"><b>Play check</b><span>Gloam Hallow plays itself for about two minutes, through all four places and their bosses, then gives a result to copy.</span></a>
   <a class="card" href="lb-sampler.html"><b>Test page</b><span>Every drawing part and screen, and the speed check.</span></a>
   <h2>On a phone</h2>
   <ul>
     <li>Hold it sideways.</li>
     <li>For full screen on an iPhone, open Gloam Hallow, then Share, then Add to Home Screen, and play it from its icon. An iPhone won't let a web page fill the screen, so its full-screen button tells you this.</li>
+  </ul>
+  <h2>The play check</h2>
+  <ul>
+    <li>Tap Play check, then Start game, and leave it be: it plays by itself, and keeps the screen awake. When it finishes, copy the result.</li>
+    <li>It is the same as Settings, Testing, Play check in the game.</li>
   </ul>
   <h2>The speed check</h2>
   <ul>
@@ -51,7 +57,7 @@
   fetch('version.txt', { cache: 'no-store' }).then((r) => (r.ok ? r.text() : Promise.reject())).then((t) => {
     const v = t.trim();
     document.getElementById('ver').textContent = 'Kit version on the server: ' + v;
-    document.querySelectorAll('a.card').forEach((a) => { a.href = a.getAttribute('href').split('?')[0] + '?v=' + encodeURIComponent(v); });
+    document.querySelectorAll('a.card').forEach((a) => { const h = a.getAttribute('href'); a.href = h + (h.includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(v); });
   }).catch(() => { document.getElementById('ver').textContent = 'Kit version: could not check (offline?)'; });
 </script>
 </body>
