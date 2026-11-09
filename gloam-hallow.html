@@ -1098,7 +1098,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.20.5';
+  const VERSION = '0.20.6';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -1710,11 +1710,13 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // wanderer's cloak and belt ripple to the step of the move he is making, not to a clock that never repeats, and 32 pictures of him are
 // kept, not 8, so a step he has made before is drawn from its kept picture; mon (kit 0.20.5): monsters standing or hovering share
 // their pictures by kind, their waiting animation looping every 24 of its steps (the mouth-hat's hop stepped 29 times a hop, about 12
-// a second), so each pose is painted once for all of its kind (attacking, hit or rising monsters, and Reduce motion, as before).
+// a second), so each pose is painted once for all of its kind (attacking, hit or rising monsters, and Reduce motion, as before);
+// tree (kit 0.20.6): the Gaping Tree's picture stepped a third as often (its sway and breathing about 1.6 times a second, not 4.8),
+// and its branch's sweep 12 times a second, as boss12 does.
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon")};})();
-const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared"].filter(Boolean);
+  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),tree:w.includes("tree")};})();
+const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.tree&&"the Gaping Tree redrawn less often"].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -5598,7 +5600,7 @@ function bsMove(lv,name,u,A){const bx=A.bx,wx=A.wx,G=A.G,t=A.t,fx=[],r={X:bx,st:
 let BOSS_SW=null;                                   // the moor mother's claw arm, when a move sets it (play.js swapped Math.sin for this)
 const BSK={};
 function bsDrawKit(x,S,lv,X,Y,t,opts,st,br){const a=st.alpha==null?1:st.alpha;if(a<=0.01)return;
-  const step=opts.rm?-KIT.frame:Math.floor(t*(BOSS_STEP[lv]||1)*8),key=step+"|"+(st.sickle==null?"":st.sickle.toFixed(4))+"|"+(br&&br.grow>0?JSON.stringify(br):"")+"|"+FX;
+  const step=opts.rm?-KIT.frame:Math.floor(t*(BOSS_STEP[lv]||1)*8/(TRIAL.tree&&lv==="mist"?3:1)),key=step+"|"+(st.sickle==null?"":st.sickle.toFixed(4))+"|"+(br&&br.grow>0?JSON.stringify(br):"")+"|"+FX;
   let K=BSK[lv];if(!K||K.S!==S){K=BSK[lv]={S,B:mk(Math.ceil(460*S),Math.ceil(330*S)),bcache:{},key:null};}
   // kit 0.20.0: a hit's flare is a second picture of the same pose, kept beside the first, so a blow and its end don't each repaint the boss
   const fl=!!st.flare;if(fl&&!K.BF){K.BF=mk(K.B.width,K.B.height);K.keyF=null;}
@@ -5872,7 +5874,7 @@ function makeTools(env){
         _S0=s;const r=name?bsMove(lv,name,u,{bx:X0,wx:m(at),G:f.gy,t:f.t,targets:tg}):{X:X0,st:lv==="night"?{dy:-5*Math.sin(f.t*1.7)}:{},hot:0,fx:[],phase:null};
         // kit 0.20.2, the boss12 trial: a sweep's pose (the sickle, the branch) taken 12 times a second, so its picture is repainted that often;
         // where it is, its phase and its warnings stay smooth
-        if(TRIAL.boss12&&name&&name!=="arrive"&&(r.br||r.st.sickle!=null)){const q=bsMove(lv,name,Math.floor(u*12)/12,{bx:X0,wx:m(at),G:f.gy,t:f.t,targets:tg});
+        if((TRIAL.boss12||(TRIAL.tree&&lv==="mist"))&&name&&name!=="arrive"&&(r.br||r.st.sickle!=null)){   // kit 0.20.6: the tree trial, for its branchconst q=bsMove(lv,name,Math.floor(u*12)/12,{bx:X0,wx:m(at),G:f.gy,t:f.t,targets:tg});
           r.st.sickle=q.st.sickle;r.br=q.br;}
         if(o.hit!=null&&o.hit>=0&&o.hit<0.13){r.st.dx=(r.st.dx||0)+BS_HIT[lv]*(r.st.flip||1);r.st.flare=true;}
         const Y=o.y==null?(lv==="dawn"?f.gy(r.X)+4:f.gy(X0)+4):o.y; // as the fights place them: the moor mother on the ground where she is, the others where they stand
@@ -8467,7 +8469,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
          a game times its own drawing, leaves that frame out of Automatic's timing.
        Kit 0.20.2: trials, the look's trade-offs switched on only by the page's address (?trial=, see TRIAL); lb.trials names those on, in
          words, for a check's result (an empty list without ?trial). Kit 0.20.3: the Testing screen in one to three columns, to fit.
-         Kit 0.20.4: the hero trial. Kit 0.20.5: the mon trial. */
+         Kit 0.20.4: the hero trial. Kit 0.20.5: the mon trial. Kit 0.20.6: the tree trial. */
     const api = {
       H: H, version: VERSION, touch: touch, input: input, hud: hud, sfx: sfx, world: world, color: colour,
       get W() { return V.W; },
