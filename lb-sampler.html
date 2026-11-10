@@ -1098,7 +1098,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.20.7';
+  const VERSION = '0.20.8';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -1712,11 +1712,12 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // their pictures by kind, their waiting animation looping every 24 of its steps (the mouth-hat's hop stepped 29 times a hop, about 12
 // a second), so each pose is painted once for all of its kind (attacking, hit or rising monsters, and Reduce motion, as before);
 // tree (kit 0.20.6): the Gaping Tree's picture stepped a third as often (its sway and breathing about 1.6 times a second, not 4.8),
-// and its branch's sweep 12 times a second, as boss12 does.
+// and its branch's sweep 12 times a second, as boss12 does; rim (kit 0.20.8): the thin rim kept pictures get when the glows are off
+// (Fastest) stamped from a coloured copy of the silhouette, with no shadows (see hardRim).
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),tree:w.includes("tree")};})();
-const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.tree&&"the Gaping Tree redrawn less often"].filter(Boolean);
+  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),tree:w.includes("tree"),rim:w.includes("rim")};})();
+const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.tree&&"the Gaping Tree redrawn less often",TRIAL.rim&&"the thin rim stamped without shadows"].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -2741,7 +2742,7 @@ class Scene{
     const put=()=>c.drawImage(T,sx,sy,sw,sh,dx+sx,dy+sy,sw,sh);
     if(FX){c.shadowColor=rgba(o.dcol,0.95);c.shadowBlur=2.5*s;put();   // the rim
     c.shadowColor=rgba(o.dglow,0.6);c.shadowBlur=11*s;put();}    // the glow
-    else hardRim(c,rgba(o.dcol,0.95),s,put);
+    else hardRim(c,rgba(o.dcol,0.95),s,put,T,(img)=>c.drawImage(img,sx,sy,sw,sh,dx+sx,dy+sy,sw,sh));
     c.shadowColor="transparent";c.shadowBlur=0;put();
     c.setTransform(s,0,0,s,dx+130*s,dy+230*s);det(c,o);
     c.restore();
@@ -3069,8 +3070,17 @@ Object.assign(Scene.prototype,{
     let by=0;for(const k in this.tiles)for(const tl of this.tiles[k].values())by+=tl.bytes;KIT.bytes=by;
   }
 });
-function hardRim(c,col,s,put){ // Effects off: a cut-out's rim as a thin hard line, its silhouette stamped round itself in the rim's colour
-  const r=Math.max(1,1.2*s);c.shadowColor=col;c.shadowBlur=0;
+// kit 0.20.8, the rim trial: the silhouette coloured once into a kept canvas of its size and stamped round itself 8 times, with no
+// shadows (a phone's graphics chip sets up a layer for each shadowed stamp); the same stamps in the same order, a few shades apart
+// along the rim's outer edge. src: the picture put draws; draw(img) draws img as put draws src
+const RIM_E=new Map();
+function hardRim(c,col,s,put,src,draw){ // Effects off: a cut-out's rim as a thin hard line, its silhouette stamped round itself in the rim's colour
+  const r=Math.max(1,1.2*s);
+  if(TRIAL.rim&&src&&draw){const k=src.width+"x"+src.height;let E=RIM_E.get(k);if(!E){E=mk(src.width,src.height);RIM_E.set(k,E);}
+    const e=E.getContext("2d");e.setTransform(1,0,0,1,0,0);e.globalCompositeOperation="copy";e.drawImage(src,0,0);e.globalCompositeOperation="source-in";e.fillStyle=col;e.fillRect(0,0,E.width,E.height);e.globalCompositeOperation="source-over";
+    for(let i=0;i<8;i++){const a=i/8*Math.PI*2;c.save();c.translate(Math.cos(a)*r,Math.sin(a)*r);draw(E);c.restore();draw(src);}
+    return;}
+  c.shadowColor=col;c.shadowBlur=0;
   for(let i=0;i<8;i++){const a=i/8*Math.PI*2;c.shadowOffsetX=Math.cos(a)*r;c.shadowOffsetY=Math.sin(a)*r;put();}
   c.shadowOffsetX=0;c.shadowOffsetY=0;c.shadowColor="transparent";
 }
@@ -4127,7 +4137,7 @@ function bossInto(c,s,lv,t,o,dx,dy,nod,noAura,cache,look){ // a reworked boss: i
   c.setTransform(1,0,0,1,0,0);
   if(FX){c.shadowColor=rgba(o.dcol,0.95);c.shadowBlur=2.5*s;c.drawImage(T,dx,dy);   // the rim, as a monster's
   c.shadowColor=rgba(o.dglow,0.6);c.shadowBlur=11*s;c.drawImage(T,dx,dy);}    // the glow, as a monster's
-  else hardRim(c,rgba(o.dcol,0.95),s,()=>c.drawImage(T,dx,dy));
+  else hardRim(c,rgba(o.dcol,0.95),s,()=>c.drawImage(T,dx,dy),T,(img)=>c.drawImage(img,dx,dy));
   c.shadowColor="transparent";c.shadowBlur=0;
   if(N.edge){const E=K.edge,ec=E.getContext("2d");ec.setTransform(1,0,0,1,0,0);ec.globalCompositeOperation="source-over";ec.clearRect(0,0,E.width,E.height);ec.drawImage(T,0,0);
     ec.globalCompositeOperation="source-in";ec.fillStyle=LV[lv].edge;ec.fillRect(0,0,E.width,E.height);c.drawImage(E,dx+2*s,dy-2*s);}
@@ -5633,7 +5643,7 @@ function bsDrawKit(x,S,lv,X,Y,t,opts,st,br){const a=st.alpha==null?1:st.alpha;if
       uc.setTransform(1,0,0,1,0,0);uc.clearRect(0,0,U.width,U.height);uc.setTransform(S,0,0,S,230*S,300*S);uc.fillStyle=INK;uc.strokeStyle=INK;uc.lineCap="round";uc.lineJoin="round";
       bsBranchLocal(br)(uc);uc.fillStyle=INK;uc.strokeStyle=INK;const det=BOSS[lv](uc,t,opts.rm,BOSS_NOD,BOSS_LOOK);
       const rim=(o2)=>{if(FX){bc.shadowColor=rgba(o2.dcol,0.95);bc.shadowBlur=2.5*S;bc.drawImage(U,0,0);bc.shadowColor=rgba(o2.dglow,0.6);bc.shadowBlur=11*S;bc.drawImage(U,0,0);bc.shadowColor="transparent";bc.shadowBlur=0;}
-        else hardRim(bc,rgba(o2.dcol,0.95),S,()=>bc.drawImage(U,0,0));}; // the kit: Effects off, the thin hard rim
+        else hardRim(bc,rgba(o2.dcol,0.95),S,()=>bc.drawImage(U,0,0),U,(img)=>bc.drawImage(img,0,0));}; // the kit: Effects off, the thin hard rim
       rim(opts);if(st.flare)rim(Object.assign({},opts,{dcol:"#ffb070"}));bc.drawImage(U,0,0);bc.save();bc.setTransform(S,0,0,S,230*S,300*S);det(bc,opts);bc.restore();}
     else{one(opts);if(st.flare)one(Object.assign({},opts,{dcol:"#ffb070"}));}
     if(fl)K.keyF=key;else K.key=key;KIT.poses++;}
@@ -8492,7 +8502,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
        Kit 0.20.2: trials, the look's trade-offs switched on only by the page's address (?trial=, see TRIAL); lb.trials names those on, in
          words, for a check's result (an empty list without ?trial). Kit 0.20.3: the Testing screen in one to three columns, to fit.
          Kit 0.20.4: the hero trial. Kit 0.20.5: the mon trial. Kit 0.20.6: the tree trial.
-         Kit 0.20.7: monsters waiting share their pictures by kind (no change you'd see). */
+         Kit 0.20.7: monsters waiting share their pictures by kind (no change you'd see). Kit 0.20.8: the rim trial. */
     const api = {
       H: H, version: VERSION, touch: touch, input: input, hud: hud, sfx: sfx, world: world, color: colour,
       get W() { return V.W; },
