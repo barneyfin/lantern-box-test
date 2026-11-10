@@ -35,7 +35,7 @@
   <a class="card" href="lb-sampler.html"><b>Test page</b><span>Every drawing part and screen, and the speed check.</span></a>
   <h2>Trials for slow devices</h2>
   <p>Each runs the play check with one change to the look, to see what it saves on a slow device. Run the Play check above first, as it is, to compare. Leave Picture on Automatic. About two minutes each: copy each result. A trial lasts only while its page is open (nothing is saved): open the game from this page again and it's back to normal.</p>
-  <a class="card trial" href="gloam-hallow.html?check&amp;trial=mon,tree,cloud,hero"><b>Monsters, tree, clouds and wanderer</b><span>The four that mattered most: monsters' waiting poses shared, the Gaping Tree redrawn less often, no light through the clouds, and the wanderer's ripple with his steps.</span></a>
+  <a class="card trial" href="gloam-hallow.html?check&amp;trial=mon,cloud,hero"><b>Monsters, clouds and wanderer</b><span>Monsters' waiting poses shared, no light through the clouds, and the wanderer's ripple with his steps (the Gaping Tree is now stepped at Fastest in the game itself).</span></a>
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=cloud"><b>No light through the clouds</b><span>Night and Blood Red Rain without the light shining through the clouds.</span></a>
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=boss12"><b>Bosses' sweeps 12 a second</b><span>The Moor Mother's sickle and the Gaping Tree's branch redrawn 12 times a second, as attacking monsters are at Fastest.</span></a>
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=lines540"><b>Softer picture: 540 lines</b><span>The picture never more than 540 lines tall.</span></a>
@@ -44,7 +44,6 @@
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=nohud"><b>HUD hidden</b><span>No HUD, to see what it still costs.</span></a>
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=hero"><b>The wanderer's ripple with his steps</b><span>His cloak and belt ripple with each step of what he's doing, so a step he has made before isn't drawn again.</span></a>
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=mon"><b>Monsters' waiting poses shared</b><span>Monsters standing or hovering share one picture per pose with all of their kind, their waiting animation looping.</span></a>
-  <a class="card trial" href="gloam-hallow.html?check&amp;trial=tree"><b>The Gaping Tree redrawn less often</b><span>Its sway and breathing stepped about 1.6 times a second, not 4.8, and its branch's sweep 12 times a second. Fixed in 0.20.10 (it left the tree undrawn while its branch swept): worth running again.</span></a>
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=cloud,boss12,few,lines540"><b>All together</b><span>The clouds, the sweeps, fewer flyers and 540 lines (not the HUD or the wanderer).</span></a>
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=cloud,boss12,few,lines540,hero"><b>All together, with the wanderer</b><span>All together, and the wanderer's ripple with his steps.</span></a>
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=cloud,boss12,few,lines540,hero,mon"><b>Everything</b><span>Every trial but the HUD, the monsters' waiting poses too: as fast as these trials get it.</span></a>
@@ -73,7 +72,7 @@
   // the version on the server, never a kept copy; the links carry it, so a phone opens the new files at once
   // this page's own version (kept the same as version.txt with every push): a phone may show a kept copy of this page for up to
   // 10 minutes, so when the server's version is newer the page loads itself afresh at a new address, once for each version
-  const PAGE = '0.20.11';
+  const PAGE = '0.20.12';
   fetch('version.txt', { cache: 'no-store' }).then((r) => (r.ok ? r.text() : Promise.reject())).then((t) => {
     const v = t.trim(), tried = (/[?&]fresh=([^&]*)/.exec(location.search) || [])[1];
     if (v !== PAGE && tried !== encodeURIComponent(v)) { location.replace(location.pathname + '?fresh=' + encodeURIComponent(v)); return; }

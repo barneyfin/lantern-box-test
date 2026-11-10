@@ -1098,7 +1098,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.20.11';
+  const VERSION = '0.20.12';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -1716,8 +1716,8 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // (Fastest) stamped from a coloured copy of the silhouette, with no shadows (see hardRim).
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),tree:w.includes("tree")};})();   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
-const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.tree&&"the Gaping Tree redrawn less often"].filter(Boolean);
+  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon")};})();   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
+const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared"].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -2860,6 +2860,15 @@ let QUICK=false;                           // kit 0.20.0: Picture at Fastest, se
 // a boss's picture moves only with its pose time, pz(t*rate): rate*8 steps a second (night 5.6, storm 6.4, dawn 5.6, mist 4.8),
 // so it is repainted exactly when its pose steps. The rates are the boss functions' own (BOSS.night ... BOSS.mist): keep them in step
 const BOSS_STEP={night:0.7,storm:0.8,dawn:0.7,mist:0.6};
+// kit 0.20.12 (design system 16, section 1; play.js's TREE16 and treeHeld): at Picture Fastest only, the Gaping Tree's sway and breathing
+// (the crown and limbs, the trunk's top, the moss, the maw) get a new picture TREE_RATE times a second, its clock held for each
+// (bsDrawKit), and its branch and glowing tip move in 12 steps a second, the branch attack's own clock in twelfths (world.boss). Where it
+// stands, its tilt, its attacks' timing and what they hurt stay smooth; Best, Faster, Effects off at them and Reduce motion as before.
+// TREE_RATE is the one switch: 2.4 (every second puppet step of the 4.8) for the Fire's check, then 2.4 or 1.6 as the bar picks
+// (35 fps or more, frames drawn in 20 ms or less, keeps 2.4).
+const TREE16={best:4.8,sway:2.4,fallback:1.6,branch:12};
+const TREE_RATE=TREE16.sway;
+function treeHeld(t,rate){return rate>=TREE16.best?t:Math.floor(t*rate+1e-9)/rate+1e-6;}
 // version 8: the side-on crow (crowSide) beats with cos(ph), not sin(ph), and the moor's near crows are drawn up to 1.43 times
 // their size, so it is painted at 1.5 (the box holds every wing position, worked out from its points)
 const FLY_BOX={bat:[-22,-16,22,12],crow:[-20,-14,14,11],crowSide:[-16,-20,15,16]},FLY_REF={bat:1.2,crow:1.2,crowSide:1.5};
@@ -5637,7 +5646,8 @@ function bsMove(lv,name,u,A){const bx=A.bx,wx=A.wx,G=A.G,t=A.t,fx=[],r={X:bx,st:
 let BOSS_SW=null;                                   // the moor mother's claw arm, when a move sets it (play.js swapped Math.sin for this)
 const BSK={};
 function bsDrawKit(x,S,lv,X,Y,t,opts,st,br){const a=st.alpha==null?1:st.alpha;if(a<=0.01)return;
-  const step=opts.rm?-KIT.frame:Math.floor(t*(BOSS_STEP[lv]||1)*8/(TRIAL.tree&&lv==="mist"?3:1)),key=step+"|"+(st.sickle==null?"":st.sickle.toFixed(4))+"|"+(br&&br.grow>0?JSON.stringify(br):"")+"|"+FX;
+  if(QUICK&&lv==="mist"&&!opts.rm)t=treeHeld(t,TREE_RATE);   // kit 0.20.12: the Gaping Tree's clock held at Fastest (design system 16)
+  const step=opts.rm?-KIT.frame:Math.floor(t*(BOSS_STEP[lv]||1)*8),key=step+"|"+(st.sickle==null?"":st.sickle.toFixed(4))+"|"+(br&&br.grow>0?JSON.stringify(br):"")+"|"+FX;
   let K=BSK[lv];if(!K||K.S!==S){K=BSK[lv]={S,B:mk(Math.ceil(460*S),Math.ceil(330*S)),bcache:{},key:null};}
   // kit 0.20.0: a hit's flare is a second picture of the same pose, kept beside the first, so a blow and its end don't each repaint the boss
   const fl=!!st.flare;if(fl&&!K.BF){K.BF=mk(K.B.width,K.B.height);K.keyF=null;}
@@ -5946,7 +5956,7 @@ function makeTools(env){
         _S0=s;const r=name?bsMove(lv,name,u,{bx:X0,wx:m(at),G:f.gy,t:f.t,targets:tg}):{X:X0,st:lv==="night"?{dy:-5*Math.sin(f.t*1.7)}:{},hot:0,fx:[],phase:null};
         // kit 0.20.2, the boss12 trial: a sweep's pose (the sickle, the branch) taken 12 times a second, so its picture is repainted that often;
         // where it is, its phase and its warnings stay smooth
-        if((TRIAL.boss12||(TRIAL.tree&&lv==="mist"))&&name&&name!=="arrive"&&(r.br||r.st.sickle!=null)){const q=bsMove(lv,name,Math.floor(u*12)/12,{bx:X0,wx:m(at),G:f.gy,t:f.t,targets:tg});   // kit 0.20.6: the tree trial, for its branch
+        if((TRIAL.boss12||(QUICK&&lv==="mist"&&!f.opt.rm))&&name&&name!=="arrive"&&(r.br||r.st.sickle!=null)){const q=bsMove(lv,name,Math.floor(u*TREE16.branch)/TREE16.branch,{bx:X0,wx:m(at),G:f.gy,t:f.t,targets:tg});   // kit 0.20.12: the Gaping Tree's branch at Fastest (design system 16; the tree trial since 0.20.6)
           // (kit 0.20.10: this line had been lost behind that comment, so from 0.20.6 to 0.20.9 the tree and boss12 trials threw in a sweep and its frames went undrawn)
           r.st.sickle=q.st.sickle;r.br=q.br;}
         if(o.hit!=null&&o.hit>=0&&o.hit<0.13){r.st.dx=(r.st.dx||0)+BS_HIT[lv]*(r.st.flip||1);r.st.flare=true;}
