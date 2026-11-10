@@ -1098,7 +1098,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.20.6';
+  const VERSION = '0.20.7';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2770,6 +2770,28 @@ class Scene{
         return;}}
     const bb=MON_BOX[m.kind]||[-128,-228,128,18],G=18,id=m.id||(m.kind+"|"+m.ph),bk=(typeof MON_BASE!=="undefined"&&MON_BASE[m.kind])||m.kind,moving=flare||(m.P&&Object.keys(m.P).length>0),r=moving?0:POSE_RATE[bk];
     const step=(r&&!o.rm)?Math.floor((r*t+m.ph)*8):-KIT.frame;
+    // kit 0.20.7 (the plan for slow devices: the Fire's paths were mostly waiting monsters each repainting its own picture): a waiting
+    // monster's picture depends only on its kind, its whole puppet step and the glows (its clock and its phase reach the drawing only
+    // through pz(rate*t+phase), which is this step), so every monster of a kind shares it: the first to reach a step paints it, the others
+    // draw it when they get there. The same pixels as each painting its own. A kind with more than one monster drawn last frame keeps
+    // its last 10 steps (a game's phases from 0 to 1 keep its monsters within 8 steps of each other), a kind with one keeps 2; the
+    // canvas let go is painted over for the next step
+    if(r&&!o.rm){
+      if(!this.share)this.share=new Map();
+      let K=this.share.get(m.kind);if(!K){K={pics:new Map(),n:0,seen:0,nf:-1};this.share.set(m.kind,K);}
+      if(K.nf!==KIT.frame){K.n=K.seen;K.seen=0;K.nf=KIT.frame;}   // how many of its kind were drawn in its last frame
+      K.seen++;
+      const key=(FX?1:0)+"|"+step;let A=K.pics.get(key);
+      if(A)K.pics.delete(key);   // put back below, as the most recently used
+      else{
+        const cap=K.n>1?10:2,w=Math.max(1,Math.ceil((bb[2]-bb[0]+2*G)*s)),h=Math.max(1,Math.ceil((bb[3]-bb[1]+2*G)*s));let old=null;
+        while(K.pics.size>=cap){const k0=K.pics.keys().next().value;old=K.pics.get(k0);K.pics.delete(k0);}
+        A=old&&old.width===w&&old.height===h?old:mk(w,h);
+        const c=A.getContext("2d");c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,A.width,A.height);
+        into(c,Math.round((G-130-bb[0])*s),Math.round((G-230-bb[1])*s));KIT.poses++;}
+      K.pics.set(key,A);
+      ctx.drawImage(A,Math.round((m.X+bb[0]-G)*s)/s,Math.round((m.Y+bb[1]-G)*s)/s,A.width/s,A.height/s);
+      return;}
     let E=this.poses.get(id);
     // kit 0.9.1: a fresh canvas when the name now belongs to another kind (a new run in the same place names its monsters afresh; a
     // walker drawn into a flyer's smaller canvas showed only its head and chest, floating)
@@ -2863,7 +2885,7 @@ function drawFairyKit(x,fl,t,lv,s,dx){ // as drawFairy, but each light is the pa
   x.globalAlpha=1;
 }
 Object.assign(Scene.prototype,{
-  kitReset(key){this.kitKey=key;this.tiles={};this.playKey=null;this.poses=new Map();this.atk=new Map();this.idleP=null;this.sky=null;this.vig=null;this.scr=null;this.bossC=null;},
+  kitReset(key){this.kitKey=key;this.tiles={};this.playKey=null;this.poses=new Map();this.atk=new Map();this.idleP=null;this.share=null;this.sky=null;this.vig=null;this.scr=null;this.bossC=null;},
   scratch(s){ // two working canvases, a tile plus its margins wide
     const m=tileM(s),w=TWP+2*m,h=Math.ceil(LH*s);
     if(!this.scr||this.scr.w!==w||this.scr.h!==h)this.scr={w,h,m,d:TMP-m,a:mk(w,h),b:mk(w,h)};
@@ -8469,7 +8491,8 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
          a game times its own drawing, leaves that frame out of Automatic's timing.
        Kit 0.20.2: trials, the look's trade-offs switched on only by the page's address (?trial=, see TRIAL); lb.trials names those on, in
          words, for a check's result (an empty list without ?trial). Kit 0.20.3: the Testing screen in one to three columns, to fit.
-         Kit 0.20.4: the hero trial. Kit 0.20.5: the mon trial. Kit 0.20.6: the tree trial. */
+         Kit 0.20.4: the hero trial. Kit 0.20.5: the mon trial. Kit 0.20.6: the tree trial.
+         Kit 0.20.7: monsters waiting share their pictures by kind (no change you'd see). */
     const api = {
       H: H, version: VERSION, touch: touch, input: input, hud: hud, sfx: sfx, world: world, color: colour,
       get W() { return V.W; },
