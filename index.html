@@ -36,8 +36,6 @@
   <h2>Trials for slow devices</h2>
   <p>Each runs the play check with one change to the look, to see what it saves on a slow device. Run the Play check above first, as it is, to compare. Leave Picture on Automatic. About two minutes each: copy each result. A trial lasts only while its page is open (nothing is saved): open the game from this page again and it's back to normal.</p>
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=mon,tree,cloud,hero"><b>Monsters, tree, clouds and wanderer</b><span>The four that mattered most: monsters' waiting poses shared, the Gaping Tree redrawn less often, no light through the clouds, and the wanderer's ripple with his steps.</span></a>
-  <a class="card trial" href="gloam-hallow.html?check&amp;trial=branch"><b>The tree kept while its branch moves</b><span>While the Gaping Tree's branch grows and sweeps, the tree is kept and only the branch is drawn fresh, at Fastest. Looks the same.</span></a>
-  <a class="card trial" href="gloam-hallow.html?check&amp;trial=branch,tree"><b>The branch, and the tree redrawn less often</b><span>The tree kept while its branch moves, with the Gaping Tree redrawn less often.</span></a>
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=cloud"><b>No light through the clouds</b><span>Night and Blood Red Rain without the light shining through the clouds.</span></a>
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=boss12"><b>Bosses' sweeps 12 a second</b><span>The Moor Mother's sickle and the Gaping Tree's branch redrawn 12 times a second, as attacking monsters are at Fastest.</span></a>
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=lines540"><b>Softer picture: 540 lines</b><span>The picture never more than 540 lines tall.</span></a>
@@ -75,7 +73,7 @@
   // the version on the server, never a kept copy; the links carry it, so a phone opens the new files at once
   // this page's own version (kept the same as version.txt with every push): a phone may show a kept copy of this page for up to
   // 10 minutes, so when the server's version is newer the page loads itself afresh at a new address, once for each version
-  const PAGE = '0.20.10';
+  const PAGE = '0.20.11';
   fetch('version.txt', { cache: 'no-store' }).then((r) => (r.ok ? r.text() : Promise.reject())).then((t) => {
     const v = t.trim(), tried = (/[?&]fresh=([^&]*)/.exec(location.search) || [])[1];
     if (v !== PAGE && tried !== encodeURIComponent(v)) { location.replace(location.pathname + '?fresh=' + encodeURIComponent(v)); return; }

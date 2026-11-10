@@ -1098,7 +1098,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.20.10';
+  const VERSION = '0.20.11';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -1716,8 +1716,8 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // (Fastest) stamped from a coloured copy of the silhouette, with no shadows (see hardRim).
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),tree:w.includes("tree"),branch:w.includes("branch")};})();   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
-const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.tree&&"the Gaping Tree redrawn less often",TRIAL.branch&&"the Gaping Tree kept while its branch moves"].filter(Boolean);
+  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),tree:w.includes("tree")};})();   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
+const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.tree&&"the Gaping Tree redrawn less often"].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -4008,7 +4008,7 @@ const BOSS_CYCLE=7.5,BOSS_H=320,BOSS_GROUND=292;
    lines lit faintly in the level's colour. Same size, same stepping, same golden-wisp defeat as before. */
 const nd=n=>typeof n==="string"?{edge:n==="edge",aura:n==="aura",detail:n==="detail"}:(n||{}); // the nod: one of edge, aura, detail, or a mix of them
 const NOD_COL={night:"#f0c9e0",storm:"#ff8fa6",dawn:"#bcd2ff",mist:"#f8ffc8"}; // the level colour each boss nods to (its old glow)
-let CUT_REC=null;   // kit 0.20.10, the branch trial: while the Gaping Tree is painted for keeping, its cut-outs (where, and their points)
+let CUT_REC=null;   // kit 0.20.10: while the Gaping Tree is painted for keeping (bsBranchKept), its cut-outs (where, and their points)
 function cutPath(x,pts){if(CUT_REC)CUT_REC.push({m:x.getTransform(),pts});x.save();x.globalCompositeOperation="destination-out";x.beginPath();pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();x.fill();x.restore();}
 function lens(a,b,w){const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1,nx=-dy/L*w,ny=dx/L*w,mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;
   return [a,[lerp(a[0],mx,0.5)+nx*0.8,lerp(a[1],my,0.5)+ny*0.8],[mx+nx,my+ny],[lerp(mx,b[0],0.5)+nx*0.8,lerp(my,b[1],0.5)+ny*0.8],b,[lerp(mx,b[0],0.5)-nx*0.5,lerp(my,b[1],0.5)-ny*0.5],[mx-nx*0.6,my-ny*0.6],[lerp(a[0],mx,0.5)-nx*0.5,lerp(a[1],my,0.5)-ny*0.5]];}
@@ -5644,7 +5644,7 @@ function bsDrawKit(x,S,lv,X,Y,t,opts,st,br){const a=st.alpha==null?1:st.alpha;if
   const B=fl?K.BF:K.B;
   if((fl?K.keyF:K.key)!==key){const bc=B.getContext("2d");bc.setTransform(1,0,0,1,0,0);bc.clearRect(0,0,B.width,B.height);
     const one=(o2)=>{BOSS_SW=st.sickle!=null&&lv==="dawn"?-st.sickle:null;try{bossInto(bc,S,lv,t,o2,0,0,BOSS_NOD,true,K.bcache,BOSS_LOOK);}finally{BOSS_SW=null;}};
-    if(br&&br.grow>0&&TRIAL.branch&&lv==="mist"&&!FX&&!fl&&!opts.rm)bsBranchKept(K,bc,B,S,lv,t,opts,br,step);   // kit 0.20.10: the branch trial
+    if(br&&br.grow>0&&lv==="mist"&&!FX&&!fl&&!opts.rm)bsBranchKept(K,bc,B,S,lv,t,opts,br,step);   // kit 0.20.11 (0.20.10's branch trial): glows off, the tree kept while its branch moves
     else if(br&&br.grow>0){const U=K.U&&K.US===S?K.U:(K.US=S,K.U=mk(B.width,B.height)),uc=U.getContext("2d");
       uc.setTransform(1,0,0,1,0,0);uc.clearRect(0,0,U.width,U.height);uc.setTransform(S,0,0,S,230*S,300*S);uc.fillStyle=INK;uc.strokeStyle=INK;uc.lineCap="round";uc.lineJoin="round";
       bsBranchLocal(br)(uc);uc.fillStyle=INK;uc.strokeStyle=INK;const det=BOSS[lv](uc,t,opts.rm,BOSS_NOD,BOSS_LOOK);
@@ -5655,13 +5655,14 @@ function bsDrawKit(x,S,lv,X,Y,t,opts,st,br){const a=st.alpha==null?1:st.alpha;if
     if(fl)K.keyF=key;else K.key=key;KIT.poses++;}
   const X1=X+(st.dx||0),Y1=Y+(st.dy||0);if(st.glow!==0&&FX)bossGlow(x,X1,Y1,lv,a*(st.glow==null?1:st.glow));
   x.save();x.globalAlpha=a;if(st.clipY!=null){x.beginPath();x.rect(X1-400,-2000,800,2000+st.clipY);x.clip();}x.translate(X1,Y1);x.rotate(st.tilt||0);x.scale((st.flip||1)*(st.sx||1),st.sy||1);x.drawImage(B,-230,-300,460,330);x.restore();}
-// kit 0.20.10, the branch trial (trial=branch; glows off, so Fastest or Effects off): while the Gaping Tree's branch grows and sweeps, the
+// kit 0.20.11 (0.20.10's branch trial; glows off, so Fastest or Effects off): while the Gaping Tree's branch grows and sweeps, the
 // tree's picture was painted afresh every frame (its shapes and its rim, round tree and branch as one). Instead the tree's own rim (TR)
 // and the tree itself (TI) are kept for its pose step, and each frame draws the branch alone: the tree's rim, then the branch's rim (each
 // stamp, then the branch, as hardRim does), the branch again, the tree over it (so the trunk still covers the branch's root and the
 // tree's rim stops where the branch leaves it), its details. The tree's eye sockets and maw cut through the branch behind them, so its
 // cut-outs, recorded as it is painted (CUT_REC), are cut from the branch too. TR is the tree's rim as hardRim stacks it (each stamp, then
 // the tree) up to its last stamp, and TI the tree drawn twice, its last two layers, so away from the branch the picture is the same.
+// Near it, a branch frame is 1 to 4 shades apart in about 2,450 pixels at the Fire's picture; on the Fire the tree 28 to 33 fps.
 function bsBranchKept(K,bc,B,S,lv,t,opts,br,step){
   const W=B.width,H=B.height,col=rgba(opts.dcol,0.95),r=Math.max(1,1.2*S),tk=step+"|"+opts.dcol;
   if(!K.TR){K.TR=mk(W,H);K.TI=mk(W,H);K.V=mk(W,H);K.tk=null;}
