@@ -1155,7 +1155,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.27.0';
+  const VERSION = '0.28.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -1627,7 +1627,8 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 })();
 
   /* ---------- Music (optional: a looping track, or two, given as MP3 text in the game's config) ----------
-     music: { data } for one, or music: [{ data }, { data }] for two (ARCADE.md); the game switches with lb.music(1).
+     music: { data } for one, or music: [{ data }, { data }] for two (ARCADE.md); the game switches with lb.music(1). Kit 0.28.0: data
+     as a function that finds the track (data: () => window.MY_GAME_MUSIC), as build.py puts the soundtrack at the end of the file.
      It plays on a loop during play, stops for the pause menu and picks up where it left off, starts again from the first
      track with each new game, fades out when the game ends, and follows the Volume setting and the sound tile. On a
      switch the old track fades over 2 s and the new one starts from its beginning. */
@@ -1655,20 +1656,30 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
       tr.state = 'ready';
     }
     // Decodes the tracks, once each. Unlike playing, this needs no key press or tap, so it can run behind the title screen.
+    // kit 0.28.0 (the CrazyGames checklist, Part 1, section 3): the soundtrack comes at the end of the built file, after the game's code
+    // (build.py moves it there), so the game plays while it is still arriving. A track's data may be a function that finds it
+    // (data: () => window.MY_GAME_MUSIC); until it has arrived the track waits and is looked for again every half second, and the
+    // music fades in once it has (start's 0.3 s rise). A plain string still works, for a soundtrack already in the page.
+    let retry = 0;
     m.load = function () {
       const Decoder = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      let waiting = false;
       tracks.forEach((tr) => {
         if (tr.state !== 'idle') return;
-        if (!Decoder || typeof tr.data !== 'string' || !tr.data) { fail(tr); return; }
+        let data = tr.data;
+        if (typeof data === 'function') { try { data = data(); } catch (e) { data = undefined; } }
+        if (data === undefined && typeof tr.data === 'function' && document.readyState !== 'complete') { waiting = true; return; }   // not here yet
+        if (!Decoder || typeof data !== 'string' || !data) { fail(tr); return; }
         tr.state = 'loading';
         try {
-          const bin = atob(tr.data);
+          const bin = atob(data);
           const bytes = new Uint8Array(bin.length);
           for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
           const job = new Decoder(2, 1, 44100).decodeAudioData(bytes.buffer, (buf) => ready(tr, buf), () => fail(tr));
           if (job && job.catch) job.catch(() => {});
         } catch (e) { fail(tr); }
       });
+      if (waiting && !retry) retry = setTimeout(() => { retry = 0; m.load(); }, 500);
     };
     function start(tr) {
       const ctx = audio.ctx;
@@ -6375,8 +6386,10 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       store.set(SHARED_KEY, shared);
       store.set(OWN_KEY, own);
     }
-    // kit 0.8.1: Testing (see testingDialog): the game's options and the kit's frame-rate line, kept per game on this device
-    const testCfg = cfg.test && Array.isArray(cfg.test.options) ? cfg.test : null;
+    // kit 0.8.1: Testing (see testingDialog): the game's options and the kit's frame-rate line, kept per game on this device. Kit 0.27.1
+    // (the CrazyGames checklist, Part 1, section 3): never in a portal build, whatever the game's config says, so the CrazyGames build has
+    // no Testing button, no frame-rate line and lb.test null, while the arcade's build, the test link and the playtest keep theirs
+    const testCfg = !PORTAL && cfg.test && Array.isArray(cfg.test.options) ? cfg.test : null;
     const testOptions = () => testCfg.options.concat([{ id: 'fps', name: 'Frame-rate line', toggle: true, note: 'Frames a second and a frame\'s drawing time, in play.' }]);
     const testValues = {};
     if (testCfg) {
