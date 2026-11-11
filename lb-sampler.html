@@ -1155,7 +1155,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.28.0';
+  const VERSION = '0.28.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -1660,11 +1660,17 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
     // (build.py moves it there), so the game plays while it is still arriving. A track's data may be a function that finds it
     // (data: () => window.MY_GAME_MUSIC); until it has arrived the track waits and is looked for again every half second, and the
     // music fades in once it has (start's 0.3 s rise). A plain string still works, for a soundtrack already in the page.
+    // kit 0.28.1 (the Fire's play check on 0.28.0: new long frames of 135 and 66 ms, as the music can now arrive mid-run): turning a
+    // track's text into bytes is the one part done on the page's own thread (decoding runs beside it), about 0.35 s for both tracks
+    // on the Fire, so one track is unpacked at a time (m.load(tr)): in play only the one playing; the other waits for a moment out of
+    // play (the title, a menu, a pause, a place card's black), one a frame (sync). And Uint8Array.fromBase64, where the browser has
+    // it, does it about 9 times faster than atob and a loop.
     let retry = 0;
-    m.load = function () {
+    m.load = function (only) {
       const Decoder = window.OfflineAudioContext || window.webkitOfflineAudioContext;
       let waiting = false;
-      tracks.forEach((tr) => {
+      const which = only && tracks.indexOf(only) >= 0 ? [only] : [tracks.find((t) => t.state === 'idle') || tracks[0]];   // one at a time
+      which.forEach((tr) => {
         if (tr.state !== 'idle') return;
         let data = tr.data;
         if (typeof data === 'function') { try { data = data(); } catch (e) { data = undefined; } }
@@ -1672,14 +1678,18 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
         if (!Decoder || typeof data !== 'string' || !data) { fail(tr); return; }
         tr.state = 'loading';
         try {
-          const bin = atob(data);
-          const bytes = new Uint8Array(bin.length);
-          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          let bytes = null;
+          if (typeof Uint8Array.fromBase64 === 'function') { try { bytes = Uint8Array.fromBase64(data); } catch (e) { bytes = null; } }
+          if (!bytes) {
+            const bin = atob(data);
+            bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          }
           const job = new Decoder(2, 1, 44100).decodeAudioData(bytes.buffer, (buf) => ready(tr, buf), () => fail(tr));
           if (job && job.catch) job.catch(() => {});
         } catch (e) { fail(tr); }
       });
-      if (waiting && !retry) retry = setTimeout(() => { retry = 0; m.load(); }, 500);
+      if (waiting && !retry) retry = setTimeout(() => { retry = 0; m.load(only); }, 500);
     };
     function start(tr) {
       const ctx = audio.ctx;
@@ -1727,7 +1737,7 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
       m.want = 0;
     };
     // Called every frame: makes the music match the screen the player is on, the sound settings and the track the game wants.
-    m.sync = function (inGame, screen, ending) {
+    m.sync = function (inGame, screen, ending, quiet) {   // kit 0.28.1: quiet, a moment out of play when a track can be unpacked unseen
       if (!tracks.length) return;
       const level = settings.muted || CG.muted ? 0 : (settings.volume / 100) * share;   // kit 0.27.0: CrazyGames' mute too
       const playing = inGame && screen === 'play' && !ending;
@@ -1750,8 +1760,9 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
         tracks[m.cur].offset = 0;
       }
       const tr = tracks[m.cur];
+      if (quiet && !settings.muted) { const next = tracks.find((t) => t.state === 'idle'); if (next) m.load(next); }   // kit 0.28.1: one a frame, out of play
       if (playing && level > 0) {
-        if (tr.state === 'idle') m.load();
+        if (tr.state === 'idle') m.load(tr);   // kit 0.28.1: in play, only the track that is wanted
         if (!tr.src && tr.buf && m.out && audio.ctx.state === 'running') start(tr);
       } else if (tr.src) stop(tr, ending ? 0.7 : 0.08);
       if (!keepPlace) tracks.forEach((t) => { t.offset = 0; });
@@ -8733,7 +8744,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       } else acc = 0;
       // kit 0.27.0: play under way, for the CrazyGames SDK: in play, no place card, the run not ended; a pause of the kit's own changes nothing
       if (PORTAL) cgPlaying(state.screen === 'paused' && pausedBy === 'kit' ? CG.playing : state.inGame && state.screen === 'play' && !placing() && !state.over);   // sent at most once a second (CG_GAP)
-      if (music) music.sync(state.inGame, state.screen, state.ending);
+      if (music) music.sync(state.inGame, state.screen, state.ending, !state.inGame || state.screen !== 'play' || placing());   // kit 0.28.1: quiet out of play
       syncAmbient();   // version 8 (4c-7)
       if (hudNodes && hudNodes.full) syncHud();   // version 8: the full HUD's moments
       if (titleLine || !titleLineEl.hidden) syncTitleLine();   // kit 0.21.0
