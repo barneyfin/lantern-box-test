@@ -1098,7 +1098,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.20.12';
+  const VERSION = '0.20.13';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2771,25 +2771,30 @@ class Scene{
         return;}}
     const bb=MON_BOX[m.kind]||[-128,-228,128,18],G=18,id=m.id||(m.kind+"|"+m.ph),bk=(typeof MON_BASE!=="undefined"&&MON_BASE[m.kind])||m.kind,moving=flare||(m.P&&Object.keys(m.P).length>0),r=moving?0:POSE_RATE[bk];
     const step=(r&&!o.rm)?Math.floor((r*t+m.ph)*8):-KIT.frame;
+    // kit 0.20.13 (design system 16, section 2): at Fastest, a waiting mouth-hat is drawn from its kind's picture of its hop's step
+    // (hopStep), shared as below and kept for all 15 steps; each is painted from the step's own clock with the phase at 0 (hopClock), so
+    // it is the same whichever mouth-hat gets there first. Moving, attacking, hit or rising (m.P or flare), or Reduce motion: as before
+    const hk=QUICK&&!moving&&!o.rm&&bk==="hatmaw"?hopStep(t,m.ph):-1;
     // kit 0.20.7 (the plan for slow devices: the Fire's paths were mostly waiting monsters each repainting its own picture): a waiting
     // monster's picture depends only on its kind, its whole puppet step and the glows (its clock and its phase reach the drawing only
     // through pz(rate*t+phase), which is this step), so every monster of a kind shares it: the first to reach a step paints it, the others
     // draw it when they get there. The same pixels as each painting its own. A kind with more than one monster drawn last frame keeps
     // its last 10 steps (a game's phases from 0 to 1 keep its monsters within 8 steps of each other), a kind with one keeps 2; the
     // canvas let go is painted over for the next step
-    if(r&&!o.rm){
+    if((r||hk>=0)&&!o.rm){
       if(!this.share)this.share=new Map();
       let K=this.share.get(m.kind);if(!K){K={pics:new Map(),n:0,seen:0,nf:-1};this.share.set(m.kind,K);}
       if(K.nf!==KIT.frame){K.n=K.seen;K.seen=0;K.nf=KIT.frame;}   // how many of its kind were drawn in its last frame
       K.seen++;
-      const key=(FX?1:0)+"|"+step;let A=K.pics.get(key);
+      const key=(FX?1:0)+"|"+(hk>=0?"h"+hk:step);let A=K.pics.get(key);
       if(A)K.pics.delete(key);   // put back below, as the most recently used
       else{
-        const cap=K.n>1?10:2,w=Math.max(1,Math.ceil((bb[2]-bb[0]+2*G)*s)),h=Math.max(1,Math.ceil((bb[3]-bb[1]+2*G)*s));let old=null;
+        const cap=hk>=0?16:K.n>1?10:2,w=Math.max(1,Math.ceil((bb[2]-bb[0]+2*G)*s)),h=Math.max(1,Math.ceil((bb[3]-bb[1]+2*G)*s));let old=null;
         while(K.pics.size>=cap){const k0=K.pics.keys().next().value;old=K.pics.get(k0);K.pics.delete(k0);}
         A=old&&old.width===w&&old.height===h?old:mk(w,h);
         const c=A.getContext("2d");c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,A.width,A.height);
-        into(c,Math.round((G-130-bb[0])*s),Math.round((G-230-bb[1])*s));KIT.poses++;}
+        const px=Math.round((G-130-bb[0])*s),py=Math.round((G-230-bb[1])*s);
+        if(hk>=0)this.monsterInto(c,s,Object.assign({},m,{ph:0}),hopClock(hk),o,px,py);else into(c,px,py);KIT.poses++;}
       K.pics.set(key,A);
       ctx.drawImage(A,Math.round((m.X+bb[0]-G)*s)/s,Math.round((m.Y+bb[1]-G)*s)/s,A.width/s,A.height/s);
       return;}
@@ -2864,11 +2869,19 @@ const BOSS_STEP={night:0.7,storm:0.8,dawn:0.7,mist:0.6};
 // (the crown and limbs, the trunk's top, the moss, the maw) get a new picture TREE_RATE times a second, its clock held for each
 // (bsDrawKit), and its branch and glowing tip move in 12 steps a second, the branch attack's own clock in twelfths (world.boss). Where it
 // stands, its tilt, its attacks' timing and what they hurt stay smooth; Best, Faster, Effects off at them and Reduce motion as before.
-// TREE_RATE is the one switch: 2.4 (every second puppet step of the 4.8) for the Fire's check, then 2.4 or 1.6 as the bar picks
-// (35 fps or more, frames drawn in 20 ms or less, keeps 2.4).
+// TREE_RATE is the one switch: 2.4 (every second puppet step of the 4.8), kept by the Fire's check on 0.20.12 (the tree 39 fps, frames
+// drawn in 15.5 ms; the bar 35 fps and 20 ms); TREE16.fallback, 1.6, is approved too if a slower device ever needs it.
 const TREE16={best:4.8,sway:2.4,fallback:1.6,branch:12};
 const TREE_RATE=TREE16.sway;
 function treeHeld(t,rate){return rate>=TREE16.best?t:Math.floor(t*rate+1e-9)/rate+1e-6;}
+// kit 0.20.13 (design system 16, section 2; play.js's HOP16 and hopHeld): at Picture Fastest only, a waiting mouth-hat's hop
+// (sin(t*2.6+ph), MONSTER.hatmaw's, its only movement while it waits) held at one of 29 steps a hop, about 12 a second. The steps are
+// taken in the hop's own phase, so they are the same 29 for every mouth-hat whatever its phase: hopStep gives the step, 1 to 14 in the
+// air and 0 for the 15 at rest (where the sine is 0 or below), and hopClock the clock that draws that step with the phase at 0, as
+// hopHeld's would (scene.monster paints each step once and shares it). Not with Reduce motion, whose own gentle hop stays smooth.
+const HOP16={steps:29,rate:2.6},HOP_ST=2*Math.PI/HOP16.steps;
+function hopStep(t,ph){const n=HOP16.steps,k=((Math.floor((t*HOP16.rate+ph)/HOP_ST+1e-9)%n)+n)%n;return Math.sin(k*HOP_ST)>1e-9?k:0;}
+function hopClock(k){return k?k*HOP_ST/HOP16.rate+1e-6:1.5*Math.PI/HOP16.rate;}
 // version 8: the side-on crow (crowSide) beats with cos(ph), not sin(ph), and the moor's near crows are drawn up to 1.43 times
 // their size, so it is painted at 1.5 (the box holds every wing position, worked out from its points)
 const FLY_BOX={bat:[-22,-16,22,12],crow:[-20,-14,14,11],crowSide:[-16,-20,15,16]},FLY_REF={bat:1.2,crow:1.2,crowSide:1.5};
