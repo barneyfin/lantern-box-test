@@ -688,6 +688,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 .lb-stick .base polygon{fill:var(--touch-face-light);stroke:var(--brass-dim)}
 .lb-stick .chev{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:var(--brass-dim);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .lb-stick .chev .is-lit{stroke:var(--heading)}
+/* kit 0.26.0 (design system 21, TouchControls): the stick's two arrowheads, brass-dim, heading while the knob is in the roll zone (after .is-lit, so a lit one keeps no stroke) */
+.lb-stick .chev .mk{fill:var(--brass-dim);stroke:none}
+.lb-stick .chev .mk.is-lit{fill:var(--heading)}
 .lb-knob{position:absolute;left:50%;top:50%;width:50px;height:50px;margin:-25px 0 0 -25px}
 .lb-knob .knob polygon{fill:var(--tile-face);stroke:var(--brass)}
 .lb-knob>i{position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;background:var(--brass);transform:rotate(45deg)}
@@ -759,6 +762,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 .lb-touchkey .ic .solid,.lb-touchkey .solid{fill:var(--heading);stroke:none}
 .lb-touchkey .dia{fill:var(--brass)}
 .lb-touchkey .chev{fill:none;stroke:var(--brass-dim);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+/* kit 0.26.0 (design system 21, HowToPlay): the small stick's arrowheads, and lines that break evenly ("to roll" moves down together) */
+.lb-touchkey .mk{fill:var(--brass-dim);stroke:none}
+.lb-touchkey>span{text-wrap:pretty}
 .lb-touchkey b{font-weight:500;color:var(--heading)}
 /* the win: the two lines, the rule, the score with the lives counted in */
 .lb-win-line{margin:-4px 0 0;font:400 18px/1.3 var(--font-display);color:var(--text-2);text-align:center}
@@ -1149,10 +1155,70 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.25.0';
+  const VERSION = '0.27.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
+  /* kit 0.27.0 (HANDOVER-climb-and-sdk.md, part B; Barney, 11 November 2026; ARCADE.md: a portal build may load its portal's own SDK):
+     the CrazyGames SDK, in the CrazyGames build only. build.py puts its one script tag in the page's head; the arcade's build has none,
+     and none of this runs there. It never makes the game wait: init runs while the page goes on loading, and if the script is missing or
+     blocked, init fails or the page is anywhere but CrazyGames or a local address (environment 'local' or 'crazygames'; elsewhere every
+     call throws), the game plays exactly as without it. Every call is wrapped, so a call that fails changes nothing.
+     - loadingStart once init has finished, loadingStop when the title is shown (both at once if init finishes after that);
+     - gameplayStart and gameplayStop as play begins and breaks (the shell decides, every frame: the player's pause, the menus, a place
+       card, the run's end break it; the kit's own pauses, on blur, a hidden tab, a phone turned upright, the sound taken by a call or
+       full screen left, send nothing, as CrazyGames handles those itself); never two within a second (the SDK refuses them, with an
+       error in the console), so a quick pause and resume sends nothing, and otherwise the state a second on is sent;
+     - the feedback context (setGameContext, clearGameContext): what the game passes in with lb.portalContext, sent when it changes, and
+       cleared when the run ends or the player quits to the title;
+     - CrazyGames' mute setting (B4, Barney's yes, 11 November 2026): while muteAudio is on the game is silent, whatever its own Volume
+       and sound settings say, and a change during play is heard at once (addSettingsChangeListener). */
+  const CG = { on: false, sdk: null, muted: false, onMute: [], shown: false, loaded: false, playing: false, sent: false, last: -1e9, ctx: '', ctxObj: null };
+  const CG_GAP = 1000;             // the SDK refuses gameplayStart and gameplayStop within 1 s of the last, with an error in the console
+  function cgCall(name, arg) {
+    if (!CG.on) return;
+    try { const job = arg === undefined ? CG.sdk[name]() : CG.sdk[name](arg); if (job && job.catch) job.catch(() => {}); } catch (e) { /* the game goes on without it */ }
+  }
+  function cgMute(on) { if (on === CG.muted) return; CG.muted = on; CG.onMute.forEach((f) => { try { f(); } catch (e) { /* ignore */ } }); }
+  function cgShown() {             // the title is shown: loading has finished
+    CG.shown = true;
+    if (CG.on && !CG.loaded) { CG.loaded = true; cgCall('loadingStop'); }
+  }
+  function cgPlaying(on) {         // called every frame by the shell with whether play is under way
+    CG.playing = on;
+    if (!CG.on || on === CG.sent) return;
+    const now = Date.now();        // the wall clock: the SDK's gap is real time, whatever the game's speed
+    if (now - CG.last < CG_GAP) return;   // a quick pause and resume waits, and only the state a second on is sent
+    CG.sent = on; CG.last = now;
+    cgCall(on ? 'gameplayStart' : 'gameplayStop');
+  }
+  function cgContext(o) {          // the game's context: a small object of plain values, or null to clear it
+    let key = '';
+    if (o && typeof o === 'object') { try { key = JSON.stringify(o); } catch (e) { key = ''; } }
+    if (key === CG.ctx) return;
+    CG.ctx = key; CG.ctxObj = key ? JSON.parse(key) : null;
+    if (CG.on) cgCall(key ? 'setGameContext' : 'clearGameContext', key ? CG.ctxObj : undefined);
+  }
+  // CrazyGames' SDK v3 never finishes an init called in the same task as its own script (found in its local mode, 11 November 2026),
+  // so init waits for the next task
+  if (PORTAL === 'crazygames') setTimeout(() => {
+    let S = null;
+    try { S = window.CrazyGames && window.CrazyGames.SDK; } catch (e) { S = null; }
+    let job = null;
+    try { job = S && typeof S.init === 'function' ? S.init() : null; } catch (e) { job = null; }
+    if (job) Promise.resolve(job).then(() => {
+      let env = '';
+      try { env = S.environment; } catch (e) { env = ''; }
+      if (env !== 'local' && env !== 'crazygames') return;
+      CG.sdk = S.game; CG.on = !!CG.sdk;
+      if (!CG.on) return;
+      cgCall('loadingStart');
+      if (CG.shown) { CG.loaded = true; cgCall('loadingStop'); }
+      try { cgMute(!!(CG.sdk.settings && CG.sdk.settings.muteAudio)); } catch (e) { /* ignore */ }
+      try { CG.sdk.addSettingsChangeListener((s) => cgMute(!!(s && s.muteAudio))); } catch (e) { /* ignore */ }
+      if (CG.ctxObj) cgCall('setGameContext', CG.ctxObj);
+    }, () => { /* init failed: the game goes on without it */ });
+  }, 0);
   const H = 540;              // the picture's height in lines, whatever the window
   const STEP = 1 / 60;
   const PHONE_H = 520;        // a window shorter than this, or narrower than PHONE_W, gets the phone layouts
@@ -1320,10 +1386,11 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
       SND8.unlock(a.ctx);   // version 8: Lantern Box's sound shares the context (and decodes its two recordings, once)
     };
     a.apply = function () {
-      if (a.master) a.master.gain.value = settings.muted ? 0 : (settings.volume / 100) * 0.5;
-      SND8.level(settings.muted ? 0 : settings.volume / 100);
+      const off = settings.muted || CG.muted;   // kit 0.27.0: CrazyGames' mute comes first
+      if (a.master) a.master.gain.value = off ? 0 : (settings.volume / 100) * 0.5;
+      SND8.level(off ? 0 : settings.volume / 100);
     };
-    const ready = () => a.ctx && a.ctx.state === 'running' && !settings.muted && settings.volume > 0;
+    const ready = () => a.ctx && a.ctx.state === 'running' && !settings.muted && !CG.muted && settings.volume > 0;
     a.tone = function (o) {
       if (!ready()) return;
       const type = o.type || 'square';
@@ -1651,7 +1718,7 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
     // Called every frame: makes the music match the screen the player is on, the sound settings and the track the game wants.
     m.sync = function (inGame, screen, ending) {
       if (!tracks.length) return;
-      const level = settings.muted ? 0 : (settings.volume / 100) * share;
+      const level = settings.muted || CG.muted ? 0 : (settings.volume / 100) * share;   // kit 0.27.0: CrazyGames' mute too
       const playing = inGame && screen === 'play' && !ending;
       const keepPlace = playing || (inGame && (screen === 'paused' || screen === 'settings' || screen === 'testing'));
       if (!m.out && audio.ctx) {
@@ -6118,7 +6185,7 @@ const ICON={
   help:`<path d="M9.2 9.3 A2.85 2.85 0 1 1 13.4 11.8 C12.4 12.4 12 13 12 14.3"/><circle cx="12" cy="18" r="1.3" style="fill:var(--heading);stroke:none"/>`,
   jump:`<path d="M12 16.5 V4.5 M7 9.5 L12 4.5 L17 9.5 M6 20.5 H18"/>`,
   attack:`<path d="M19.2 4.8 L9.4 14.6 M6.8 12 L12 17.2 M9.4 14.6 L5.4 18.6"/><circle class="solid" cx="4.6" cy="19.4" r="1.5"/>`,
-  stick:`<path class="l" d="M23 45 L14 56 L23 67"/><path class="r" d="M89 45 L98 56 L89 67"/><path class="u" d="M45 23 L56 14 L67 23"/>`,
+  stick:`<path class="l" d="M23 45 L14 56 L23 67"/><path class="r" d="M89 45 L98 56 L89 67"/><path class="u" d="M45 23 L56 14 L67 23"/><path class="dl mk" d="M7.9 104.1 L10.7 94.9 L17.1 101.3 Z"/><path class="dr mk" d="M104.1 104.1 L94.9 101.3 L101.3 94.9 Z"/>`,   // kit 0.26.0 (version 21): the two arrowheads
   // round 13: the potions, as on the ground (a round flask with a heart, a tall vial with a flame), for the plaque line and How to play
   potH:`<path d="${POT.health.glass}"/><path class="solid" d="${POT.health.mark}"/>`,
   potM:`<path d="${POT.mana.glass}"/><path class="solid" d="${POT.mana.mark}"/>`
@@ -6252,13 +6319,19 @@ function set(hud,st){const q=s=>hq(hud,s);
     if(on){setOnce(bb,"n",st.boss.name,v=>{bb.querySelector(".lb-bossbar-name").textContent=v;bb.setAttribute("aria-label",v);});bb.style.opacity=String(st.boss.a*ha);
       const tr=bb.querySelector(".lb-bossbar-track");tr.style.setProperty("--v",st.boss.hp.toFixed(3));tr.style.setProperty("--trace",Math.max(st.boss.hp,st.boss.trace).toFixed(3));setOnce(bb,"vn",Math.round(st.boss.hp*100),v=>bb.setAttribute("aria-valuenow",String(v)));}}}
 const CARDS={night:["Night","The Graveyard"],storm:["Blood Red Rain","The Old Town"],dawn:["Dawn","The Open Moor"],mist:["Mist","The Wind Bent Forest"]}; // from mv10.js: the places' names (Barney, 4 November 2026)
+// kit 0.26.0 (design system 21, play.js 1.9.0): the pull-down roll's zone, the one place it is kept, so the roll (the shell's stickMove)
+// and the arrowheads (stickShow) always agree (starting figures from Barney's test build): the knob at least 70% of its 31 px travel,
+// 30 to 75 degrees below level
+const ROLL_ZONE={from:30,to:75,depth:0.7,travel:31};
+function inRollZone(dx,dy){const Z=ROLL_ZONE,dep=Math.hypot(dx,dy)/Z.travel,ang=dy>0?Math.atan2(dy,Math.abs(dx))*180/Math.PI:-90;return dep>=Z.depth&&ang>=Z.from&&ang<=Z.to;}
 // the phone's stick (play.js, word for word; the review page's thumb mark has no style, so it never shows)
 function stickShow(hud,x,y,dx,dy,a,thumb){const s=hud.querySelector(".lb-stick");if(!s)return;s.style.left=x+"px";s.style.top=y+"px";s.style.opacity=String(a);
   const k=s.querySelector(".lb-knob");k.style.transform=`translate(${dx}px,${dy}px)`;const sv=s.querySelector(".chev");
   sv.querySelector(".l").classList.toggle("is-lit",dx<-12&&Math.abs(dx)>Math.abs(dy)*0.8);sv.querySelector(".r").classList.toggle("is-lit",dx>12&&Math.abs(dx)>Math.abs(dy)*0.8);sv.querySelector(".u").classList.toggle("is-lit",dy<-12&&-dy>Math.abs(dx)*0.8);
+  const rz=inRollZone(dx,dy);sv.querySelector(".dl").classList.toggle("is-lit",rz&&dx<0);sv.querySelector(".dr").classList.toggle("is-lit",rz&&dx>0);   // version 21
   const th=hud.querySelector(".lb-thumb");if(th){th.style.opacity=String(thumb||0);th.style.left=(x+dx)+"px";th.style.top=(y+dy)+"px";}}
 function ensureDefs(){if(!defsDone){document.body.insertAdjacentHTML("afterbegin",defs);defsDone=true;}}   /* kit 0.11.0: the potions' liquid, for pictures outside the HUD */
-return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
+return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRollZone};
   })();
 
   function createGame(cfg) {
@@ -6341,11 +6414,12 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       if (saveCfg.onClear) { try { saveCfg.onClear(api); } catch (e) { reportError(e); } }
     }
     const audio = makeAudio(settings);
+    CG.onMute.push(() => audio.apply());   // kit 0.27.0: CrazyGames' mute setting, heard at once
     // version 8 (4c-7): every named sound is design system version 8's (lb.sounds lists them); the shell's moments as Barney chose: the menus'
     // muted tick, soft chime and falling tick (select, confirm, back), pause the soft chime, game over the life lost's falling tones, new best
     // the plaque line's chime (kit 0.16.0: the shell's game over plays lifeLost by that name, as 'gameOver' is now version 13's toll)
     const SHELL_SOUND = { blip: 'select', pause: 'confirm', newBest: 'line' };
-    const soundOn = () => !settings.muted && settings.volume > 0;
+    const soundOn = () => !settings.muted && !CG.muted && settings.volume > 0;
     function sfx(name, v) {   // kit 0.10.0: v, the echo a defeat gives (lb.sfx('defeat', 5), lb.sfx('echo', 25))
       const k = SHELL_SOUND[name] || name;
       if (!SND8.FX[k]) { console.warn('Lantern Box: no sound called "' + name + '". The names are in lb.sounds.'); return; }
@@ -6536,14 +6610,18 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
     /* version 8 (4c-6b): the touch controls (TouchControls), in the full HUD on any touch device. The stick shows where the left thumb lands,
        anywhere in the left half, and goes when it lifts; its knob travels 31 px; left, right and up as its chevrons light (up also climbs); a
        quick flick sideways rolls, and (kit 0.8.2, Barney's trial, 5 November 2026) so does a double tap of the left thumb: two short, still taps
-       close together within 0.3 s; the game rolls him the way he faces. The three buttons press jump, attack and cast; a tap on the spell's
+       close together within 0.3 s; the game rolls him the way he faces. Kit 0.26.0 (design system 21, after Barney's test build of 11 November
+       2026): three ways to roll, all always on, the pull first: the knob pulled down to the side (at least 70% of its travel, 30 to 75
+       degrees below level, HUD8.ROLL_ZONE) rolls him once towards that side, turning him first; it re-arms only once the knob comes back
+       inside 52.5% or leaves 22 to 83 degrees, and shares the flick's rest; then the flick, then the double tap. Straight down does nothing.
+       The three buttons press jump, attack and cast; a tap on the spell's
        socket presses switch, and (kit 0.9.0) a tap on a potion's socket drinkHealth or drinkMana. A tap on a socket is the socket's own:
        it never reaches the canvas, so it never starts the stick or counts towards a double tap. */
     const FLICK_PX = 40, FLICK_MS = 120, FLICK_REST = 350;   // a flick: the thumb 40 px sideways within 0.12 s (starting figures, to tune in play)
     const TAP_MS = 250, TAP_PX = 14, DTAP_MS = 300, DTAP_PX = 70;   // kit 0.8.2: a tap is shorter than 0.25 s and moves under 14 px; a double tap is
                                                               // a second touch within 0.3 s of the first tap's end and within 70 px of it
     const tc = { on: false, held: new Set(), just: new Set(), dirs: { left: false, right: false, up: false },
-      stick: { id: null, x: 0, y: 0, dx: 0, dy: 0, hist: [], rest: 0 } };
+      stick: { id: null, x: 0, y: 0, dx: 0, dy: 0, hist: [], rest: 0, armed: true, side: 0 } };   // kit 0.26.0: armed, side (the pull)
     function prepareInput() {
       for (const name in KEYMAP) {
         input[name] = KEYMAP[name].some((c) => keys.has(c));
@@ -6552,6 +6630,8 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       // the stick: what its chevrons light is what it presses
       const s = tc.stick, on = s.id != null;
       const d = { left: on && s.dx < -12 && Math.abs(s.dx) > Math.abs(s.dy) * 0.8, right: on && s.dx > 12 && Math.abs(s.dx) > Math.abs(s.dy) * 0.8, up: on && s.dy < -12 && -s.dy > Math.abs(s.dx) * 0.8 };
+      if (s.side && tc.just.has('roll')) { d.left = s.side < 0; d.right = s.side > 0; }   // kit 0.26.0: he turns to the pull's side as he rolls
+      s.side = 0;
       for (const n in d) { if (d[n]) { input[n] = true; if (!tc.dirs[n]) input.pressed[n] = true; } }
       for (const a in ACTIONS) {
         input[a] = ACTIONS[a].some((c) => keys.has(c)) || tc.held.has(a);
@@ -6589,7 +6669,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       tc.just.clear();
       tc.dirs = { left: false, right: false, up: false };
       const s = tc.stick;
-      s.id = null; s.dx = 0; s.dy = 0; s.hist = [];
+      s.id = null; s.dx = 0; s.dy = 0; s.hist = []; s.armed = true; s.side = 0;
       const h = hudNodes && hudNodes.full;
       if (h) { HUD8.stickShow(h, s.x, s.y, 0, 0, 0, 0); h.querySelectorAll('.lb-touch-btn.is-pressed').forEach((b) => { b.classList.remove('is-pressed'); b.__pid = null; }); }
     }
@@ -6608,6 +6688,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       const now = performance.now(), lt = s.lastTap;
       if (lt && now - lt.t < DTAP_MS && Math.hypot(x - lt.x, y - lt.y) < DTAP_PX && now >= s.rest) { tc.just.add('roll'); s.rest = now + FLICK_REST; s.lastTap = null; }
       s.down = { t: now, x, y };
+      s.armed = true; s.side = 0;   // kit 0.26.0
       stickMove(e);
       return true;
     }
@@ -6620,6 +6701,12 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       if (dd > r) { dx *= r / dd; dy *= r / dd; }
       s.dx = dx; s.dy = dy;
       HUD8.stickShow(h, s.x, s.y, dx, dy, 1, 0);
+      // design system 21: pulled down to the side, at least 70% out and 30 to 75 degrees below level, rolls him that way, once per pull
+      const Z = HUD8.ROLL_ZONE, dep = Math.hypot(dx, dy) / r, ang = dy > 0 ? Math.atan2(dy, Math.abs(dx)) * 180 / Math.PI : -90;
+      const inside = HUD8.inRollZone(dx, dy);
+      const out = dep < Z.depth * 0.75 || ang < Z.from - 8 || ang > Z.to + 8;   // re-arm: back inside 52.5%, or outside 22 to 83 degrees
+      if (inside && s.armed && now >= s.rest) { tc.just.add('roll'); s.side = dx < 0 ? -1 : 1; s.rest = now + FLICK_REST; s.armed = false; s.hist = [[now, x, y]]; }
+      else if (out) s.armed = true;
       // a flick: the thumb itself (not the knob) 40 px sideways within 0.12 s, mostly sideways
       s.hist.push([now, x, y]);
       while (s.hist.length > 1 && now - s.hist[0][0] > FLICK_MS) s.hist.shift();
@@ -6629,7 +6716,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
     function stickUp(e) {
       const s = tc.stick;
       if (s.id == null || e.pointerId !== s.id) return false;
-      s.id = null; s.dx = 0; s.dy = 0; s.hist = [];
+      s.id = null; s.dx = 0; s.dy = 0; s.hist = []; s.armed = true; s.side = 0;
       const h = hudNodes && hudNodes.full;
       // kit 0.8.2: a short, still touch is a tap, remembered for a double tap
       if (h && s.down) { const [x, y] = hudAt(h, e), now = performance.now(); s.lastTap = now - s.down.t < TAP_MS && Math.hypot(x - s.down.x, y - s.down.y) < TAP_PX ? { t: now, x: s.down.x, y: s.down.y } : null; }
@@ -6769,7 +6856,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
     }
     const onFullscreenChange = () => {
       syncFullscreen();
-      if (!fsElement() && state.screen === 'play') pause();   // left full screen mid-play: the jump in size never costs anything
+      if (!fsElement() && state.screen === 'play') pause(true);   // left full screen mid-play: the jump in size never costs anything
     };
     document.addEventListener('fullscreenchange', onFullscreenChange);
     document.addEventListener('webkitfullscreenchange', onFullscreenChange);
@@ -7016,7 +7103,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
        with ids walk, jump, attack, cast, roll, drink; the kit draws it as the design does (on a computer a row of keycaps and a word above the
        path, with Hide hints and its H keycap bottom right; on a touch device the stick's half outlined and labelled, the touch buttons ringed and
        named, Hide hints top middle), edges the next to learn, dims a hint to 35% the moment its control is used and drops it a second later.
-       later: shown fainter, not yet usable (the phone's "Cast, once a spell is learnt", "Flick to roll"). H or Hide hints hides them all, and
+       later: shown fainter, not yet usable (the phone's "Cast, once a spell is learnt", "Pull down to the side to roll", since kit 0.26.0). H or Hide hints hides them all, and
        onHintsHidden(lb) in the config hears it (to keep it so). The hints never stop play, never flash, step aside while the place card or the
        boss bar shows, and show only in play. */
     const TEACH = {
@@ -7074,7 +7161,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       const dim = (it) => (it.done != null ? ';opacity:.35' : '');
       const walk = list.find((it) => it.id === 'walk'), roll = list.find((it) => it.id === 'roll');
       if (walk) { add('lb-teach-zone', 'left:12px;top:calc(100% * 150 / 390);width:calc(50% - 24px);bottom:12px' + dim(walk)); add('lb-teach-label', 'left:calc(100% * 110 / 844);top:calc(100% * 176 / 390)' + dim(walk), 'Touch and drag here to move'); }
-      if (roll) add('lb-teach-label is-later', 'left:calc(100% * 110 / 844);top:calc(100% * 206 / 390)' + dim(roll), 'Flick to roll');
+      if (roll) add('lb-teach-label is-later', 'left:calc(100% * 110 / 844);top:calc(100% * 206 / 390)' + dim(roll), 'Pull down to the side to roll');   // kit 0.26.0: Barney's words (version 21)
       list.forEach((it) => {
         const d = TEACH[it.id], b = d.btn && hudEl.querySelector('.lb-touch-btn.' + d.btn);
         if (!b) return;
@@ -7695,7 +7782,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       '<g transform="translate(18.1 9.6) scale(0.62)" class="pf m"><path d="M9.8 2.4 H14.2 V4.4 H13.4 V7 Q15.6 8.3 15.6 10.6 V19.4 Q15.6 21.6 13.4 21.6 H10.6 Q8.4 21.6 8.4 19.4 V10.6 Q8.4 8.3 10.6 7 V4.4 H9.8 Z"/></g>',
       '<b>Tap a potion</b>, top left, to drink it'];
     const HOWTO_TOUCH = [
-      ['<polygon class="oct dim" points="10.0,0.7 24.0,0.7 33.3,10.0 33.3,24.0 24.0,33.3 10.0,33.3 0.7,24.0 0.7,10.0"/><path class="chev" d="M7 13.5 L4 17 L7 20.5 M27 13.5 L30 17 L27 20.5 M13.5 7 L17 4 L20.5 7"/><path class="dia" d="M17 12.5 L21.5 17 L17 21.5 L12.5 17 Z"/>', '<b>Left thumb</b>, anywhere on the left: walk, climb up a bank; flick or double tap to roll'],
+      ['<polygon class="oct dim" points="10.0,0.7 24.0,0.7 33.3,10.0 33.3,24.0 24.0,33.3 10.0,33.3 0.7,24.0 0.7,10.0"/><path class="chev" d="M7 13.5 L4 17 L7 20.5 M27 13.5 L30 17 L27 20.5 M13.5 7 L17 4 L20.5 7"/><path class="mk" d="M1 33 L2.5 28 L6 31.5 Z M33 33 L28 31.5 L31.5 28 Z"/><path class="dia" d="M17 12.5 L21.5 17 L17 21.5 L12.5 17 Z"/>', '<b>Left thumb</b>, anywhere on the left: walk, climb up a bank; pull down to the side, flick or double tap to roll'],   // kit 0.26.0 (version 21): the arrowheads, Barney's words
       [OCT34 + '<g class="ic" transform="translate(5,5)"><path d="M12 16.5 V4.5 M7 9.5 L12 4.5 L17 9.5 M6 20.5 H18"/></g>', '<b>Jump</b>'],
       [OCT34 + '<g class="ic" transform="translate(5,5)"><path d="M19.2 4.8 L9.4 14.6 M6.8 12 L12 17.2 M9.4 14.6 L5.4 18.6"/><circle class="solid" cx="4.6" cy="19.4" r="1.5"/></g>', '<b>Attack</b>'],
       [OCT34 + '<g class="ic" transform="translate(5,5)"><circle class="solid" cx="16" cy="12" r="4.8"/><path class="solid" d="M13.8 8.2 L3.6 4.4 L11.2 10.6 Z M12.4 10.8 L0.8 12.4 L12.4 13.8 Z M13.8 15.8 L4.2 18.8 L11.2 13.6 Z"/></g>', '<b>Cast</b> the chosen spell'],
@@ -7895,6 +7982,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       showDialog(win12Dialog);
     }
     function showWin(o) {
+      cgContext(null);                 // kit 0.27.0 (a second loop sends it again as play goes on)
       if (!state.inGame) return;
       o = asObject(o);
       state.screen = 'over';
@@ -7963,6 +8051,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       });
     }
     function showRunEnd(o) {
+      cgContext(null);                 // kit 0.27.0
       state.screen = 'over';
       state.ending = false;
       state.over = true;
@@ -8165,6 +8254,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       touch: touch
     };
     function showGameOver() {
+      cgContext(null);                 // kit 0.27.0
       state.screen = 'over';
       state.over = true;
       state.ending = false;
@@ -8473,9 +8563,11 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       lastFrame = performance.now();
       acc = 0;
     }
-    function pause() {
+    let pausedBy = '';                 // kit 0.27.0: 'player' (P, Escape, the pause tile or button) or 'kit' (its own pauses), for the SDK
+    function pause(kit) {
       if (state.screen !== 'play') return;
       state.screen = 'paused';
+      pausedBy = kit === true ? 'kit' : 'player';
       resetInput();
       sfx('pause');
       showDialog(pauseDialog);
@@ -8492,6 +8584,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       acc = 0;
     }
     function quitToTitle() {
+      cgContext(null);                 // kit 0.27.0: the feedback context goes with the run
       closeDialog();
       runEndInfo = null;
       state.inGame = false;
@@ -8551,10 +8644,10 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       if (active && active.key(e)) e.preventDefault();
     });
     document.addEventListener('keyup', (e) => { keys.delete(e.code); physical.delete(e.code); stale.delete(e.code); });
-    window.addEventListener('blur', () => { keys.clear(); physical.clear(); stale.clear(); if (state.screen === 'play') pause(); });
+    window.addEventListener('blur', () => { keys.clear(); physical.clear(); stale.clear(); if (state.screen === 'play') pause(true); });
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) return;
-      if (state.screen === 'play') pause();
+      if (state.screen === 'play') pause(true);
       if (music) music.stop(0.08);   // a hidden tab stops drawing, so stop the music here rather than on the next frame
     });
 
@@ -8618,13 +8711,15 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
         rotateEl.hidden = !(upright() || forceRotate);
         if (!rotateEl.hidden) fitScreens();
       }
-      if (state.screen === 'play' && upright()) pause();
+      if (state.screen === 'play' && upright()) pause(true);
       audio.watch();   // kit 0.17.3: the sound's clock
-      if (state.screen === 'play' && audio.lost() && !audio.pausedForLoss) { audio.pausedForLoss = true; audio.lostPauses++; pauseWhy = true; pause(); }   // kit 0.17.2: the sound stopped by the system (an iPhone's call): nothing plays on unheard, once until it is back
+      if (state.screen === 'play' && audio.lost() && !audio.pausedForLoss) { audio.pausedForLoss = true; audio.lostPauses++; pauseWhy = true; pause(true); }   // kit 0.17.2: the sound stopped by the system (an iPhone's call): nothing plays on unheard, once until it is back
       if (state.screen === 'play') {
         acc += dt;
         while (acc >= STEP) { tick(); acc -= STEP; }
       } else acc = 0;
+      // kit 0.27.0: play under way, for the CrazyGames SDK: in play, no place card, the run not ended; a pause of the kit's own changes nothing
+      if (PORTAL) cgPlaying(state.screen === 'paused' && pausedBy === 'kit' ? CG.playing : state.inGame && state.screen === 'play' && !placing() && !state.over);   // sent at most once a second (CG_GAP)
       if (music) music.sync(state.inGame, state.screen, state.ending);
       syncAmbient();   // version 8 (4c-7)
       if (hudNodes && hudNodes.full) syncHud();   // version 8: the full HUD's moments
@@ -8703,6 +8798,9 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
        lb.shake(lines, seconds): the picture only, never under Reduce motion. lb.after(seconds, fn): a timer in game time.
        lb.settings: effects, reduceMotion, picture and the rest (read only). lb.screen, lb.time, lb.t.
        lb.picture: the Picture level in use ('best', 'faster' or 'fastest') and the picture's width, height and sharpness.
+       lb.portal (kit 0.27.0): '' in the arcade's build, 'crazygames' in the CrazyGames build. lb.portalContext(o): the feedback context, a
+         small object of plain values (where the player is, never who), sent to the portal's SDK when it changes; null clears it. The kit
+         clears it at the run's end and on quitting to the title, and sends the gameplay and loading events and honours the portal's mute itself.
        lb.rand, lb.randInt, lb.pick, lb.clamp, lb.lerp. lb.color('ember'): a named colour from the design system's tokens.
        lb.world draws the World. A frame: world.begin(ctx, { place: 'night', 'storm', 'dawn' or 'mist', camX, rise }), then the
          things on the path in the order they overlap, then world.end(). camX is the path's position at the picture's left
@@ -8786,6 +8884,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
          Lives left shows the run's row. */
     const api = {
       H: H, version: VERSION, touch: touch, input: input, hud: hud, sfx: sfx, world: world, color: colour,
+      portal: PORTAL, portalContext: cgContext,   // kit 0.27.0: the portal this copy was built for ('' or 'crazygames'), and the feedback context
       get W() { return V.W; },
       get settings() { return Object.assign({}, settings, { picture: own.picture }); },
       get picture() { return { level: pictureLevel(), width: canvas.width, height: canvas.height, sharpness: V.k }; },
@@ -8822,6 +8921,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
     const fontLoads = ['400 20px "IM Fell English"', '400 14px "Alegreya Sans"', '500 14px "Alegreya Sans"', '700 14px "Alegreya Sans"']
       .map((f) => (document.fonts && document.fonts.load ? document.fonts.load(f) : Promise.resolve()));
     const reveal = () => {
+      cgShown();                       // kit 0.27.0: the CrazyGames SDK's loadingStop
       root.classList.remove('lb-loading');
       layout();
       fitScreens();
@@ -8942,7 +9042,9 @@ window.GLOAM_HALLOW_MUSIC_2 = "SUQzAwAAAAAvZUdFT0IAABfbAAAAYXBwbGljYXRpb24vYzJwY
    each life lost; Continue on the title, the relight plaque, and the title's line for a run that couldn't be kept (a run to continue).
    The playtest pass (Barney, 11 November 2026, HANDOVER-playtest-af.md; no kit or design change), part A: armour found with three pips
    full is picked up as 2 echo (take). Design system 18 (HANDOVER-design-18.md, kit 0.22.0): the day's double announced on Night's card
-   and in the choice of run (part C); The Moor Mother closes in (part D, kit 0.23.0); a life for each boss, up to five (part G, kit 0.24.0). */
+   and in the choice of run (part C); The Moor Mother closes in (part D, kit 0.23.0); a life for each boss, up to five (part G, kit 0.24.0).
+   The climb (HANDOVER-climb-and-sdk.md, part A, kit 0.25.0): each place from Blood Red Rain on lighter before its halfway lantern, busier after it.
+   The CrazyGames SDK (part B, kit 0.27.0): the CrazyGames build's feedback context (portalNote). */
 
 const PLACES = ['night', 'storm', 'dawn', 'mist'];
 const TRACK = { night: 0, storm: 0, dawn: 1, mist: 1 };   // The Long Vigil, then Lantern in the Moor from Dawn's place card
@@ -9033,12 +9135,17 @@ const PATTERNS = {
 // How it gets harder, place by place (the gameplay note): Night, small and medium monsters; Blood Red Rain, more kinds (the ghoul) and
 // more at once; Dawn, the walkers join; the Mist, the most at once. M is a mouth-hat or a ghoul; big: the chance an M is a walker
 // instead; extra: spots added to each section's pattern, anywhere along it, each a small, flying or medium monster.
+// The climb (HANDOVER-climb-and-sdk.md, part A; Barney, 11 November 2026; starting figures, to be tuned from the playtest's run logs):
+// big and extra are each a pair, [before, after] the halfway lantern. A level's ten stretches split there, 1 to 5 before it and 6 to
+// 10 after, by position along the path (the second loop shuffles the sections, so not by letter), and the second loop climbs the same.
+// Each place's total stays as it was; Night is unchanged.
 const MIX = {
-  night: { M: ['hatmaw'], big: 0, extra: 0 },
-  storm: { M: ['hatmaw', 'ghoul2'], big: 0, extra: 1 },
-  dawn:  { M: ['hatmaw', 'ghoul2'], big: 0.35, extra: 1 },
-  mist:  { M: ['hatmaw', 'ghoul2'], big: 0.35, extra: 2 },
+  night: { M: ['hatmaw'],           big: [0, 0],       extra: [0, 0] },   // unchanged (Barney, 11 November 2026)
+  storm: { M: ['hatmaw', 'ghoul2'], big: [0, 0],       extra: [0, 2] },   // was extra 1
+  dawn:  { M: ['hatmaw', 'ghoul2'], big: [0.15, 0.55], extra: [0, 2] },   // was big 0.35, extra 1
+  mist:  { M: ['hatmaw', 'ghoul2'], big: [0.25, 0.45], extra: [1, 3] },   // was big 0.35, extra 2
 };
+const HALF = 5;                        // the climb: stretches 1 to HALF come before the halfway lantern
 const CROWD = ['crawler', 'bat2', 'hatmaw', 'ghoul2', 'walker', 'crawler', 'bat2', 'walker'];   // Testing: eight at once past the start
 
 // Spells, mana and loot (4d-3; starting figures, Barney's where he gave them)
@@ -9460,12 +9567,12 @@ function runBegin(g, lb) {
   runLb = lb;
   runsSave(lb);
 }
-// where he is: the place, and the path's section letter and how far along the path to the arena (a letter can come twice in a place), or
-// in the boss's fight
+// where he is: the place, and the path's section letter, its stretch's number (st, 1 to 10; not n, the log's run number; the climb, part A: a letter can come twice in a
+// place, and the halves split after stretch 5) and how far along the path to the arena, or in the boss's fight
 function runWhere(g) {
   const b = g.boss, fight = !!b && (b.st === 'arrive' || b.st === 'fight');
-  const s = fight ? null : g.L.sections.find((q) => g.x >= q.x0 && g.x < q.x1);
-  return { p: g.p, loop: g.loop, sec: s ? String(s.id) : '', at: fight ? null : Math.max(0, Math.min(100, Math.round(100 * g.x / g.L.arena))), boss: fight };
+  const i = fight ? -1 : g.L.sections.findIndex((q) => g.x >= q.x0 && g.x < q.x1), s = i >= 0 ? g.L.sections[i] : null;
+  return { p: g.p, loop: g.loop, sec: s ? String(s.id) : '', st: s ? i + 1 : null, at: fight ? null : Math.max(0, Math.min(100, Math.round(100 * g.x / g.L.arena))), boss: fight };
 }
 // the run as it stands (the time played, the loop, where), kept if save
 function runNote(g, lb, save) {
@@ -9479,7 +9586,7 @@ function runLost(g, lb, kind) {
   const L = runNote(g, lb);
   if (!L || L.end) return;
   const b = g.boss, by = kind === 'pit' ? { by: 'pit', atk: '' } : g.hitBy || { by: '', atk: '' };
-  L.lost.push({ t: L.t, p: L.p, loop: L.loop, sec: L.sec, at: L.at, boss: L.boss, by: by.by, atk: by.atk, left: L.boss ? Math.round(100 * b.hp / b.max) : null });
+  L.lost.push({ t: L.t, p: L.p, loop: L.loop, sec: L.sec, st: L.st, at: L.at, boss: L.boss, by: by.by, atk: by.atk, left: L.boss ? Math.round(100 * b.hp / b.max) : null });
   runsSave(lb);
 }
 // part G: a life gained after a boss, or at five lives its 10 echo instead, for the playtest's run log (how often players reach five)
@@ -9515,10 +9622,20 @@ const clockText = (s) => {
   const n = Math.max(0, Math.round(s)), h = Math.floor(n / 3600), m = Math.floor(n / 60) % 60, x = String(n % 60).padStart(2, '0');
   return h ? h + ':' + String(m).padStart(2, '0') + ':' + x : m + ':' + x;
 };
+// part B of HANDOVER-climb-and-sdk.md (kit 0.27.0): where the player is, for the CrazyGames build's feedback context (lb.portalContext;
+// the kit sends it only when it changes, and clears it at the run's end and on quitting). Game state only, nothing about the player.
+function portalNote(g, lb) {
+  if (!g.L) return;
+  const w = runWhere(g), run = RUNS.find((x) => x.id === g.run);
+  const o = { place: PLACE_SHORT[w.p], loop: w.loop, lives: Math.max(0, g.lives), run: run ? run.name : '', boss: w.boss };
+  if (!w.boss && w.st) { o.stretch = w.st; o.section = w.sec; }
+  lb.portalContext(o);
+}
 function runWhereText(lb, w, twice) {   // twice: the run went round again, so the second loop is said
   const p = Math.max(0, Math.min(3, Math.floor(Number(w.p) || 0)));
   const along = typeof w.at === 'number' && isFinite(w.at) ? Math.round(w.at) + '% along' : '';
-  const at = w.boss === true ? lb.world.bossNames[PLACES[p]] : PLACE_SHORT[p] + (/^[A-Z]$/.test(w.sec) ? ' section ' + w.sec : '') +
+  const n = Number.isInteger(w.st) && w.st >= 1 && w.st <= 10 ? ', stretch ' + w.st + ' of 10' : '';   // the climb: 1 to 5 before the halfway lantern
+  const at = w.boss === true ? lb.world.bossNames[PLACES[p]] : PLACE_SHORT[p] + (/^[A-Z]$/.test(w.sec) ? ' section ' + w.sec + n : '') +
     (along || (twice && w.loop === 2) ? ' (' + [along, twice && w.loop === 2 ? 'second loop' : ''].filter(Boolean).join(', ') + ')' : '');
   return at + (w.boss === true && twice && w.loop === 2 ? ' (second loop)' : '');
 }
@@ -9762,7 +9879,7 @@ LanternBox.game({
   },
 
   // step 5f-1: a play check runs the game's own update and drawing, timed (the play check, below)
-  update(g, lb) { if (g.check) return checkUpdate(g, lb); playUpdate(g, lb); },
+  update(g, lb) { if (g.check) return checkUpdate(g, lb); playUpdate(g, lb); if (lb.portal) portalNote(g, lb); },   // kit 0.27.0: the portal's feedback context
   draw(ctx, g, lb) { if (g.check) return checkDraw(ctx, g, lb); playDraw(ctx, g, lb); },
 });
 
@@ -10283,7 +10400,7 @@ function startTeaching(g, lb) {  // as Night's card lifts: walk, jump, attack; o
 function teachOnce(g, lb, id) {  // the first time a control matters in a taught run
   if (!g.teach || g.taught[id]) return;
   g.taught[id] = true;
-  if (id === 'roll' && lb.touch) return;   // a touch device has had "Flick to roll" from the start
+  if (id === 'roll' && lb.touch) return;   // a touch device has had "Pull down to the side to roll" from the start
   lb.teach.show(id);
 }
 
@@ -10862,16 +10979,17 @@ function spawnMonsters(g, lb) {
   g.walls = g.L.pits.concat(g.L.banks.filter((b) => Math.abs(bankRise(g, b)) >= BANK_MIN), g.pieces.map((p) => [p.x0, p.x1]));
   if (g.monsTest === 'none') return;
   const mix = MIX[PLACES[g.p]];
-  const kindOf = (role) => g.monsTest === 'hatmaw' ? 'hatmaw' : role === 'S' ? 'crawler' : role === 'F' ? 'bat2' : lb.rand() < mix.big ? 'walker' : lb.pick(mix.M);
-  let n = 0;
-  for (const s of g.L.sections) {
+  let n = 0, h = 0;                    // h: the climb's half, 0 before the halfway lantern, 1 after
+  const kindOf = (role) => g.monsTest === 'hatmaw' ? 'hatmaw' : role === 'S' ? 'crawler' : role === 'F' ? 'bat2' : lb.rand() < mix.big[h] ? 'walker' : lb.pick(mix.M);
+  g.L.sections.forEach((s, i) => {
+    h = i < HALF ? 0 : 1;              // the climb: stretches numbered along the path, 1 to 10
     const pats = PATTERNS[s.id], pat = pats[Math.floor(lb.rand() * pats.length)].slice();
-    for (let e = 0; e < mix.extra; e++) pat.push([0.12 + lb.rand() * 0.8, lb.pick(['S', 'S', 'F', 'M'])]);
+    for (let e = 0; e < mix.extra[h]; e++) pat.push([0.12 + lb.rand() * 0.8, lb.pick(['S', 'S', 'F', 'M'])]);
     for (const [u, role] of pat) {
       const m = makeMonster(g, kindOf(role), s.x0 + u * (s.x1 - s.x0), n++);
       if (m) g.mons.push(m);
     }
-  }
+  });
   if (g.monsTest === 'crowd') {        // Testing: eight more just past the start, all coming at once (the speed check)
     const s = g.L.sections[0];
     CROWD.forEach((kind, k) => { const m = makeMonster(g, kind, s.x0 + 160 + k * 60, n++, true); if (m) g.mons.push(m); });
