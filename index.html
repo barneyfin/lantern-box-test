@@ -30,7 +30,7 @@
   <h1>Lantern Box tests</h1>
   <p>Test builds of Gloam Hallow and the kit's test page, for trying on any device. Not finished, and not for sharing.</p>
   <p class="ver" id="ver">Kit version: checking…</p>
-  <a class="card" href="gloam-hallow.html"><b>Gloam Hallow</b><span>The game, with its Testing screen in Settings.</span></a>
+  <a class="card" href="gloam-hallow.html"><b>Gloam Hallow</b><span>The game, with its Testing screen in Settings. Kit 0.21.0: a run is saved at each lantern, so close the tab mid-run and Continue is on the title.</span></a>
   <a class="card" href="gloam-hallow.html?check"><b>Play check</b><span>Gloam Hallow plays itself for about two minutes, through all four places and their bosses, then gives a result to copy.</span></a>
   <a class="card" href="lb-sampler.html"><b>Test page</b><span>Every drawing part and screen, and the speed check.</span></a>
   <h2>Trials for slow devices</h2>
@@ -72,7 +72,7 @@
   // the version on the server, never a kept copy; the links carry it, so a phone opens the new files at once
   // this page's own version (kept the same as version.txt with every push): a phone may show a kept copy of this page for up to
   // 10 minutes, so when the server's version is newer the page loads itself afresh at a new address, once for each version
-  const PAGE = '0.20.13';
+  const PAGE = '0.21.0';
   fetch('version.txt', { cache: 'no-store' }).then((r) => (r.ok ? r.text() : Promise.reject())).then((t) => {
     const v = t.trim(), tried = (/[?&]fresh=([^&]*)/.exec(location.search) || [])[1];
     if (v !== PAGE && tried !== encodeURIComponent(v)) { location.replace(location.pathname + '?fresh=' + encodeURIComponent(v)); return; }

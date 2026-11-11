@@ -1085,6 +1085,30 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 .lb-root>.lb-rotate{z-index:2}
 .lb-rotate>.lb-plaque{flex:none}
 .lb-error{position:absolute;left:50%;top:12px;z-index:3;transform:translateX(-50%);max-width:90%;padding:var(--space-2) var(--space-4);background:var(--brass);color:var(--on-brass);font:700 15px/1.3 var(--font-text)}
+/* kit 0.21.0: design system version 17's section, as bundle.css has it */
+/* ---------- version 17: a run to continue (Gloam Hallow, part C; Barney, 11 November 2026) ---------- */
+/* a title item with a line under it: Continue, and where he'll come back (TitleArch) */
+.lb-title-item.has-sub,.lb-arch.has-four .lb-title-item.has-sub,.lb-arch.is-phone.has-four .lb-title-item.has-sub{display:grid;grid-template-columns:1fr auto auto 1fr;justify-content:stretch;align-content:center;column-gap:0;row-gap:0;height:auto;min-height:42px;padding:2px 12px 1px}
+.lb-title-item.has-sub::before{grid-column:2;grid-row:1;align-self:center;margin-right:10px}
+.lb-title-item.has-sub .lb-title-label{grid-column:3;grid-row:1;line-height:24px}
+.lb-title-item.has-sub:not(.is-selected) .lb-title-label{grid-column:2/span 2}
+.lb-title-sub{grid-column:1/-1;grid-row:2;justify-self:center;font:400 14px/17px var(--font-text);letter-spacing:.02em;color:var(--title-hint);text-shadow:none;white-space:nowrap}
+.lb-title-item.is-selected .lb-title-sub{color:var(--title-item);font-weight:400}
+.lb-arch.is-phone.has-four .lb-title-item.has-sub{min-height:var(--target);padding:2px 12px 2px}
+.lb-arch.is-phone .lb-title-item.has-sub::before{margin-right:9px}
+.lb-arch.is-phone .lb-title-item.has-sub .lb-title-label{line-height:23px}
+.lb-arch.is-phone .lb-title-sub{font-size:12px;line-height:15px}
+/* the relight plaque (Relight) */
+.lb-relight-facts{display:flex;flex-direction:column;gap:2px;font:400 16px/1.35 var(--font-text);color:var(--text-2)}
+.lb-relight-run{font:400 15px/1.3 var(--font-text);letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)}
+.lb-plaque.is-phone .lb-relight-facts{font-size:15px}
+.lb-plaque.is-phone .lb-relight-run{font-size:13px}
+.lb-relight-keep{font-size:14px;text-align:center}
+/* the line for a run that couldn't be kept, beside the arch on the title (PlaqueLine) */
+.lb-line.is-title{top:210px;left:calc(50% + 200px)}
+.lb-line.is-title.is-phone{top:150px;left:calc(50% + 152px)}
+.lb-line.is-title.is-phone>.lb-face{height:41px}
+.lb-line.is-title.is-phone .lb-line-text{font-size:20px}
 
 </style>
 <script>
@@ -1098,7 +1122,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.20.13';
+  const VERSION = '0.21.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -6217,7 +6241,8 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
        gives save: { version, fresh(), read(old, version), clear } (clear: the confirmation's words); fresh() makes a new record and
        read(old, version) turns a stored one into a good record, or returns null to start afresh. A record that can't be read (not an
        object, no version, a newer version, or read throwing) starts afresh rather than stopping. The game reads and changes lb.progress
-       and writes it with lb.saveProgress(); Settings' Clear saved progress removes it. Nothing about a run in progress is kept. */
+       and writes it with lb.saveProgress(); Settings' Clear saved progress removes it. The kit keeps nothing about a run in progress;
+       kit 0.21.0: a game may keep one in its record and offer it on the title (resume, below). */
     const saveCfg = cfg.save && typeof cfg.save.fresh === 'function' ? cfg.save : null;
     const saveKey = 'lanternbox.save.' + gameId;
     const saveVersion = saveCfg ? Math.max(1, Math.floor(+saveCfg.version) || 1) : 0;
@@ -7023,8 +7048,10 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       dialogLayer.hidden = true;
       dialogLayer.innerHTML = '';
       titleScreen.hidden = state.inGame;
+      syncTitle();   // kit 0.21.0: the title's first item follows the run waiting (Continue or Start game)
       nav = state.inGame ? null : titleNav;
       if (nav) nav.focus();
+      if (!state.inGame) fitScreens();
     }
     function plaque(labelId, width, phoneWidth, faceStyle, faceClass) {
       const p = el('div', 'lb-plaque' + (V.phone ? ' is-phone' : ''));
@@ -8202,10 +8229,22 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
         menu.append(b);
         return { el: b, menu: true, activate: activate };
       };
+      // kit 0.21.0 (design system version 17, TitleArch): while the game has a run waiting, the first item reads Continue with a line under it
+      // saying where he'll come back, and opens the relight plaque
+      const wait = resumeInfo();
+      titleFor = wait ? wait.where : null;
+      const contItem = () => {
+        const b = el('button', 'lb-title-item has-sub', '<span class="lb-title-label">Continue</span><span class="lb-title-sub"></span>');
+        b.type = 'button';
+        b.lastChild.textContent = wait.where;
+        b.setAttribute('aria-label', 'Continue: ' + wait.where);
+        menu.append(b);
+        return { el: b, menu: true, activate: () => openRelight() };
+      };
       const items = [
         // kit 0.11.0: chooseRun(lb, start) in the config hears Start game first, and starts the run with start(id) (at once, or from its own
         // choice of run, built with lb.ui); lb.run is the run being played, and Play again repeats it
-        item('Start game', () => { sfx('confirm'); if (typeof cfg.chooseRun === 'function') { try { cfg.chooseRun(api, (id) => { state.run = id == null ? null : String(id); startGame(); }); } catch (e) { reportError(e); } } else startGame(); }),
+        wait ? contItem() : item('Start game', () => { sfx('confirm'); if (typeof cfg.chooseRun === 'function') { try { cfg.chooseRun(api, (id) => { state.run = id == null ? null : String(id); startGame(); }); } catch (e) { reportError(e); } } else startGame(); }),
         howTo ? item('How to play', () => openHowTo('title')) : null,
         shrineCfg ? item('Echo Shrine', () => goShrine(() => { sfx('back'); state.screen = 'title'; closeDialog(); }, shrineBank()))   // kit 0.10.2
           : item('High scores', () => { sfx('confirm'); openScores(-1, false); }),
@@ -8231,11 +8270,85 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       }
       tiles.append(sound);
       if (!PORTAL) tiles.append(fullscreenTile('lb-arch-tile'));   // kit 0.18.0 (version 14): none in the CrazyGames build; the others keep their places from the right
-      titleScreen.append(scrim, wrap, tiles);
+      titleLineEl.classList.toggle('is-phone', phone);   // kit 0.21.0: the title's line, beside the arch
+      titleScreen.append(scrim, wrap, tiles, titleLineEl);
       const keep = titleNav ? titleNav.index : 0;
       titleNav = makeNav(items, { start: keep }, sfx);
       if (dialogLayer.hidden) nav = titleNav;
       applySettings();
+    }
+
+    /* kit 0.21.0 (design system version 17: a run to continue). resume: { waiting(lb), back(lb, start), abandon(lb) } in the config:
+       waiting(lb) gives null, or { where, run, lives, echo, again } for a run the game has kept (where: the line under Continue, such as
+       "Dawn \u00b7 the halfway lantern"; run: its name; again: the second loop). The title asks it each time it is built, and again whenever
+       a plaque over it closes, so the first item follows the run. Continue opens the relight plaque (Relight): Return to the lantern
+       (primary, focused, so Enter returns) calls back(lb, start), where the game readies its run and calls start(id) as chooseRun does;
+       Abandon the run calls abandon(lb), with no second step, and the title reads Start game again, selected; Backspace closes the plaque
+       and the run still waits. The note is left out when the run holds no echo. */
+    const resumeCfg = cfg.resume && typeof cfg.resume.waiting === 'function' ? cfg.resume : null;
+    let titleFor = null;   // the place line the title was last built with, or null for Start game
+    function resumeInfo() {
+      if (!resumeCfg) return null;
+      let w = null;
+      try { w = resumeCfg.waiting(api); } catch (e) { reportError(e); }
+      return w && typeof w === 'object' && w.where
+        ? { where: String(w.where), run: w.run ? String(w.run) : '', lives: Math.max(0, w.lives | 0), echo: Math.max(0, w.echo | 0), again: !!w.again } : null;
+    }
+    function syncTitle() {
+      if (state.inGame || !resumeCfg) return;
+      const w = resumeInfo();
+      if ((w ? w.where : null) !== titleFor) buildTitle();
+    }
+    function relightDialog(w) {
+      const { panel, face } = plaque('lb-rl-t', 520, 460, 'gap:12px;padding:22px 22px 18px', 'is-centred');
+      panel.setAttribute('role', 'alertdialog');
+      const facts = el('div', 'lb-relight-facts');
+      if (w.run) facts.append(txt('span', 'lb-relight-run', w.run));
+      facts.append(txt('span', '', w.where + (w.again ? ' \u00b7 Again, harder' : '')),
+        txt('span', '', (w.lives === 1 ? '1 life left' : w.lives + ' lives left') + ' \u00b7 ' + w.echo + ' echo'));
+      const back = button('Return to the lantern', true, true);
+      back.style.width = '100%';
+      const drop = button('Abandon the run');
+      drop.style.width = '100%';
+      face.append(heading('lb-rl-t', 'Relight the lantern to return?'), el('div', '', RULE).firstChild, facts, back, drop);
+      if (w.echo > 0) face.append(txt('p', 'lb-note lb-relight-keep', 'Its ' + w.echo + ' echo is kept.'));
+      if (!touch && !V.phone) { const hint = el('p', 'lb-hint', kbd('Enter') + ' return \u00b7 ' + kbd('Backspace') + ' back'); hint.style.textAlign = 'center'; face.append(hint); }
+      const shut = () => { sfx('back'); state.screen = 'title'; closeDialog(); };
+      return { panel: panel, opts: { back: shut }, items: [
+        { el: back, activate: () => { sfx('confirm'); try { resumeCfg.back(api, (id) => { state.run = id == null ? null : String(id); startGame(); }); } catch (e) { reportError(e); } } },
+        { el: drop, activate: () => { sfx('back'); try { resumeCfg.abandon(api); } catch (e) { reportError(e); } state.screen = 'title'; closeDialog(); } }] };
+    }
+    function openRelight(sample) {   // sample: the test page's own facts
+      const w = sample || resumeInfo();
+      if (!w) { syncTitle(); return; }
+      sfx('confirm');
+      state.screen = 'relight';
+      showDialog(() => relightDialog(sample || resumeInfo() || w));
+    }
+    /* kit 0.21.0 (version 17, PlaqueLine): lb.titleLine(text) shows one line beside the arch on the title, with no picture: it drops in
+       and fades in as a line does in play, holds 4 s in all and fades; it takes no input. Its time begins once the title is showing. */
+    const TITLE_LINE = 4;
+    const titleLineEl = el('div', 'lb-plaque is-hud lb-line is-title no-pic', '<div class="lb-face"><span class="lb-line-text"></span></div>');
+    titleLineEl.setAttribute('role', 'status');
+    titleLineEl.hidden = true;
+    let titleLine = null;
+    function showTitleLine(text) { titleLine = { text: String(text), t0: null }; }
+    function syncTitleLine() {
+      const L = titleLine;
+      if (L && L.t0 == null && !state.inGame && (titleScreen.hidden || root.classList.contains('lb-loading'))) return;   // not yet on show
+      const u = L && L.t0 != null ? state.t - L.t0 : 0;
+      if (!L || state.inGame || u >= TITLE_LINE) { titleLine = null; if (!titleLineEl.hidden) titleLineEl.hidden = true; return; }
+      if (L.t0 == null) {
+        L.t0 = state.t;
+        titleLineEl.firstChild.firstChild.textContent = L.text;
+        titleLineEl.hidden = false;
+        const arch = titleScreen.querySelector('.lb-title-arch');   // a narrow screen: scaled to the room beside the arch
+        const room = titleScreen.clientWidth - (arch ? arch.offsetLeft + arch.getBoundingClientRect().width : 0) - 16;
+        L.k = Math.min(1, room / Math.max(1, titleLineEl.offsetWidth));
+      }
+      const a = u < 0.22 ? u / 0.22 : u > TITLE_LINE - 0.4 ? Math.max(0, (TITLE_LINE - u) / 0.4) : 1, q = Math.min(1, u / 0.25), dy = -8 * (1 - q * q * (3 - 2 * q));
+      titleLineEl.style.opacity = String(a);
+      titleLineEl.style.transform = 'translate(-50%,' + dy.toFixed(2) + 'px)' + (L.k < 1 ? ' scale(' + L.k.toFixed(3) + ')' : '');
     }
 
     /* ----- Flow ----- */
@@ -8423,6 +8536,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       if (music) music.sync(state.inGame, state.screen, state.ending);
       syncAmbient();   // version 8 (4c-7)
       if (hudNodes && hudNodes.full) syncHud();   // version 8: the full HUD's moments
+      if (titleLine || !titleLineEl.hidden) syncTitleLine();   // kit 0.21.0
       const r0 = performance.now();
       render();
       if (testCfg) showFps(gap, performance.now() - r0);   // kit 0.8.1
@@ -8566,7 +8680,10 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
        Kit 0.20.2: trials, the look's trade-offs switched on only by the page's address (?trial=, see TRIAL); lb.trials names those on, in
          words, for a check's result (an empty list without ?trial). Kit 0.20.3: the Testing screen in one to three columns, to fit.
          Kit 0.20.4: the hero trial. Kit 0.20.5: the mon trial. Kit 0.20.6: the tree trial.
-         Kit 0.20.7: monsters waiting share their pictures by kind (no change you'd see). Kit 0.20.8: the rim trial. */
+         Kit 0.20.7: monsters waiting share their pictures by kind (no change you'd see). Kit 0.20.8: the rim trial.
+       Kit 0.21.0 (design system version 17): resume: { waiting(lb), back(lb, start), abandon(lb) } puts Continue on the title, with a
+         place line under it, while the game has a run waiting, and opens the relight plaque (see resumeInfo); lb.titleLine(text) shows
+         one line beside the title's arch for 4 s. */
     const api = {
       H: H, version: VERSION, touch: touch, input: input, hud: hud, sfx: sfx, world: world, color: colour,
       get W() { return V.W; },
@@ -8583,6 +8700,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       addWisps: addWisps, gameOver: gameOver, shake: shake, after: after,
       get progress() { return progress; }, saveProgress: saveProgress, runEnd: runEnd, keyLetter: keyLetter,   // kit 0.10.0
       ui: ui, get run() { return state.run || null; },   // kit 0.11.0
+      titleLine: showTitleLine,   // kit 0.21.0
       teach: { show: teachShow, hide: teachHide, get showing() { return teach.items.map((it) => it.id); } },   // kit 0.14.0
       fade: fade, placeCard: placeCard, placing: placing, win: (o) => showWin(o), held: setHeld, howTo: () => openHowTo('play'),   // version 8 (4c-6a)
       get test() { return testCfg ? Object.assign({}, testValues) : null; },   // kit 0.8.1: Testing's values, or null when the game has none
@@ -8599,6 +8717,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
     nav = titleNav;
     layout();
     if (cfg.init) { try { cfg.init(api); } catch (e) { reportError(e); } }
+    syncTitle();   // kit 0.21.0: init may have ended a run that was waiting
     if (music && !settings.muted) setTimeout(music.load, 300);   // get the tracks ready behind the title screen
     const fontLoads = ['400 20px "IM Fell English"', '400 14px "Alegreya Sans"', '500 14px "Alegreya Sans"', '700 14px "Alegreya Sans"']
       .map((f) => (document.fonts && document.fonts.load ? document.fonts.load(f) : Promise.resolve()));
@@ -8631,6 +8750,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs};
       openHowTo: openHowTo, showWin: showWin, h8: state.h8, snd: SND8, openTesting: openTesting,
       showRunEnd: showRunEnd, openCredits: openCredits, openClear: openClear, clearProgress: () => clearProgress(), layout: LAYOUT,   // kit 0.10.0
       pickTake: (i) => pickTake(i), get card() { return h8.card; },   // kit 0.13.0
+      openRelight: openRelight, get titleLine() { return titleLine; },   // kit 0.21.0
       setScores: (table) => { if (Array.isArray(table)) store.set(scoreKey(), table); else store.remove(scoreKey()); },   // kit 0.10.0: the test page's sample tables
       get runEnd() { return runEndInfo; }
     };
@@ -9213,6 +9333,12 @@ function screensPanel(g, lb) {
     ["Run's end: furthest, a belt", () => runEndScreen(D, 'beltFar')],
     ['Credits', () => { D.quit(); D.openSettings('title'); D.openCredits('title'); }],
     ['Clear saved progress?', () => { D.quit(); D.openSettings('title'); D.openClear('title'); }],
+    // kit 0.21.0 (design system version 17): a run to continue
+    ['Title: a run waiting', () => { SAMPLE_RUN = SAMPLE_RUNS[0]; D.quit(); }],
+    ['Title: the longest line', () => { SAMPLE_RUN = SAMPLE_RUNS[1]; D.quit(); }],
+    ['Relight', () => { SAMPLE_RUN = SAMPLE_RUNS[0]; D.quit(); D.openRelight(); }],
+    ['Relight: second loop', () => { SAMPLE_RUN = SAMPLE_RUNS[2]; D.quit(); D.openRelight(); }],
+    ['Title: a run ended', () => { SAMPLE_RUN = null; D.quit(); lb.titleLine('Your last run ended. Its 118 echo was kept.'); }],
   ];
   openPanel((face, close) => {
     const h = document.createElement('h2');
@@ -9371,8 +9497,15 @@ function buildPieces(g, lb) {
   document.body.append(bar, readout, showBar);
 }
 
+// kit 0.21.0 (design system version 17): sample runs for Continue on the title and the relight plaque (Screens)
+const SAMPLE_RUNS = [{ where: 'Dawn · the halfway lantern', run: 'The Bare Reckoning', lives: 2, echo: 118 },
+  { where: 'Blood Red Rain · the halfway lantern', run: 'The Echo Infusion', lives: 3, echo: 0 },
+  { where: 'Mist · Boss', run: 'The Echo Infusion', lives: 1, echo: 1204, again: true }];
+let SAMPLE_RUN = null;
+
 LanternBox.game({
   id: 'lb-sampler',
+  resume: { waiting: () => SAMPLE_RUN, back: (lb, start) => { SAMPLE_RUN = null; start(); }, abandon: () => { SAMPLE_RUN = null; } },   // kit 0.21.0
   title: ['Test', 'Page'],
   hud: 'full',   // version 8's HUD (4c-6a)
   potions: true,   // kit 0.9.0: the potion sockets
