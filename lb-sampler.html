@@ -1133,8 +1133,9 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 .lb-life-ring{fill:none;stroke:var(--gold-light);stroke-width:1.2;animation:lbGainRing 3s linear infinite}
 /* kit 0.24.0: in the game the lantern's moment is played once on the kit's clock (lifeGain), so the review's loop is stopped here */
 .lb-hud .lb-life-ring,.lb-bonus .lb-life-ring{animation:none;opacity:0}
-/* kit 0.24.0: on a phone the plaque line is held to one line's height (41px); a life gained's plaque keeps both its lines and its rule */
-.lb-hud.is-phone .lb-line.is-name.is-gain>.lb-face{height:auto}
+/* kit 0.25.0 (design system 20, PlaqueLine; Barney's choice): on a phone the plaque line is held to one line's height (41px), but every
+   name plaque (the boss's name, 64px, and a life gained's, 94px) grows to fit, so its name keeps its rule (version 20's rule) */
+.lb-hud.is-phone .lb-line.is-name>.lb-face{height:auto}
 
 </style>
 <script>
@@ -1148,7 +1149,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.24.0';
+  const VERSION = '0.25.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2738,9 +2739,9 @@ class Scene{
         if(it.k==="hatmaw"){if(lv&&hX>-400&&hX<W+400)monsters.push({kind:"hatmaw",X:hX+hs.perch.x,Y:hY+hs.perch.y,ph:p*1.7});continue;}
         const wx=base+it.x,X=wx-camX;
         if(X<-340||X>W+340)continue;
-        const Y=gY(wx);
+        const Y=gY(wx),gq=q=>gY(q+camX);   // kit 0.25.0 (design system 19): the ground at a picture x, so a prop meets it
         switch(it.k){
-          case "grave":if(st){if(this.ver>=5)drawGrave5(x,X,Y+4,1.45,it.v);else drawGrave(x,X,Y+4,1,it.v);}break;
+          case "grave":if(st){if(this.ver>=5)drawGrave5(x,X,Y+4,1.45,it.v,gq);else drawGrave(x,X,Y+4,1,it.v);}break;
           case "fence":if(st){drawFence(x,X,wx,it.w);}break;
           case "wall":if(st){drawWall(x,X,Y,it.w,it.h,p);}break;
           case "potion":if(lv){drawPotion(x,X,SD.potionGround?Y-SD.wallH+1:wallTop,t,o.rm);}break;
@@ -2754,13 +2755,13 @@ class Scene{
           case "thorns":if(lv){monsters.push(this.ver>=5?{kind:"crawler",X,Y:Y+3,ph:p}:{kind:"thorns",X,Y:Y+3,w:it.w,ph:p});}break;
           case "ghoul":if(lv){monsters.push({kind:this.ver>=5?"ghoul2":"ghoul",X,Y:Y+2,ph:p*2.3});}break;
           case "bat":if(lv){monsters.push({kind:this.ver>=5?"bat2":"bat",X:X+Math.sin(t*0.9+p)*30,Y:it.y+Math.sin(t*1.7+p)*16,ph:p});}break;
-          case "post":if(st){if(set==="town")drawStreetLamp(x,X,Y,o.win);else drawPost(x,X,Y,true,o.win);}break;
-          case "candle":if(lv){drawCandle(x,X,Y+4,t,o.rm);}break;
-          case "lamp":if(st){drawStreetLamp(x,X,Y,o.win);}break;
+          case "post":if(st){if(set==="town")drawStreetLamp(x,X,Y,o.win,gq);else drawPost(x,X,Y,true,o.win);}break;
+          case "candle":if(lv){drawCandle(x,X,Y+4,t,o.rm,gq);}break;
+          case "lamp":if(st){drawStreetLamp(x,X,Y,o.win,gq);}break;
           case "barrels":if(st){drawBarrels(x,X,Y);}break;
           case "crates":if(st){drawCrates(x,X,Y);}break;
-          case "well":if(st){drawWell(x,X,Y);}break;
-          case "menhir":if(st){drawMenhir(x,X,Y+2,1,it.v);}break;
+          case "well":if(st){drawWell(x,X,Y,gq);}break;
+          case "menhir":if(st){drawMenhir(x,X,Y+2,1,it.v,gq);}break;
           case "cairn":if(st){drawCairn(x,X,Y,1);}break;
           case "fallen":if(st){drawFallen(x,X,wx);}break;
           case "stonewall":if(st){drawStoneWall(x,X,wx,it.w,it.h,p);}break;
@@ -2768,7 +2769,7 @@ class Scene{
           case "bigstump":if(st){drawBigStump(x,X,Y,it.v,p);}break;
           case "grass":if(st){drawSprite(x,Pp.get("wind").wgrass[posmod(p+Math.round(it.x/100),4)],X,Y+5,0.62,false);}break;
           case "ferns":if(st){drawFerns(x,X,wx,it.w,p);}break;
-          case "shrine":if(lv){drawShrine(x,X,Y+2,t,o.rm);}break;
+          case "shrine":if(lv){drawShrine(x,X,Y+2,t,o.rm,gq);}break;
           case "log":if(st){drawLog(x,X,wx,it.w,it.h,p);}break;
         }
       }
@@ -3496,9 +3497,23 @@ function drawGrave(x,X,Y,k,v){
   x.restore();
 }
 /* round 6's gravestones: bigger and quirkier, like the houses and trees. They lean, crack, sag and bend. */
-function drawGrave5(x,X,Y,k,v){
+// version 19: a prop meets the ground along its whole base. gy, when given, is the ground's height at a picture x. Where the
+// ground falls away under a prop's flat base, the part fills down from the base to the ground (its root, in the ground's own ink,
+// so it shows only where the ground has dropped away), and the grave's mound leans with the ground, sheared so its sides stay
+// upright. Where nothing would hang in the air, the part draws exactly as before; a part drawn without gy always does.
+const ROOT_G5=[[-14.1,13.3],[-10.4,12.1],[-11.9,11.7],[-12.6,13],[-11.5,8.5],[-14.7,14.9]],ROOT_MENHIR=[[-9,10],[-12,13],[-7,8]];
+function propRoot(x,X,Y,l,r,gy,bot,s){s=s||0;const n=Math.max(2,Math.ceil((r-l)/4)),pts=[];let any=false;
+  for(let i=0;i<=n;i++){const d=r-(r-l)*i/n,top=Y+s*d,g=gy(X+d);if(g>bot+s*d-2)any=true;pts.push([X+d,Math.max(top,g+3)]);}
+  if(!any)return;x.fillStyle=INK;x.beginPath();x.moveTo(X+l,Y+s*l);x.lineTo(X+r,Y+s*r);pts.forEach(q=>x.lineTo(q[0],q[1]));x.closePath();x.fill();}
+function propMound(x,X,Y,k,gy){const r=24*k,s=(gy(X+r)-gy(X-r))/(2*r);
+  x.fillStyle=INK;x.save();x.translate(X,Y);x.transform(1,s,0,1,0,0);x.scale(k,k);x.beginPath();x.ellipse(0,1,24,5,0,Math.PI,0);x.fill();x.restore();
+  propRoot(x,X,Y+k,-r,r,gy,Y+k,s);}
+function drawGrave5(x,X,Y,k,v,gy){
+  const lean=!!gy&&Math.max(gy(X-24*k),gy(X+24*k))>Y+k-1; // version 19: the flat mound would hang in the air here
+  if(lean)propMound(x,X,Y,k,gy);
+  if(gy){const e=ROOT_G5[v%6];propRoot(x,X,Y-k,e[0]*k,e[1]*k,gy,Y+2*k);}
   x.fillStyle=INK;x.strokeStyle=INK;x.save();x.translate(X,Y);x.scale(k,k);
-  x.beginPath();x.ellipse(0,1,24,5,0,Math.PI,0);x.fill(); // a mound of earth
+  if(!lean){x.beginPath();x.ellipse(0,1,24,5,0,Math.PI,0);x.fill();} // a mound of earth
   const P=(pts,eo)=>{x.beginPath();pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();x.fill(eo?"evenodd":"nonzero");};
   switch(v%6){
     case 0:{ // a leaning slab, cracked and chipped
@@ -3566,14 +3581,16 @@ function drawWallLamp(x,X,Y,t,rm){ // a bracket lantern by the door
   x.strokeStyle=INK;x.lineWidth=1;x.strokeRect(X+5.5,Y+1.5,9,11);x.beginPath();x.moveTo(X+10,Y+1.5);x.lineTo(X+10,Y+12.5);x.stroke();
   x.fillStyle=INK;x.fillRect(X+5,Y+12.5,10,2);
 }
-function drawCandle(x,X,Y,t,rm){ // a candle at the foot of a grave
+function drawCandle(x,X,Y,t,rm,gy){ // a candle at the foot of a grave
+  if(gy)propRoot(x,X,Y-1,-2.4,2.4,gy,Y);
   const fl=1+0.12*Math.sin(t*(rm?2:5.3))+0.06*Math.sin(t*(rm?3:8.1));
   if(FX){const g=x.createRadialGradient(X,Y-12,1,X,Y-12,30);g.addColorStop(0,"rgba(255,207,106,0.5)");g.addColorStop(1,"rgba(255,207,106,0)");x.fillStyle=g;x.fillRect(X-32,Y-44,64,64);}
   x.fillStyle=INK;x.fillRect(X-2.4,Y-9,4.8,9);
   x.fillStyle="#ffdf9a";x.beginPath();x.moveTo(X,Y-9-8*fl);x.quadraticCurveTo(X+2.6,Y-12,X,Y-9.5);x.quadraticCurveTo(X-2.6,Y-12,X,Y-9-8*fl);x.fill();
 }
 /* the old town */
-function drawStreetLamp(x,X,Y,col){
+function drawStreetLamp(x,X,Y,col,gy){
+  if(gy)propRoot(x,X,Y+2,-6.5,6.5,gy,Y+4);
   x.fillStyle=INK;x.strokeStyle=INK;
   x.beginPath();x.moveTo(X-7,Y+4);x.lineTo(X-3,Y-14);x.lineTo(X-2,Y-106);x.lineTo(X+2,Y-106);x.lineTo(X+3,Y-14);x.lineTo(X+7,Y+4);x.closePath();x.fill();
   x.fillRect(X-5,Y-20,10,3);x.fillRect(X-4,Y-62,8,2.5);x.lineWidth=1.6;x.beginPath();x.moveTo(X-12,Y-100);x.lineTo(X+12,Y-100);x.stroke();
@@ -3587,7 +3604,8 @@ function drawBarrels(x,X,Y){
   for(const b of [[0,0],[20,0],[10,-24]]){const bx=X+b[0],by=Y+3+b[1];x.beginPath();x.moveTo(bx-8,by);x.quadraticCurveTo(bx-11.5,by-12,bx-8,by-24);x.lineTo(bx+8,by-24);x.quadraticCurveTo(bx+11.5,by-12,bx+8,by);x.closePath();x.fill();}
 }
 function drawCrates(x,X,Y){x.fillStyle=INK;x.save();x.translate(X,Y+3);x.fillRect(0,-22,24,22);x.fillRect(26,-16,17,16);x.rotate(-0.09);x.fillRect(3,-41,19,18);x.restore();}
-function drawWell(x,X,Y){
+function drawWell(x,X,Y,gy){
+  if(gy)propRoot(x,X,Y,-19.5,19.5,gy,Y+4);
   x.fillStyle=INK;x.strokeStyle=INK;
   x.beginPath();x.moveTo(X-20,Y+4);x.lineTo(X-19,Y-24);x.quadraticCurveTo(X,Y-29,X+19,Y-24);x.lineTo(X+20,Y+4);x.closePath();x.fill();
   x.fillRect(X-17,Y-62,4,40);x.fillRect(X+13,Y-62,4,40);
@@ -3603,7 +3621,8 @@ function drawRoofline(x,X,Y,r){ // distant rooftops and chimneys, with the odd s
   if(r()<0.4)drawSpireCluster(x,px+4,Y,r);
 }
 /* the open moor */
-function drawMenhir(x,X,Y,k,v){
+function drawMenhir(x,X,Y,k,v,gy){
+  if(gy){const e=ROOT_MENHIR[v%3];propRoot(x,X,Y,e[0]*k,e[1]*k,gy,Y+4*k);}
   const sh=[[[-9,0],[-11,-30],[-7,-62],[1,-70],[8,-58],[11,-24],[10,0]],[[-12,0],[-10,-24],[-4,-44],[4,-46],[10,-30],[13,0]],[[-7,0],[-9,-40],[-3,-82],[4,-88],[9,-60],[8,0]]][v%3];
   x.fillStyle=INK;x.save();x.translate(X,Y);x.scale(k,k);x.rotate((v%3-1)*0.07);x.beginPath();sh.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.lineTo(sh[sh.length-1][0],4);x.lineTo(sh[0][0],4);x.closePath();x.fill();x.restore();
 }
@@ -3700,7 +3719,8 @@ function drawLog(x,X,wx,w,h,p){ // a fallen trunk, its root plate torn up
   x.beginPath();x.moveTo(X+6,y0+4);for(let i=0;i<=10;i++){const a=Math.PI*0.5+i/10*Math.PI,rr=h*(0.9+r()*0.7);x.lineTo(X+6+Math.cos(a)*rr*0.7,y0-h*0.5+Math.sin(a)*rr);}x.closePath();x.fill();
   for(const u of [0.22,0.7,0.86]){const bx=X+w*u,by=lerp(y0,y1,u)-h*0.95;x.lineWidth=2.6;x.beginPath();x.moveTo(bx,by+4);x.lineTo(bx+6+r()*8,by-12-r()*14);x.stroke();}
 }
-function drawShrine(x,X,Y,t,rm){ // a wayside shrine on a post, with a candle inside
+function drawShrine(x,X,Y,t,rm,gy){ // a wayside shrine on a post, with a candle inside
+  if(gy)propRoot(x,X,Y,-2.5,2.5,gy,Y+4);
   x.fillStyle=INK;x.strokeStyle=INK;x.fillRect(X-2.5,Y-48,5,52);
   x.fillRect(X-12,Y-64,24,3);x.fillRect(X-12,Y-50,24,3);x.fillRect(X-12,Y-64,3,16);x.fillRect(X+9,Y-64,3,16);
   x.beginPath();x.moveTo(X-16,Y-63);x.lineTo(X,Y-78);x.lineTo(X+16,Y-63);x.closePath();x.fill();
@@ -4736,11 +4756,12 @@ function lvBuild(T,S){const key=T.key+"@"+S.toFixed(3);if(_lvP[key])return _lvP[
   for(let x=180;x<T.arena-100;x+=gap[0]+r()*(gap[1]-gap[0])){if(clear(x,lv==="mist"?70:14))dress.push([x,Math.floor(r()*6)]);}
   const P={T,G,pieces,walks,dress};return _lvP[key]=P;}
 // the kit: pass "static" draws what never moves (into the path's tiles), "live" the candles and shrines (every frame), neither both
-function lvDress(c,P,cam,W,t,pass,rm){const lv=P.T.lv,G=P.G,st=pass!=="live",lp=pass!=="static";for(const [x,v] of P.dress){if(x<cam-160||x>cam+W+160)continue;const X=x-cam;
-  if(lv==="night"){if(st)drawGrave5(c,X,G(x)+4,1.45,v);if(v===2&&lp)drawCandle(c,X+26,G(x+26)+4,t,!!rm);}
-  else if(lv==="storm"){if(!st)continue;if(v===5)drawWell(c,X,G(x));else drawStreetLamp(c,X,G(x),GOLD_LIGHT);}
-  else if(lv==="dawn"){if(st)drawMenhir(c,X,G(x)+2,1,v%3);}
-  else{if(v===5){if(lp)drawShrine(c,X,G(x)+2,t,!!rm);}else if(st)drawFerns(c,X,x,110+v*10,v,G);}}}
+// kit 0.25.0 (design system 19, play.js 1.8.0): gy, the ground at a picture x from the same cam, so each prop meets the ground in both passes
+function lvDress(c,P,cam,W,t,pass,rm){const lv=P.T.lv,G=P.G,gy=q=>G(q+cam),st=pass!=="live",lp=pass!=="static";for(const [x,v] of P.dress){if(x<cam-160||x>cam+W+160)continue;const X=x-cam;
+  if(lv==="night"){if(st)drawGrave5(c,X,G(x)+4,1.45,v,gy);if(v===2&&lp)drawCandle(c,X+26,G(x+26)+4,t,!!rm,gy);}
+  else if(lv==="storm"){if(!st)continue;if(v===5)drawWell(c,X,G(x),gy);else drawStreetLamp(c,X,G(x),GOLD_LIGHT,gy);}
+  else if(lv==="dawn"){if(st)drawMenhir(c,X,G(x)+2,1,v%3,gy);}
+  else{if(v===5){if(lp)drawShrine(c,X,G(x)+2,t,!!rm,gy);}else if(st)drawFerns(c,X,x,110+v*10,v,G);}}}
 
 /* ---------- the wanderer (4c-3): from wand.js, the lantern and the drawing helpers the posable figure uses ---------- */
 const W_INK="#060508";let W_RED="#b3261e";   // version 12: let, so setBelt can change it
@@ -6050,11 +6071,11 @@ function makeTools(env){
       const f=frame("splash");o=o||{};
       drawSplash(f.ctx,PLACE_SET[f.level],"on",x-f.camX,(o.y==null?f.gy(x):o.y)+3,f.t,f.rm,o.seed||0,"green","intense");
     },
-    candle(x,y){const f=frame("candle");drawCandle(f.ctx,x-f.camX,(y==null?f.gy(x):y)+4,f.t,f.rm);},
+    candle(x,y){const f=frame("candle");drawCandle(f.ctx,x-f.camX,(y==null?f.gy(x):y)+4,f.t,f.rm,y==null?q=>f.gy(q+f.camX):undefined);},   // kit 0.25.0: on the path it meets the ground
     wallLamp(x,y){const f=frame("wallLamp");drawWallLamp(f.ctx,x-f.camX,y,f.t,f.rm);},
     post(x,y,lit){const f=frame("post");drawPost(f.ctx,x-f.camX,y==null?f.gy(x):y,lit!==false,GOLD_LIGHT);},
-    streetLamp(x,y){const f=frame("streetLamp");drawStreetLamp(f.ctx,x-f.camX,y==null?f.gy(x):y,GOLD_LIGHT);},
-    shrine(x,y){const f=frame("shrine");drawShrine(f.ctx,x-f.camX,(y==null?f.gy(x):y)+2,f.t,f.rm);},
+    streetLamp(x,y){const f=frame("streetLamp");drawStreetLamp(f.ctx,x-f.camX,y==null?f.gy(x):y,GOLD_LIGHT,y==null?q=>f.gy(q+f.camX):undefined);},
+    shrine(x,y){const f=frame("shrine");drawShrine(f.ctx,x-f.camX,(y==null?f.gy(x):y)+2,f.t,f.rm,y==null?q=>f.gy(q+f.camX):undefined);},
     potion(x,y){const f=frame("potion");drawPotion(f.ctx,x-f.camX,y==null?f.gy(x):y,f.t,f.rm);},
     stringLights(ax,ay,qx,qy,bx,by,seed){ // lights along a curve from (ax, ay) to (bx, by), its string drawn by whatever holds it up
       const f=frame("stringLights");
