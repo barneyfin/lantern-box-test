@@ -1173,7 +1173,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.32.0';
+  const VERSION = '0.33.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -6772,12 +6772,16 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
        2026): three ways to roll, all always on, the pull first: the knob pulled down to the side (at least 70% of its travel, 30 to 75
        degrees below level, HUD8.ROLL_ZONE) rolls him once towards that side, turning him first; it re-arms only once the knob comes back
        inside 52.5% or leaves 22 to 83 degrees, and shares the flick's rest; then the flick, then the double tap. Straight down does nothing.
+       Kit 0.33.0 (Barney's play of The Endless Rot, 14 November 2026: "whenever I put my thumb down to face the other way I end up rolling
+       in the direction I am facing and away from the crawler"): a thumb put down and pushed to turn never rolls. No flick in the first
+       0.3 s after the thumb lands (FLICK_LAND); up and down are read from where the thumb landed, so a thumb landing near the bottom or
+       top edge, where the stick is drawn further in to fit (s.vy), no longer starts with its knob pulled down (a sideways push rolled him)
+       or up; and the double tap no longer rolls. Two ways to roll, the pull and the flick.
        The three buttons press jump, attack and cast; a tap on the spell's
        socket presses switch, and (kit 0.9.0) a tap on a potion's socket drinkHealth or drinkMana. A tap on a socket is the socket's own:
        it never reaches the canvas, so it never starts the stick or counts towards a double tap. */
     const FLICK_PX = 40, FLICK_MS = 120, FLICK_REST = 350;   // a flick: the thumb 40 px sideways within 0.12 s (starting figures, to tune in play)
-    const TAP_MS = 250, TAP_PX = 14, DTAP_MS = 300, DTAP_PX = 70;   // kit 0.8.2: a tap is shorter than 0.25 s and moves under 14 px; a double tap is
-                                                              // a second touch within 0.3 s of the first tap's end and within 70 px of it
+    const FLICK_LAND = 300;   // kit 0.33.0: no flick this soon after the thumb lands (starting figure)
     const tc = { on: false, held: new Set(), just: new Set(), dirs: { left: false, right: false, up: false },
       stick: { id: null, x: 0, y: 0, dx: 0, dy: 0, hist: [], rest: 0, armed: true, side: 0 } };   // kit 0.26.0: armed, side (the pull)
     function prepareInput() {
@@ -6829,7 +6833,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       const s = tc.stick;
       s.id = null; s.dx = 0; s.dy = 0; s.hist = []; s.armed = true; s.side = 0;
       const h = hudNodes && hudNodes.full;
-      if (h) { HUD8.stickShow(h, s.x, s.y, 0, 0, 0, 0); h.querySelectorAll('.lb-touch-btn.is-pressed').forEach((b) => { b.classList.remove('is-pressed'); b.__pid = null; }); }
+      if (h) { HUD8.stickShow(h, s.x, s.vy != null ? s.vy : s.y, 0, 0, 0, 0); h.querySelectorAll('.lb-touch-btn.is-pressed').forEach((b) => { b.classList.remove('is-pressed'); b.__pid = null; }); }
     }
     function hudAt(h, e) { const r = h.getBoundingClientRect(), k = r.width / (h.offsetWidth || 1); return [(e.clientX - r.left) / k, (e.clientY - r.top) / k]; }
     function stickDown(e) {   // a thumb landing in the left half (play.js's live stick)
@@ -6840,11 +6844,12 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
       s.id = e.pointerId;
       s.x = Math.max(60, Math.min(W * 0.5 - 60, x));
-      s.y = Math.max(70, Math.min(H - 60, y));
+      s.vy = Math.max(70, Math.min(H - 60, y));   // drawn where it fits
+      s.y = y;                                     // kit 0.33.0: and read from where the thumb landed, up and down
       s.hist = [];
-      // kit 0.8.2: the second touch of a double tap rolls (as a flick does, and not again within its rest)
-      const now = performance.now(), lt = s.lastTap;
-      if (lt && now - lt.t < DTAP_MS && Math.hypot(x - lt.x, y - lt.y) < DTAP_PX && now >= s.rest) { tc.just.add('roll'); s.rest = now + FLICK_REST; s.lastTap = null; }
+      // kit 0.8.2 to 0.32.0: the second touch of a double tap rolled; kit 0.33.0: no longer (it rolled him the way he faced as he put his
+      // thumb down again to turn)
+      const now = performance.now();
       s.down = { t: now, x, y };
       s.armed = true; s.side = 0;   // kit 0.26.0
       stickMove(e);
@@ -6858,7 +6863,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       const dd = Math.hypot(dx, dy), r = 31;
       if (dd > r) { dx *= r / dd; dy *= r / dd; }
       s.dx = dx; s.dy = dy;
-      HUD8.stickShow(h, s.x, s.y, dx, dy, 1, 0);
+      HUD8.stickShow(h, s.x, s.vy != null ? s.vy : s.y, dx, dy, 1, 0);
       // design system 21: pulled down to the side, at least 70% out and 30 to 75 degrees below level, rolls him that way, once per pull
       const Z = HUD8.ROLL_ZONE, dep = Math.hypot(dx, dy) / r, ang = dy > 0 ? Math.atan2(dy, Math.abs(dx)) * 180 / Math.PI : -90;
       const inside = HUD8.inRollZone(dx, dy);
@@ -6869,16 +6874,15 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       s.hist.push([now, x, y]);
       while (s.hist.length > 1 && now - s.hist[0][0] > FLICK_MS) s.hist.shift();
       const o = s.hist[0], fx = x - o[1], fy = y - o[2];
-      if (now >= s.rest && Math.abs(fx) >= FLICK_PX && Math.abs(fx) >= 2 * Math.abs(fy)) { tc.just.add('roll'); s.rest = now + FLICK_REST; s.hist = [[now, x, y]]; }
+      // kit 0.33.0: not as the thumb lands (FLICK_LAND)
+      if (now >= s.rest && (!s.down || now - s.down.t >= FLICK_LAND) && Math.abs(fx) >= FLICK_PX && Math.abs(fx) >= 2 * Math.abs(fy)) { tc.just.add('roll'); s.rest = now + FLICK_REST; s.hist = [[now, x, y]]; }
     }
     function stickUp(e) {
       const s = tc.stick;
       if (s.id == null || e.pointerId !== s.id) return false;
       s.id = null; s.dx = 0; s.dy = 0; s.hist = []; s.armed = true; s.side = 0;
       const h = hudNodes && hudNodes.full;
-      // kit 0.8.2: a short, still touch is a tap, remembered for a double tap
-      if (h && s.down) { const [x, y] = hudAt(h, e), now = performance.now(); s.lastTap = now - s.down.t < TAP_MS && Math.hypot(x - s.down.x, y - s.down.y) < TAP_PX ? { t: now, x: s.down.x, y: s.down.y } : null; }
-      if (h) HUD8.stickShow(h, s.x, s.y, 0, 0, 0, 0);   // nothing shows at rest
+      if (h) HUD8.stickShow(h, s.x, s.vy != null ? s.vy : s.y, 0, 0, 0, 0);   // nothing shows at rest
       return true;
     }
     const worldX = (e) => e.clientX / (V.w || 1) * V.W;
@@ -8042,7 +8046,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       '<g transform="translate(18.1 9.6) scale(0.62)" class="pf m"><path d="M9.8 2.4 H14.2 V4.4 H13.4 V7 Q15.6 8.3 15.6 10.6 V19.4 Q15.6 21.6 13.4 21.6 H10.6 Q8.4 21.6 8.4 19.4 V10.6 Q8.4 8.3 10.6 7 V4.4 H9.8 Z"/></g>',
       '<b>Tap a potion</b>, top left, to drink it'];
     const HOWTO_TOUCH = [
-      ['<polygon class="oct dim" points="10.0,0.7 24.0,0.7 33.3,10.0 33.3,24.0 24.0,33.3 10.0,33.3 0.7,24.0 0.7,10.0"/><path class="chev" d="M7 13.5 L4 17 L7 20.5 M27 13.5 L30 17 L27 20.5 M13.5 7 L17 4 L20.5 7"/><path class="mk" d="M1 33 L2.5 28 L6 31.5 Z M33 33 L28 31.5 L31.5 28 Z"/><path class="dia" d="M17 12.5 L21.5 17 L17 21.5 L12.5 17 Z"/>', '<b>Left thumb</b>, anywhere on the left: walk, climb up a bank; pull down to the side, flick or double tap to roll'],   // kit 0.26.0 (version 21): the arrowheads, Barney's words
+      ['<polygon class="oct dim" points="10.0,0.7 24.0,0.7 33.3,10.0 33.3,24.0 24.0,33.3 10.0,33.3 0.7,24.0 0.7,10.0"/><path class="chev" d="M7 13.5 L4 17 L7 20.5 M27 13.5 L30 17 L27 20.5 M13.5 7 L17 4 L20.5 7"/><path class="mk" d="M1 33 L2.5 28 L6 31.5 Z M33 33 L28 31.5 L31.5 28 Z"/><path class="dia" d="M17 12.5 L21.5 17 L17 21.5 L12.5 17 Z"/>', '<b>Left thumb</b>, anywhere on the left: walk, climb up a bank; pull down to the side or flick to roll'],   // kit 0.33.0: no double tap; kit 0.26.0 (version 21): the arrowheads, Barney's words
       [OCT34 + '<g class="ic" transform="translate(5,5)"><path d="M12 16.5 V4.5 M7 9.5 L12 4.5 L17 9.5 M6 20.5 H18"/></g>', '<b>Jump</b>'],
       [OCT34 + '<g class="ic" transform="translate(5,5)"><path d="M19.2 4.8 L9.4 14.6 M6.8 12 L12 17.2 M9.4 14.6 L5.4 18.6"/><circle class="solid" cx="4.6" cy="19.4" r="1.5"/></g>', '<b>Attack</b>'],
       [OCT34 + '<g class="ic" transform="translate(5,5)"><circle class="solid" cx="16" cy="12" r="4.8"/><path class="solid" d="M13.8 8.2 L3.6 4.4 L11.2 10.6 Z M12.4 10.8 L0.8 12.4 L12.4 13.8 Z M13.8 15.8 L4.2 18.8 L11.2 13.6 Z"/></g>', '<b>Cast</b> the chosen spell'],
@@ -9104,7 +9108,8 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
          input.keyPressed(code), and two fingers: input.pointer and input.pointer2 (x, y in lines; down, pressed, released, dx, dy).
          Version 8's named controls: input.jump (Space), attack (J), cast (K), switch (L), roll (Shift), climb (W or up), held and
          in input.pressed. With the full HUD on a touch device the touch controls press them: the stick (left, right, up and climb;
-         a quick flick sideways presses roll, and kit 0.8.2 a double tap of the left thumb), the jump, attack and cast buttons, and a tap on
+         a quick flick sideways presses roll, and kit 0.26.0 the pull down to the side; kit 0.8.2 to 0.32.0 a double tap of the left thumb
+         too), the jump, attack and cast buttons, and a tap on
          the spell's socket (switch). Kit 0.9.0: input.drinkHealth (Q) and drinkMana (E), pressed too by a tap or click on a potion's socket.
        lb.addWisps(n), lb.wisps, lb.best: the score, in whole wisps. lb.gameOver(delay): ends the run (game over, then the
          initials if it makes the top ten). lb.hud.health(0..1), lb.hud.mana(0..1): the bars; mana: false in the config leaves
@@ -9395,7 +9400,8 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
    and in the choice of run (part C); The Moor Mother closes in (part D, kit 0.23.0); a life for each boss, up to five (part G, kit 0.24.0).
    The climb (HANDOVER-climb-and-sdk.md, part A, kit 0.25.0): each place from Blood Red Rain on lighter before its halfway lantern, busier after it.
    The CrazyGames SDK (part B, kit 0.27.0): the CrazyGames build's feedback context (portalNote).
-   Barney's play of The Endless Rot (14 November 2026, CM211; no kit change): a walker higher than him on a slope sweeps low, everywhere. */
+   Barney's play of The Endless Rot (14 November 2026, CM211; no kit change): a walker higher than him on a slope sweeps low, everywhere.
+   Then (CM212, with kit 0.33.0's touch fixes): a roll out of a sword swing turns him first to the way he is pressing. */
 
 const PLACES = ['night', 'storm', 'dawn', 'mist'];
 const TRACK = { night: 0, storm: 0, dawn: 1, mist: 1 };   // The Long Vigil, then Lantern in the Moor from Dawn's place card
@@ -11107,7 +11113,9 @@ function swordUpdate(g, lb, dt, i) {
   const s = g.mt * lb.world.stepRate * swingRate(g);   // step 5e-6b: Quick Hands plays the swing 15% quicker
   if (!g.swHit && s >= 1) { g.swHit = true; swordHits(g, lb); }   // the blow lands on the strike
   if (s >= 2 && i.pressed.jump) return jump(g, lb);                // after the strike, a jump or a roll cuts the follow-through short
-  if (s >= 2 && i.pressed.roll) return startRoll(g, lb);
+  // a roll out of the swing turns him first to the way he is pressing, as a roll from standing does (Barney, 14 November 2026: in The
+  // Endless Rot, rolls from a swing took him away from the crawler behind him)
+  if (s >= 2 && i.pressed.roll) { const d = (i.right ? 1 : 0) - (i.left ? 1 : 0); if (d) g.facing = d; return startRoll(g, lb); }
   if (g.mt >= SWORD_T / swingRate(g)) { g.mode = 'ground'; g.mt = 0; g.landT = 9; }
 }
 // every monster in front of him, from his feet to above his head, as far as the blade reaches; each takes 1, and half more for each
