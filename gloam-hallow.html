@@ -9423,7 +9423,7 @@ const LIFE_ECHO = 10;
 // the second loop (step 5e-5; the gameplay note's How it gets harder): monsters take 1.5 times the hits and come 1.2 times faster, bosses have
 // 1.5 times the health, echo is doubled (all starting figures but the doubling)
 const HARD = { hits: 1.5, speed: 1.2, boss: 1.5, echo: 2 };
-const hard = (g, k) => (g.loop === 2 ? HARD[k] : 1);           // echo for each life still lit at the win (the win's words below)
+const hard = (g, k) => (g.run === 'rot' ? rotRamp(g, k) : g.loop === 2 ? HARD[k] : 1);   // The Endless Rot: its own ramp, wave by wave (rotRamp)           // echo for each life still lit at the win (the win's words below)
 const RETURN_AT = 46;            // he forms again this far past the checkpoint that brought him back
 
 // Fighting (4d-2a; starting figures)
@@ -9917,6 +9917,10 @@ let G = null;                    // the run's state, for the console while testi
 // Step 5f-1 (the playtest, Barney, 8 November 2026): friends and family play the playtest's own copy, at its own address (or with ?playtest),
 // which has no Testing screen and no way into it; its speed test link (?check) makes Start game run the play check (below)
 const PLAYTEST = /\/gloam-hallow-playtest\//.test(location.pathname) || /[?&]playtest\b/.test(location.search);
+// Barney, 14 November 2026: the run log on his own test link too (its address only), to measure how far he gets as The Endless Rot's
+// difficulty is tuned; never in the arcade's build elsewhere or the CrazyGames build. Its menu's "Your runs" opens ?runs, as the playtest's
+const TEST_LINK = /\/lantern-box-test\//.test(location.pathname);
+const RUN_LOG = PLAYTEST || TEST_LINK;
 const CHECK_LINK = /[?&]check\b/.test(location.search);
 const wantCheck = (lb) => CHECK_LINK || !!(lb.test && lb.test.check);
 // The Endless Rot's play check (Barney, 14 November 2026, to check the mode on each device): ?check=rot, or Testing's Play check with
@@ -9977,11 +9981,12 @@ function readRunLog(o) {
 const runsOf = (lb) => (lb.progress && lb.progress.runLog) || { n: 0, runs: [] };
 const runsSave = (lb) => { if (lb) lb.saveProgress(); };
 function runBegin(g, lb) {
-  if (!PLAYTEST || g.check || !lb.progress) return;
+  if (!RUN_LOG || g.check || !lb.progress) return;
   const R = lb.progress.runLog || (lb.progress.runLog = { n: 0, runs: [] });
   if (runLeft) { runLeft.end = 'restart'; runLeft = null; }
   R.n++;
   g.log = { n: R.n, day: today(), run: g.run, loop: g.loop, t: 0, p: g.p, sec: '', boss: false, lost: [], end: '', echo: null, won1: null };
+  if (g.run === 'rot') Object.assign(g.log, { tune: ROT_RAMP.tune, wave: 0, felled: 0, wt: {}, graces: [], gained: [] });   // The Endless Rot's own (rotRunLine)
   R.runs.unshift(g.log);
   if (R.runs.length > RUNS_KEPT) R.runs.length = RUNS_KEPT;
   runLb = lb;
@@ -9990,6 +9995,7 @@ function runBegin(g, lb) {
 // where he is: the place, and the path's section letter, its stretch's number (st, 1 to 10; not n, the log's run number; the climb, part A: a letter can come twice in a
 // place, and the halves split after stretch 5) and how far along the path to the arena, or in the boss's fight
 function runWhere(g) {
+  if (g.run === 'rot') return { p: g.p, loop: g.loop, wave: g.wave ? g.wave.n : g.resumeWave || 0, boss: false };   // The Endless Rot: the wave
   const b = g.boss, fight = !!b && (b.st === 'arrive' || b.st === 'fight');
   const i = fight ? -1 : g.L.sections.findIndex((q) => g.x >= q.x0 && g.x < q.x1), s = i >= 0 ? g.L.sections[i] : null;
   return { p: g.p, loop: g.loop, sec: s ? String(s.id) : '', st: s ? i + 1 : null, at: fight ? null : Math.max(0, Math.min(100, Math.round(100 * g.x / g.L.arena))), boss: fight };
@@ -9999,6 +10005,7 @@ function runNote(g, lb, save) {
   const L = g.log;
   if (!L) return null;
   if (!L.end) Object.assign(L, runWhere(g), { t: Math.round(lb.time + (g.t0 || 0)) });   // part C: a continued run's time carries on
+  if (!L.end && g.run === 'rot') Object.assign(L, { felled: g.felled + (g.felledDue || 0), up: { reach: g.sword.reach, bite: g.sword.bite, heal: g.spells.heal, atk: g.spells[g.attack], attack: g.attack } });
   if (save) runsSave(lb);
   return L;
 }
@@ -10007,6 +10014,7 @@ function runLost(g, lb, kind) {
   if (!L || L.end) return;
   const b = g.boss, by = kind === 'pit' ? { by: 'pit', atk: '' } : g.hitBy || { by: '', atk: '' };
   L.lost.push({ t: L.t, p: L.p, loop: L.loop, sec: L.sec, st: L.st, at: L.at, boss: L.boss, by: by.by, atk: by.atk, left: L.boss ? Math.round(100 * b.hp / b.max) : null });
+  if (g.run === 'rot') L.lost[L.lost.length - 1].wave = L.wave;   // The Endless Rot: the wave it went in
   runsSave(lb);
 }
 // part G: a life gained after a boss, or at five lives its 10 echo instead, for the playtest's run log (how often players reach five)
@@ -10026,7 +10034,7 @@ function runEnded(g, lb, end) {
   if (end === 'quit') { runLeft = L; Promise.resolve().then(() => { runLeft = null; }); }
   runsSave(lb);
 }
-if (PLAYTEST) {                        // the page hidden or closed mid-run: the time and where it was left kept
+if (RUN_LOG) {                         // the page hidden or closed mid-run: the time and where it was left kept
   const away = () => { if (G && G.log && !G.log.end && runLb) runNote(G, runLb, true); };
   addEventListener('pagehide', away);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') away(); });
@@ -10061,6 +10069,7 @@ function runWhereText(lb, w, twice) {   // twice: the run went round again, so t
   return at + (w.boss === true && twice && w.loop === 2 ? ' (second loop)' : '');
 }
 function runLine(lb, r) {
+  if (r.run === 'rot') return rotRunLine(lb, r);   // The Endless Rot's own line
   const num = (v) => (typeof v === 'number' && isFinite(v) ? v : null);
   const twice = r.loop === 2, run = RUNS.find((x) => x.id === r.run);
   const lost = Array.isArray(r.lost) ? r.lost.filter((q) => q && typeof q === 'object').slice(0, 9) : [];
@@ -10086,6 +10095,34 @@ function runGainedText(lb, r, twice) {
   const name = (q) => lb.world.bossNames[PLACES[q.p]] + (twice && q.loop === 2 ? ' (second loop)' : '');
   const won = list.filter((q) => !q.five).map(name), five = list.filter((q) => q.five).map(name);
   return ' ' + [won.length ? 'Life gained after ' + won.join(', ') : '', five.length ? (won.length ? 'at' : 'At') + ' five lives after ' + five.join(', ') : ''].filter(Boolean).join('; ') + '.';
+}
+/* The Endless Rot's run in the log (Barney, 14 November 2026, to measure the difficulty as it is tuned), one paragraph, e.g. "Run 7,
+   2026-11-14, The Endless Rot (tuning 2): game over in wave 9 (Dawn) after 8:12 played, 87 felled, 34 echo. Reached wave 4 at 1:55, wave 7
+   at 4:40. Lives lost: wave 4 (Blood Red Rain) at 2:10, a ghoul's swipe. Lives gained after wave 6. Graces: Keen Edge after wave 3. At
+   the end: sword reach 2 of 2, bite 1 of 2, heal 2 of 3, fireball 3 of 3." Every value read back as data and checked. */
+const ATK_NAME = { fire: 'fireball', bolt: 'lightning bolt', acid: 'acid spray' };
+function rotRunLine(lb, r) {
+  const num = (v) => (typeof v === 'number' && isFinite(v) ? v : null), int = (v) => Number.isInteger(v) && v > 0 && v < 1e6;
+  const wv = (q) => (int(q.wave) ? 'wave ' + q.wave + ' (' + PLACE_SHORT[arenaOfWave(q.wave)] + ')' : 'its first card');
+  const lost = Array.isArray(r.lost) ? r.lost.filter((q) => q && typeof q === 'object').slice(0, 12) : [];
+  const cause = (q) => (RUN_MON[q.by] ? RUN_MON[q.by] + "'s " + (RUN_ATK[q.atk] || 'blow') : 'a blow');
+  const day = typeof r.day === 'string' && /^\d{4}-\d\d-\d\d$/.test(r.day) ? ', ' + r.day : '';
+  const echo = num(r.echo) != null ? Math.round(r.echo) + ' echo' : 'no echo banked', felled = num(r.felled) != null ? Math.round(r.felled) + ' felled, ' : '';
+  const out = ['Run ' + (num(r.n) || '?') + day + ', ' + ROT_NAME + (int(r.tune) ? ' (tuning ' + r.tune + ')' : '') + ': ' + (RUN_END[r.end] || 'left by closing the page') +
+    ' in ' + wv(r) + ' after ' + clockText(num(r.t) || 0) + ' played, ' + felled + echo + '.'];
+  const wt = r.wt && typeof r.wt === 'object' && !Array.isArray(r.wt) ? r.wt : {};
+  const arenas = Object.keys(wt).map(Number).filter((n) => int(n) && n > 1 && n % 3 === 1 && num(wt[n]) != null).sort((a, b) => a - b).slice(0, 30);
+  if (arenas.length) out.push('Reached ' + arenas.map((n) => 'wave ' + n + ' at ' + clockText(wt[n])).join(', ') + '.');
+  out.push(lost.length ? 'Lives lost: ' + lost.map((q) => wv(q) + ' at ' + clockText(num(q.t) || 0) + ', ' + cause(q)).join('; ') + '.' : 'No lives lost.');
+  const gained = Array.isArray(r.gained) ? r.gained.filter((q) => q && int(q.wave)).slice(0, 20) : [];
+  const life = gained.filter((q) => !q.five).map((q) => q.wave), five = gained.filter((q) => q.five).map((q) => q.wave);
+  if (life.length) out.push('Lives gained after wave' + (life.length > 1 ? 's ' : ' ') + life.join(', ') + '.');
+  if (five.length) out.push('At five lives, ' + LIFE_ECHO + ' echo instead after wave' + (five.length > 1 ? 's ' : ' ') + five.join(', ') + '.');
+  const gr = Array.isArray(r.graces) ? r.graces.filter((q) => q && graceOf(q.id) && int(q.wave)).slice(0, 20) : [];
+  if (gr.length) out.push('Graces: ' + gr.map((q) => graceOf(q.id).name + ' after wave ' + q.wave).join(', ') + '.');
+  const u = r.up && typeof r.up === 'object' ? r.up : null, lv = (v, top) => (Number.isInteger(v) && v >= 0 && v <= top ? v + ' of ' + top : '?');
+  if (u) out.push('At the end: sword reach ' + lv(u.reach, 2) + ', bite ' + lv(u.bite, 2) + ', heal ' + lv(u.heal, 3) + ', ' + (ATK_NAME[u.attack] || 'the attack spell') + ' ' + lv(u.atk, 3) + '.');
+  return out.join(' ');
 }
 function runsLines(lb) {
   const R = runsOf(lb);
@@ -10190,7 +10227,7 @@ function resumeRun(g, lb, sv) {
   g.graces = {}; g.bound = []; sv.graces.forEach((id) => { g.graces[id] = true; g.bound.push(id); }); heldToKit(g, lb);
   g.taught = {}; sv.taught.forEach((id) => { g.taught[id] = true; });
   sv.used = true; lb.progress.saved = sv;   // one continue for each lantern lit
-  const L = PLAYTEST && sv.n > 0 && lb.progress.runLog ? lb.progress.runLog.runs.find((r) => r.n === sv.n && !r.end) : null;   // the run log's own line carries on
+  const L = RUN_LOG && sv.n > 0 && lb.progress.runLog ? lb.progress.runLog.runs.find((r) => r.n === sv.n && !r.end) : null;   // the run log's own line carries on
   if (L) { g.log = L; runLb = lb; g.t0 = Math.max(g.t0, typeof L.t === 'number' && isFinite(L.t) ? Math.round(L.t) : 0); }
   lb.saveProgress();
   loadPlace(g, lb, sv.p, sv.cp, true);
@@ -10222,7 +10259,7 @@ LanternBox.game({
   // step 5f-1: a play check just finished shows its result on the title (5f-2: only if it couldn't in play); the Night pass, part D: the
   // playtest page's Send my runs (?runs) opens the run log on the title
   // part C: a run that can't be continued is ended first (not on the speed test's link, which leaves it be)
-  init(lb) { if (!CHECK_LINK) settleSaved(lb); if (!checkShown(lb) && PLAYTEST && RUNS_LINK) lb.ui.open((ui) => runsPlaque(lb, ui)); },
+  init(lb) { if (!CHECK_LINK) settleSaved(lb); if (!checkShown(lb) && RUN_LOG && RUNS_LINK) lb.ui.open((ui) => runsPlaque(lb, ui)); },
   // part C (kit 0.21.0): Continue on the title while a run waits, with its place and lantern, and the relight plaque's facts and choices
   resume: {
     waiting(lb) {
@@ -10298,7 +10335,7 @@ LanternBox.game({
     if (wantCheck(lb)) return startCheck(g, lb);   // step 5f-1: the play check, in place of a run
     if (!wantCheck(lb)) rec.lastRun = g.run;   // design system 23: the run last played (saved with the run as it begins)
     if (sv) return sv.run === 'rot' ? resumeRot(g, lb, sv) : resumeRun(g, lb, sv);   // part C: Return to the lantern (step 5: or to the wave)
-    if (g.run === 'rot') return startRot(g, lb, t);   // design system 23: The Endless Rot, in its arenas
+    if (g.run === 'rot') { startRot(g, lb, t); runBegin(g, lb); return g; }   // design system 23: The Endless Rot, in its arenas (its run logged on the test link)
     runBegin(g, lb);                              // the Night pass, part D: the playtest's run log (the play check is no run)
     loadPlace(g, lb, g.p, { start: 0, half: 1, boss: 2 }[t.where] || 0);
     lb.hud.health(1); lb.hud.mana(1); lb.hud.armour(g.armour); lb.hud.lives(g.lives, { slots: g.slots }); hudSpells(g, lb); lb.hud.potCap(g.potCap.health, g.potCap.mana); lb.hud.potions(0, 0);
@@ -10521,6 +10558,20 @@ const ROT = { first: 1.0, barOut: 0.6, endLine: 1.0, refillAt: 0.5, refillT: 0.5
 // last wisp has reached the counter (0.9 s); refill: health and mana from 0.5 s after the end line, over 0.5 s (play.js); next: the next
 // wave's line after the end line (play.js: 2.3 s); out: how far beyond an end a monster starts; inside: how far in it walks before it
 // comes for him; flyer: the share of arrivals that fly (starting figure, about Night's own mix)
+// Barney, 14 November 2026 (his first run reached wave 21, where the mode means a player who beats The Veiled Ghost to reach wave 6 to
+// 9): a ramp every wave in place of the step at wave 13 (hits 1.5, speed 1.2), starting figures: the monsters 3% faster a wave, moving
+// and attacking (their wind-ups and the wait between attacks), up to 1.6 times; 5% more damage and 5% more health a wave, without end;
+// between waves health refills half of what is missing, mana in full. tune: the figures' number, kept with each run in the run log
+const ROT_RAMP = { speed: 0.03, speedMax: 1.6, dmg: 0.05, hits: 0.05, healBack: 0.5, tune: 2 };
+function rotRamp(g, k) {               // hard()'s figures in the mode, by the wave: speed, hits (health) and dmg; never echo or a boss's
+  const w = (g.wave ? g.wave.n : 1) - 1;
+  if (k === 'speed') return Math.min(ROT_RAMP.speedMax, 1 + ROT_RAMP.speed * w);
+  if (k === 'hits') return 1 + ROT_RAMP.hits * w;
+  if (k === 'dmg') return 1 + ROT_RAMP.dmg * w;
+  return 1;
+}
+const monDmg = (g) => (g.run === 'rot' ? rotRamp(g, 'dmg') : 1);     // a monster's blow, the mode's ramp on it (the journey's as it was)
+const atkPace = (g) => (g.run === 'rot' ? rotRamp(g, 'speed') : 1);  // its attacks' clock and the wait between them
 // step 4: from wave 13 the size restarts at 12 and climbs by 2 a wave, and the most on screen goes on rising as it did, one more every
 // third wave (2 + n / 3: 6, 6, 7, 7, 7, 8), to 8 and no more; the gap stays wave 12's (starting figures: the note says only "rises to 8")
 function waveSpec(n) {
@@ -10535,6 +10586,8 @@ function startWave(g, lb, n, line) {
   g.mons = g.mons.filter((m) => m.st !== 'gone');
   lb.hud.boss({ name: 'Wave ' + n, hp: 1, full: true });
   if (line) lb.hud.line(null, 'Wave ' + n);
+  const L = runNote(g, lb);             // the run log (the test link's and the playtest's): when each wave began
+  if (L && !L.end && L.wt && L.wt[n] == null) { L.wt[n] = L.t; runsSave(lb); }   // the first time it was reached (a continue begins it again)
 }
 function rotUpdate(g, lb, dt) {
   const W = g.wave;
@@ -10562,7 +10615,8 @@ function rotUpdate(g, lb, dt) {
   if (R && g.mode !== 'lost' && g.mode !== 'return') {
     R.t += dt;
     const u = ease3(Math.max(0, Math.min(1, (R.t - ROT.refillAt) / ROT.refillT)));
-    if (u > 0) { g.health = Math.max(g.health, R.h + (1 - R.h) * u); g.mana = Math.max(g.mana, R.m + (1 - R.m) * u); lb.hud.health(g.health); hudMana(g, lb, true); }
+    // Barney, 14 November 2026: health back by half of what is missing (ROT_RAMP.healBack), mana in full
+    if (u > 0) { g.health = Math.max(g.health, R.h + (1 - R.h) * ROT_RAMP.healBack * u); g.mana = Math.max(g.mana, R.m + (1 - R.m) * u); lb.hud.health(g.health); hudMana(g, lb, true); }
     if (u >= 1) g.refill = null;
   }
 }
@@ -10640,6 +10694,8 @@ function arenaCard(g, lb, n) {
   }
   lb.placeCard(PLACES[next], () => { lb.fade(0); loadArena(g, lb, next); enterArena(g, lb); }, () => {
     g.mode = 'ground'; g.mt = 0;
+    const L = runNote(g, lb);           // the run log: the Grace bound and the life lit (or its 10 echo), after which wave
+    if (L && !L.end && L.graces) { if (g.justBound) L.graces.push({ id: g.justBound, wave: n }); if (!grace) L.gained.push({ wave: n, five }); runsSave(lb); }
     if (g.justBound) { lb.hud.line(gracePic(g.justBound), graceOf(g.justBound).name + ' bound'); g.justBound = null; }
     if (!grace && !five) { g.lives = Math.min(LIVES_MAX, g.lives + 1); g.slots = Math.max(g.slots, g.lives); lb.hud.lives(g.lives, { slots: g.slots, gain: true }); lb.sfx('checkpoint'); }
     rotSave(g, lb, n + 1);              // step 5: the run saved at the change of arena, its Grace bound or its life lit
@@ -10662,7 +10718,7 @@ function rotSave(g, lb, wave) {
   lb.progress.saved = { v: RUN_V, used: false, run: 'rot', wave, lives: Math.max(0, g.lives), slots: g.slots, armour: g.armour,
     sword: { reach: g.sword.reach, bite: g.sword.bite }, attack: g.attack, spells: { heal: g.spells.heal, atk: g.spells[g.attack] },
     list: g.spellList.slice(), sel: g.sel, pots: { health: g.pots.health, mana: g.pots.mana }, cap: { health: g.potCap.health, mana: g.potCap.mana },
-    graces: g.bound.slice(), grave: !!g.graveSpent, felled: g.felled, echo, t: Math.round(lb.time + (g.t0 || 0)), n: 0,
+    graces: g.bound.slice(), grave: !!g.graveSpent, felled: g.felled, echo, t: Math.round(lb.time + (g.t0 || 0)), n: g.log ? g.log.n : 0,
     now: { felled: g.felled, echo, wave } };
   g.usedSave = false;
   lb.saveProgress();
@@ -10693,7 +10749,7 @@ function readRotSaved(o) {             // a saved Endless Rot run read back, eve
   return { v: RUN_V, used: o.used === true, run: 'rot', wave: o.wave, lives: o.lives, slots: o.slots, armour: o.armour,
     sword: { reach: o.sword.reach, bite: o.sword.bite }, attack: o.attack, spells: { heal: o.spells.heal, atk: o.spells.atk },
     list: o.list.slice(), sel: o.sel, pots: { health: o.pots.health, mana: o.pots.mana }, cap: { health: o.cap.health, mana: o.cap.mana },
-    graces: o.graces.slice(), grave: o.grave === true, felled: o.felled, echo: o.echo, t: o.t, n: 0,
+    graces: o.graces.slice(), grave: o.grave === true, felled: o.felled, echo: o.echo, t: o.t, n: Number.isInteger(o.n) && o.n > 0 ? o.n : 0,
     now: { felled: nw.felled, echo: nw.echo, wave: nw.wave } };
 }
 // Return to the wave (Relight, version 23): the run as it was saved; the arena fades up, he forms in its middle (as at a lantern), health
@@ -10705,6 +10761,8 @@ function resumeRot(g, lb, sv) {
   g.spells = { heal: sv.spells.heal }; g.spells[g.attack] = sv.spells.atk; g.spellList = sv.list.slice();
   g.graces = {}; g.bound = []; sv.graces.forEach((id) => { g.graces[id] = true; g.bound.push(id); }); heldToKit(g, lb);
   sv.used = true; lb.progress.saved = sv;   // one continue for each save
+  const L = RUN_LOG && sv.n > 0 && lb.progress.runLog ? lb.progress.runLog.runs.find((r) => r.n === sv.n && !r.end) : null;   // the run log's own line carries on
+  if (L) { g.log = L; runLb = lb; g.t0 = Math.max(g.t0, typeof L.t === 'number' && isFinite(L.t) ? Math.round(L.t) : 0); }
   lb.saveProgress();
   g.felled = sv.felled; g.felledDue = 0; g.wave = null; g.rotN = 0; g.spareDue = 0;
   lb.hud.counter('Felled', g.felled);
@@ -11640,8 +11698,8 @@ function hurtCheck(g, lb) {
     // the Night pass, part D: what hit him, for the run log: the attack's sweep, or its body in an attack that moves it (a lunge, a dive, a
     // leap), or else its touch
     const a = m.atk && m.atk.name;
-    if (meets(atkZone(m, g))) return hurt(g, lb, MON[m.kind].dmg, m.px, { by: m.kind, atk: a || 'touch' });
-    if (!(rolling && MON[m.kind].through) && meets(monBox(m))) return hurt(g, lb, MON[m.kind].dmg, m.px, { by: m.kind, atk: a && a !== 'spit' && !MON[m.kind].zone ? a : 'touch' });
+    if (meets(atkZone(m, g))) return hurt(g, lb, MON[m.kind].dmg * monDmg(g), m.px, { by: m.kind, atk: a || 'touch' });   // The Endless Rot: its ramp (monDmg)
+    if (!(rolling && MON[m.kind].through) && meets(monBox(m))) return hurt(g, lb, MON[m.kind].dmg * monDmg(g), m.px, { by: m.kind, atk: a && a !== 'spit' && !MON[m.kind].zone ? a : 'touch' });
   }
   const hit = bossHits(g, rolling);
   if (hit) return hurt(g, lb, hit.dmg, hit.x, { by: 'boss', atk: hit.atk || 'touch' });
@@ -11794,7 +11852,7 @@ function monsterUpdate(m, g, lb, dt, busy, camX) {
   if (m.riseW != null) { m.riseW += dt; if (m.riseW >= ROT_RISE.warn) { m.riseW = null; m.riseT = 0; } return; }   // step 3b: its warning, then its rise
   if (m.riseT != null && m.riseT < (m.riseLen || 0.35)) { m.riseT += dt; return; }   // a called crawler still rising out of the ground (step 3b: or a riser, 0.6 s)
   if (m.atk) {                         // signal, attack, recover: it moves as the attack moves it, facing the way it began
-    m.atk.t += dt;
+    m.atk.t += dt * atkPace(g);        // The Endless Rot: its attacks quicker wave by wave (the journey's as they were)
     if (m.atk.name === 'spit' && !m.atk.left && m.atk.t >= SPIT.leave) { m.atk.left = true; spitLeave(g, lb, m); }   // step 5e-8: the gob leaves
     const mv = atkMove(m.atk);
     m.wdx = -mv.dx * m.f; m.ody = mv.dy;
@@ -11803,12 +11861,12 @@ function monsterUpdate(m, g, lb, dt, busy, camX) {
       m.bx = m.px; if (!K.ground) m.by = m.py;
       // step 5e-8: after a spit the mouth-hat holds its ground (SPIT.wait); on the second loop its waits are 1.2 times shorter
       const spat = m.atk.name === 'spit';
-      m.atk = null; m.wdx = 0; m.ody = 0; m.cd = K.spit ? (spat ? SPIT.wait : K.cd) / hard(g, 'speed') : K.cd; m.held = spat;
+      m.atk = null; m.wdx = 0; m.ody = 0; m.cd = K.spit ? (spat ? SPIT.wait : K.cd) / (g.run === 'rot' ? 1 : hard(g, 'speed')) : K.cd; m.held = spat;   // the mode's waits run quicker instead (atkPace)
       place(m, g, m.bx, 0);
     }
     return;
   }
-  m.cd -= dt;
+  m.cd -= dt * atkPace(g);
   if (m.entry != null) return enterStep(m, g, lb, dt);   // The Endless Rot: still on its way in from beyond an end
   const d = g.x - m.bx, ad = Math.abs(d);
   m.f = d >= 0 ? 1 : -1;               // it faces him
@@ -11952,7 +12010,7 @@ function spitUpdate(g, lb, dt) {
       const q = b.path.at(t / SPIT.fly);
       if (gobMeets(g, q[0], q[1])) {   // it bursts on him
         b.done = true; g.splats.push({ x: q[0], y: q[1], slope: 0, t: 0, from: b.from, hurts: false }); lb.sfx('splat');
-        hurt(g, lb, SPIT.dmg, b.from, SPAT);
+        hurt(g, lb, SPIT.dmg * monDmg(g), b.from, SPAT);
       }
     }
     if (b.done) continue;
@@ -11965,7 +12023,7 @@ function spitUpdate(g, lb, dt) {
     if (s.hurts && s.t > SPIT.splashT) s.hurts = false;
     if (s.hurts && canHurt(g)) {
       const h = g.mode === 'roll' ? ROLL_H : BODY_H;
-      if (!(s.x + SPIT.splashR < g.x - BODY_W || s.x - SPIT.splashR > g.x + BODY_W || s.y < g.y - h || s.y - SPIT.splashH > g.y)) { s.hurts = false; hurt(g, lb, SPIT.dmg, s.from, SPAT); }
+      if (!(s.x + SPIT.splashR < g.x - BODY_W || s.x - SPIT.splashR > g.x + BODY_W || s.y < g.y - h || s.y - SPIT.splashH > g.y)) { s.hurts = false; hurt(g, lb, SPIT.dmg * monDmg(g), s.from, SPAT); }
     }
   }
   g.splats = g.splats.filter((s) => s.t < SPIT.splatT);
