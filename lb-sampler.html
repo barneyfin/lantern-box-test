@@ -1173,7 +1173,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.31.0';
+  const VERSION = '0.32.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -6177,7 +6177,19 @@ function makeTools(env){
     spark(from,to,u){ // a gold spark between two points ({ x, y }), u 0 to 1: the return at a checkpoint sends one from its glass to his lantern (0.3 s)
       const f=frame("spark");cpSpark(f.ctx,[from.x-f.camX,from.y],[to.x-f.camX,to.y],Math.max(0,Math.min(1,u)));
     },
+    // kit 0.32.0 (design system version 23, loopWave): an ember warning on the ground at x, cracked, as The Tentacled Skull's crawlers
+    // come through, drawn where it is called (under what is drawn after it), for a game's own monsters to rise through. o: a (0 to 1, how
+    // strong; the design fades it in over 0.15 s and out over the rise and 0.3 s more), w (its width, 70 as the design's), crack (1, as the
+    // skull's call; 0 for none). Its cracks are seeded by x along the path, so they hold still as the camera moves.
+    warning(x,o){
+      const f=frame("warning");o=o||{};
+      const a=clamp(o.a==null?1:o.a,0,1);if(a<=0)return;
+      const c=f.ctx;c.save();c.translate(-f.camX,0);bsWarn(c,x,f.gy,o.w==null?70:o.w,a,f.t,o.crack==null?1:o.crack);c.restore();
+    },
     monster(o){ // o: kind, x, y, ph (its pace, so neighbours differ), id (a monster's own name), defeat (0 to 1, over 1.6 s), seed, facing (kit 0.8.1)
+      // rise: seconds since it began to rise out of the ground (0.35 s from 26 below, with dust: the skull's crawlers); kit 0.32.0: with
+      // riseLen (seconds, the design's 0.6) and riseDepth (its own height if left out: 104 for a ghoul, 37 for a crawler), The Endless
+      // Rot's deeper rise through a warning (version 23)
       // version 8 (4c-5a): the posable monsters, always. attack { name, t (seconds since its signal began), dir, dx, dy (the flyer's dive) }: names in
       // world.ATTACKS; it moves the monster from x (returned as dx, dy) and says its phase. hit: seconds since a blow landed (0.13 s: it jolts back a
       // puppet step and its ember rim flares once; a one-hit monster then breaks up, which is the game's defeat).
@@ -6197,7 +6209,14 @@ function makeTools(env){
       const out=at?{phase:at.phase,dx,dy}:{phase:null,dx,dy};
       const c=f.ctx,Xs=Math.round(X*s)/s;   // mirrored about a whole device pixel, so its painted picture stays sharp
       if(fc===1){c.save();c.translate(Xs,0);c.scale(-1,1);c.translate(-Xs,0);}
-      if(o.rise!=null&&o.rise<0.35){ // version 8 (4c-5b): rising out of the ground (the skull's crawlers): 0.35 s, its legs still, dust bursting
+      if(o.rise!=null&&o.riseLen!=null&&o.rise<o.riseLen){ // kit 0.32.0 (version 23, loopWave): The Endless Rot's rise through a warning: riseLen s
+        // (the design's 0.6), up from riseDepth below, eased, drawn only above the ground's own line within 100 of it, as play.js clips
+        // it; no dust (the design draws none). Left out, the depth is the monster's own height and one (MON_BOX): the design's 104 for a
+        // ghoul, 37 for a crawler, so each starts just out of sight. The clip follows the ground, so it is mirrored with a monster facing right
+        const rv=clamp(o.rise/o.riseLen,0,1),up=rv*rv*(3-2*rv),d=o.riseDepth==null?1-MON_BOX[o.kind][1]:o.riseDepth,mx=X1=>fc===1?2*Xs-X1:X1;m.Y+=(1-up)*d;
+        c.save();c.beginPath();c.moveTo(mx(x-100-f.camX),f.gy(x-100)+2);for(let q=x-100;q<=x+100;q+=8)c.lineTo(mx(q-f.camX),f.gy(q)+2);
+        c.lineTo(mx(x+100-f.camX),-2000);c.lineTo(mx(x-100-f.camX),-2000);c.closePath();c.clip();scene.monster(c,s,m,f.t,f.opt,hit);c.restore();}
+      else if(o.rise!=null&&o.rise<0.35){ // version 8 (4c-5b): rising out of the ground (the skull's crawlers): 0.35 s, its legs still, dust bursting
         const rv=clamp(o.rise/0.35,0,1),gy=f.gy(x);m.Y+=(1-rv)*26;m.P=Object.assign({t:1.0},m.P);
         c.save();c.beginPath();c.rect(X-80,-2000,160,2000+gy+4);c.clip();scene.monster(c,s,m,f.t,f.opt,hit);c.restore();fxBurst(c,X,gy-2,1,rv,"#3a2a22");}
       else if(o.defeat==null)scene.monster(c,s,m,f.t,f.opt,hit);
@@ -9142,7 +9161,12 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
          seconds since the moment began. Then:
          world.monster({ kind, x, y, ph, id, defeat, seed, attack, hit }) (kinds in world.MONSTERS; give each monster its own id;
          defeat 0 to 1 breaks it into card pieces and a wisp, over 1.6 s; version 8: the posable monsters, attack { name, t } with
-         names in world.ATTACKS, moving it from x and returning dx, dy and its phase; hit, seconds since a blow: 0.13 s of flare),
+         names in world.ATTACKS, moving it from x and returning dx, dy and its phase; hit, seconds since a blow: 0.13 s of flare;
+         rise, seconds since it began rising out of the ground, 0.35 s from 26 below; kit 0.32.0: with riseLen, seconds, and
+         riseDepth, lines (its own height if left out: 104 for a ghoul, 37 for a crawler), the deeper rise The Endless Rot's
+         monsters make through a warning, version 23's 0.6 s),
+         world.warning(x, { a, w, crack }) (kit 0.32.0: an ember warning on the ground at x, cracked as the skull's call, a 0 to 1,
+         w its width, 70; drawn where it is called, under what comes after),
          world.boss({ x, y, defeat, arrive, attack, facing, hit }) (the place's own; defeat over 2.2 s; version 8: its arrival and
          three attacks, names in world.BOSS_ATTACKS, lengths in world.BOSS_MOVES; its warnings and reach are drawn in world.end()), world.splash(x, { y, seed }), world.candle(x, y),
          world.wallLamp(x, y), world.post(x, y, lit), world.streetLamp(x, y), world.shrine(x, y), world.potion(x, y),
@@ -9621,6 +9645,19 @@ const PARTS = [
     w.potion(x(4));
     w.wallLamp(x(5), w.ground(x(5)) - 90);
     w.stringLights(x(0), 250, (x(0) + x(5)) / 2, 300, x(5), 250, 3);
+  } },
+  // kit 0.32.0 (design system version 23, play.js's loopWave): The Endless Rot's rising, a ghoul on his left and a crawler on his right
+  // half a loop apart, each through its ember warning (faded in over 0.15 s, held to 0.9 s, fading over the rise and 0.3 s more), up in
+  // 0.6 s from 104 below, then standing, facing him; 4 s a loop
+  { name: 'Rising through a warning (The Endless Rot)', draw(w, lb, g, cam) {
+    const T = 4, mid = cam + lb.W * 0.5;
+    const show = (kind, x, u) => {
+      if (u < 1.8) w.warning(x, { a: u < 0.15 ? u / 0.15 : u < 0.9 ? 1 : Math.max(0, 1 - (u - 0.9) / 0.9) });
+      if (u >= 0.9) w.monster({ kind, x, ph: 0.3, id: 'up-' + kind, rise: u - 0.9, riseLen: 0.6, facing: x < mid ? 1 : -1 });
+    };
+    show('ghoul2', cam + lb.W * 0.25, lb.time % T);
+    show('crawler', cam + lb.W * 0.75, (lb.time + T / 2) % T);
+    w.wanderer(mid, { walking: false });
   } },
 ];
 

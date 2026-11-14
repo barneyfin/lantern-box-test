@@ -1173,7 +1173,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.31.0';
+  const VERSION = '0.32.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -6177,7 +6177,19 @@ function makeTools(env){
     spark(from,to,u){ // a gold spark between two points ({ x, y }), u 0 to 1: the return at a checkpoint sends one from its glass to his lantern (0.3 s)
       const f=frame("spark");cpSpark(f.ctx,[from.x-f.camX,from.y],[to.x-f.camX,to.y],Math.max(0,Math.min(1,u)));
     },
+    // kit 0.32.0 (design system version 23, loopWave): an ember warning on the ground at x, cracked, as The Tentacled Skull's crawlers
+    // come through, drawn where it is called (under what is drawn after it), for a game's own monsters to rise through. o: a (0 to 1, how
+    // strong; the design fades it in over 0.15 s and out over the rise and 0.3 s more), w (its width, 70 as the design's), crack (1, as the
+    // skull's call; 0 for none). Its cracks are seeded by x along the path, so they hold still as the camera moves.
+    warning(x,o){
+      const f=frame("warning");o=o||{};
+      const a=clamp(o.a==null?1:o.a,0,1);if(a<=0)return;
+      const c=f.ctx;c.save();c.translate(-f.camX,0);bsWarn(c,x,f.gy,o.w==null?70:o.w,a,f.t,o.crack==null?1:o.crack);c.restore();
+    },
     monster(o){ // o: kind, x, y, ph (its pace, so neighbours differ), id (a monster's own name), defeat (0 to 1, over 1.6 s), seed, facing (kit 0.8.1)
+      // rise: seconds since it began to rise out of the ground (0.35 s from 26 below, with dust: the skull's crawlers); kit 0.32.0: with
+      // riseLen (seconds, the design's 0.6) and riseDepth (its own height if left out: 104 for a ghoul, 37 for a crawler), The Endless
+      // Rot's deeper rise through a warning (version 23)
       // version 8 (4c-5a): the posable monsters, always. attack { name, t (seconds since its signal began), dir, dx, dy (the flyer's dive) }: names in
       // world.ATTACKS; it moves the monster from x (returned as dx, dy) and says its phase. hit: seconds since a blow landed (0.13 s: it jolts back a
       // puppet step and its ember rim flares once; a one-hit monster then breaks up, which is the game's defeat).
@@ -6197,7 +6209,14 @@ function makeTools(env){
       const out=at?{phase:at.phase,dx,dy}:{phase:null,dx,dy};
       const c=f.ctx,Xs=Math.round(X*s)/s;   // mirrored about a whole device pixel, so its painted picture stays sharp
       if(fc===1){c.save();c.translate(Xs,0);c.scale(-1,1);c.translate(-Xs,0);}
-      if(o.rise!=null&&o.rise<0.35){ // version 8 (4c-5b): rising out of the ground (the skull's crawlers): 0.35 s, its legs still, dust bursting
+      if(o.rise!=null&&o.riseLen!=null&&o.rise<o.riseLen){ // kit 0.32.0 (version 23, loopWave): The Endless Rot's rise through a warning: riseLen s
+        // (the design's 0.6), up from riseDepth below, eased, drawn only above the ground's own line within 100 of it, as play.js clips
+        // it; no dust (the design draws none). Left out, the depth is the monster's own height and one (MON_BOX): the design's 104 for a
+        // ghoul, 37 for a crawler, so each starts just out of sight. The clip follows the ground, so it is mirrored with a monster facing right
+        const rv=clamp(o.rise/o.riseLen,0,1),up=rv*rv*(3-2*rv),d=o.riseDepth==null?1-MON_BOX[o.kind][1]:o.riseDepth,mx=X1=>fc===1?2*Xs-X1:X1;m.Y+=(1-up)*d;
+        c.save();c.beginPath();c.moveTo(mx(x-100-f.camX),f.gy(x-100)+2);for(let q=x-100;q<=x+100;q+=8)c.lineTo(mx(q-f.camX),f.gy(q)+2);
+        c.lineTo(mx(x+100-f.camX),-2000);c.lineTo(mx(x-100-f.camX),-2000);c.closePath();c.clip();scene.monster(c,s,m,f.t,f.opt,hit);c.restore();}
+      else if(o.rise!=null&&o.rise<0.35){ // version 8 (4c-5b): rising out of the ground (the skull's crawlers): 0.35 s, its legs still, dust bursting
         const rv=clamp(o.rise/0.35,0,1),gy=f.gy(x);m.Y+=(1-rv)*26;m.P=Object.assign({t:1.0},m.P);
         c.save();c.beginPath();c.rect(X-80,-2000,160,2000+gy+4);c.clip();scene.monster(c,s,m,f.t,f.opt,hit);c.restore();fxBurst(c,X,gy-2,1,rv,"#3a2a22");}
       else if(o.defeat==null)scene.monster(c,s,m,f.t,f.opt,hit);
@@ -9142,7 +9161,12 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
          seconds since the moment began. Then:
          world.monster({ kind, x, y, ph, id, defeat, seed, attack, hit }) (kinds in world.MONSTERS; give each monster its own id;
          defeat 0 to 1 breaks it into card pieces and a wisp, over 1.6 s; version 8: the posable monsters, attack { name, t } with
-         names in world.ATTACKS, moving it from x and returning dx, dy and its phase; hit, seconds since a blow: 0.13 s of flare),
+         names in world.ATTACKS, moving it from x and returning dx, dy and its phase; hit, seconds since a blow: 0.13 s of flare;
+         rise, seconds since it began rising out of the ground, 0.35 s from 26 below; kit 0.32.0: with riseLen, seconds, and
+         riseDepth, lines (its own height if left out: 104 for a ghoul, 37 for a crawler), the deeper rise The Endless Rot's
+         monsters make through a warning, version 23's 0.6 s),
+         world.warning(x, { a, w, crack }) (kit 0.32.0: an ember warning on the ground at x, cracked as the skull's call, a 0 to 1,
+         w its width, 70; drawn where it is called, under what comes after),
          world.boss({ x, y, defeat, arrive, attack, facing, hit }) (the place's own; defeat over 2.2 s; version 8: its arrival and
          three attacks, names in world.BOSS_ATTACKS, lengths in world.BOSS_MOVES; its warnings and reach are drawn in world.end()), world.splash(x, { y, seed }), world.candle(x, y),
          world.wallLamp(x, y), world.post(x, y, lit), world.streetLamp(x, y), world.shrine(x, y), world.potion(x, y),
@@ -10334,6 +10358,7 @@ function playDraw(ctx, g, lb, t) {
   drawPatches(g, lb, w);   // step 5e-2: the acid's patches, on the ground under everything
   drawSpitGround(g, lb, w);   // step 5e-8: where each gob will land, and its splash
   drawBoss(g, lb, w);
+  if (g.warns) drawWarns(g, w);        // step 3b: The Endless Rot's warnings, under the monsters and him
   drawMonsters(g, lb, w, camX, false);
   const r = drawWanderer(g, lb, w);
   if (r && r.lantern) { g.lantern = r.lantern; g.chest = r.chest; g.hand = r.hand; }
@@ -10513,6 +10538,7 @@ function startWave(g, lb, n, line) {
 }
 function rotUpdate(g, lb, dt) {
   const W = g.wave;
+  if (g.warns) warnsUpdate(g, dt);     // step 3b
   if (W) {
     W.t += dt;
     if (!W.done) {
@@ -10550,6 +10576,50 @@ function arrivalKind(g, lb) {
   let r = lb.rand() * all;
   for (const k of ks) { r -= w[k]; if (r < 0) return k; }
   return ks[0];
+}
+/* Step 3b (kit 0.32.0; design system version 23, Monsters, play.js's loopWave): rising through a warning. From wave 4 some crawlers and
+   ghouls rise inside the arena through a cracked ember warning, as the skull's crawlers do: the warning for 0.9 s (faded in over 0.15 s),
+   then the rise in 0.6 s, each from its own height below (the kit's), the warning fading over the rise and 0.3 s more. A rising monster
+   can neither hurt nor be hurt, nor move, until it is up, and it counts as on screen from its warning. A rising spot is at least 220 from
+   him and 120 from any other warning, and 40 inside the arena's ends; with none in 12 tries it walks in. One arrival in four rises from
+   wave 4, one in three from wave 7, of all arrivals (Barney, 14 November 2026, the handover's reading 14): the kinds come as before, and a
+   crawler or ghoul rises often enough to make that share (from wave 4 one crawler in two; from wave 7 five in nine; from wave 10 two in
+   three). Mouth-hats, walkers and flyers always come in over the ends. No sound of its own (the design names none). */
+const ROT_RISE = { from: 4, share: 1 / 4, from2: 7, share2: 1 / 3, warn: 0.9, len: 0.6, fadeIn: 0.15, fadeOut: 0.3, him: 220, apart: 120, inset: 40, tries: 12,
+  kinds: { crawler: true, ghoul2: true } };
+const unborn = (m) => m.riseW != null || (m.riseLen != null && m.riseT < m.riseLen);   // step 3b: a riser still in its warning or rising
+function riseChance(g) {               // the chance that a crawler or ghoul arriving now rises, so rising is the share of all arrivals
+  const n = g.wave ? g.wave.n : 1;
+  if (n < ROT_RISE.from) return 0;
+  const w = ROT_KINDS.filter((r) => n >= r[0]).pop()[1], ks = Object.keys(w);
+  const all = ks.reduce((s, k) => s + w[k], 0), can = ks.reduce((s, k) => s + (ROT_RISE.kinds[k] ? w[k] : 0), 0);
+  return Math.min(1, (n >= ROT_RISE.from2 ? ROT_RISE.share2 : ROT_RISE.share) * all / can);
+}
+function riseSpot(g, lb, kind) {       // where it may rise, or null
+  const K = MON[kind], half = Math.max(-K.box[0], K.box[1]) + 2, a = half + ROT_RISE.inset, b = g.L.length - half - ROT_RISE.inset;
+  for (let i = 0; i < ROT_RISE.tries; i++) {
+    const x = a + lb.rand() * (b - a);
+    if (Math.abs(x - g.x) >= ROT_RISE.him && !g.warns.some((q) => Math.abs(q.x - x) < ROT_RISE.apart)) return x;
+  }
+  return null;
+}
+function sendRiser(g, lb, kind, x) {   // up through a warning at x, facing him
+  const K = MON[kind], half = Math.max(-K.box[0], K.box[1]) + 2, n = 1000 + (++g.rotN);
+  const m = { id: 'r' + n, kind, sx: x, sy: 0, alt: 0, patch: [half + 2, g.L.length - half - 2], ph: (n * 0.37) % 1, seed: n * 7 + 3, arena: true, entry: null };
+  resetMonster(g, m); m.awake = true; m.f = g.x >= x ? 1 : -1; m.cd = Math.max(m.cd, 0.3);
+  m.riseW = 0; m.riseLen = ROT_RISE.len;
+  g.mons.push(m); g.warns.push({ x, t: 0 });
+}
+function warnsUpdate(g, dt) {          // the warnings' own clocks, each gone once faded
+  const end = ROT_RISE.warn + ROT_RISE.len + ROT_RISE.fadeOut;
+  for (const q of g.warns) q.t += dt;
+  if (g.warns.some((q) => q.t >= end)) g.warns = g.warns.filter((q) => q.t < end);
+}
+function drawWarns(g, w) {             // under the monsters and him, as loopWave draws it
+  for (const q of g.warns) {
+    const t = q.t, R = ROT_RISE, a = t < R.fadeIn ? t / R.fadeIn : t < R.warn ? 1 : Math.max(0, 1 - (t - R.warn) / (R.len + R.fadeOut));
+    w.warning(q.x, { a });
+  }
 }
 // step 3: the card between arenas, after every third wave, in the next wave's line's place (PlaceCard, GracePick, version 23): the next
 // arena's place with its waves in brass; after waves 3, 9, 15... a Grace (the card holds with the pick, as on the journey; when the deck
@@ -10654,8 +10724,10 @@ function sureDrop(g, lb, m) {
   const kind = can.length ? lb.pick(can) : 'health', x = m.px;
   g.loot.push({ kind, x, y: surfaceAt(g, x), drop: 0, from: { x: m.px, y: m.py + (MON[m.kind].ground ? -30 : 0) }, seed: g.loot.length + 1 });
 }
-function sendMonster(g, lb) {          // in from beyond an end, either end at random
-  const kind = arrivalKind(g, lb), K = MON[kind], half = Math.max(-K.box[0], K.box[1]) + 2, side = lb.rand() < 0.5 ? -1 : 1, len = g.L.length;
+function sendMonster(g, lb) {          // in from beyond an end, either end at random (step 3b: or up through a warning)
+  const kind = arrivalKind(g, lb), up = ROT_RISE.kinds[kind] ? riseChance(g) : 0;
+  if (up > 0 && lb.rand() < up) { const x = riseSpot(g, lb, kind); if (x != null) return sendRiser(g, lb, kind, x); }
+  const K = MON[kind], half = Math.max(-K.box[0], K.box[1]) + 2, side = lb.rand() < 0.5 ? -1 : 1, len = g.L.length;
   const x = side < 0 ? -ROT.out - half : len + ROT.out + half, n = 1000 + (++g.rotN), alt = K.ground ? 0 : (n % 2) * 22;
   const m = { id: 'r' + n, kind, sx: x, sy: K.ground ? 0 : g.L.ground(x) - K.hover - alt, alt, patch: K.ground ? [x - 1, x + 1] : null, ph: (n * 0.37) % 1, seed: n * 7 + 3,
     arena: true, entry: side < 0 ? half + ROT.inside : len - half - ROT.inside };
@@ -10698,6 +10770,7 @@ function loadArena(g, lb, a) {       // an arena: a = 0, 1, 2, 3 for the four in
   g.x = g.L.length / 2; g.y = surfaceAt(g, g.x); g.on = null; g.vy = 0; g.facing = 1; g.walkDist = 0;
   g.mons = []; g.boss = null;
   g.loot = []; g.shots = []; g.zaps = []; g.sprays = []; g.patches = []; g.gobs = []; g.splats = [];
+  g.warns = [];                      // step 3b: the warnings risers come up through
 }
 function enterArena(g, lb) {         // as enterPlace: Lantern Ward and Iron Skin count an arena as a place; the place's sound and track
   g.out = false;
@@ -10975,7 +11048,7 @@ function swordHits(g, lb) {
   const x0 = Math.min(xa, xb), x1 = Math.max(xa, xb), y0 = g.y - 135, y1 = g.y + 4;
   let hits = 0;
   for (const m of g.mons) {
-    if (!alive(m)) continue;
+    if (!alive(m) || unborn(m)) continue;   // step 3b: a riser can't be hurt until it is up
     const b = monBox(m);
     if (b[1] < x0 || b[0] > x1 || b[3] < y0 || b[2] > y1) continue;
     hits++;
@@ -11051,7 +11124,7 @@ function shotsUpdate(g, lb, dt) {     // each fireball flies on until it hits a 
   for (const s of g.shots) {
     if (s.burst != null) { s.burst += dt; if (s.burst >= 0.4) s.gone = true; continue; }
     s.x += s.f * FIRE_SPEED * dt;
-    const m = g.mons.find((q) => { if (!alive(q)) return false; const b = monBox(q); return !(b[1] < s.x - 10 || b[0] > s.x + 10 || b[3] < s.y - 10 || b[2] > s.y + 10); });
+    const m = g.mons.find((q) => { if (!alive(q) || unborn(q)) return false; const b = monBox(q); return !(b[1] < s.x - 10 || b[0] > s.x + 10 || b[3] < s.y - 10 || b[2] > s.y + 10); });
     const bb = m ? null : bossBody(g), lg = m || !bb ? null : bossLegs(g);
     if (m) { s.burst = 0; lb.sfx('burst'); damage(g, lb, m, SPELL.fire.dmg[s.level], s.f); }
     else if (bb && !(bb[1] < s.x - 10 || bb[0] > s.x + 10 || bb[3] < s.y - 10 || bb[2] > s.y + 10)) { s.burst = 0; lb.sfx('burst'); bossDamage(g, lb, SPELL.fire.dmg[s.level]); }
@@ -11080,7 +11153,7 @@ function teachOnce(g, lb, id) {  // the first time a control matters in a taught
 // targets: every monster alive and the boss's body while it can be struck, each with its box and its middle
 function boltTargets(g) {
   const list = [];
-  for (const m of g.mons) if (alive(m)) { const b = monBox(m); list.push({ m, b, x: (b[0] + b[1]) / 2, y: (b[2] + b[3]) / 2 }); }
+  for (const m of g.mons) if (alive(m) && !unborn(m)) { const b = monBox(m); list.push({ m, b, x: (b[0] + b[1]) / 2, y: (b[2] + b[3]) / 2 }); }
   const bb = bossBody(g);
   if (bb) list.push({ boss: true, b: bb, x: (bb[0] + bb[1]) / 2, y: Math.max(bb[2] + 20, (bb[2] + bb[3]) / 2) });
   return list;
@@ -11137,13 +11210,13 @@ function acidHit(g, lb, s) {
   // step 5e-6c: and nothing solid between the spray's mouth and it
   const meets = (b) => b && !(b[1] < x0 || b[0] > x1 || b[3] < y0 || b[2] > y1) && !lineBlock(g, s.x, s.y, (b[0] + b[1]) / 2, (b[2] + b[3]) / 2, b, s.on);
   let any = false;
-  for (const m of g.mons) if (alive(m) && meets(monBox(m))) { any = true; damage(g, lb, m, s.dmg * 0.5, s.f); }
+  for (const m of g.mons) if (alive(m) && !unborn(m) && meets(monBox(m))) { any = true; damage(g, lb, m, s.dmg * 0.5, s.f); }
   const share = bossShare(g, meets);   // Barney, 8 November 2026: the Moor Mother's legs too, for LEG_HIT
   if (share) { any = true; bossDamage(g, lb, s.dmg * 0.5 * share); }
 }
 function patchHit(g, lb, p) {
   for (const m of g.mons) {
-    if (!alive(m) || !MON[m.kind].ground) continue;
+    if (!alive(m) || unborn(m) || !MON[m.kind].ground) continue;
     const b = monBox(m), py = p.slope ? g.L.ground(Math.max(p.x0, Math.min(p.x1, (b[0] + b[1]) / 2))) : p.y;   // step 5e-6a: along a slope
     if (b[1] >= p.x0 && b[0] <= p.x1 && Math.abs(b[3] - py) < 24) damage(g, lb, m, p.dmg, p.f);
   }
@@ -11560,7 +11633,7 @@ function hurtCheck(g, lb) {
   const rolling = g.mode === 'roll', h = rolling ? ROLL_H : BODY_H, x0 = g.x - BODY_W, x1 = g.x + BODY_W, y0 = g.y - h, y1 = g.y;
   const meets = (b) => b && !(b[1] < x0 || b[0] > x1 || b[3] < y0 || b[2] > y1);
   for (const m of g.mons) {
-    if (!alive(m) || (m.riseT != null && m.riseT < 0.35)) continue;   // a crawler still rising out of the ground can't hurt yet
+    if (!alive(m) || (m.riseT != null && m.riseT < 0.35) || unborn(m)) continue;   // a crawler still rising out of the ground can't hurt yet (step 3b: nor a riser)
     // the Night pass, part D: what hit him, for the run log: the attack's sweep, or its body in an attack that moves it (a lunge, a dive, a
     // leap), or else its touch
     const a = m.atk && m.atk.name;
@@ -11715,7 +11788,8 @@ function monstersUpdate(g, lb, dt) {
 function startAttack(m, name, extra) { m.atk = Object.assign({ name, t: 0 }, extra || {}); m.moving = false; }
 function monsterUpdate(m, g, lb, dt, busy, camX) {
   const K = MON[m.kind];
-  if (m.riseT != null && m.riseT < 0.35) { m.riseT += dt; return; }   // a called crawler still rising out of the ground
+  if (m.riseW != null) { m.riseW += dt; if (m.riseW >= ROT_RISE.warn) { m.riseW = null; m.riseT = 0; } return; }   // step 3b: its warning, then its rise
+  if (m.riseT != null && m.riseT < (m.riseLen || 0.35)) { m.riseT += dt; return; }   // a called crawler still rising out of the ground (step 3b: or a riser, 0.6 s)
   if (m.atk) {                         // signal, attack, recover: it moves as the attack moves it, facing the way it began
     m.atk.t += dt;
     if (m.atk.name === 'spit' && !m.atk.left && m.atk.t >= SPIT.leave) { m.atk.left = true; spitLeave(g, lb, m); }   // step 5e-8: the gob leaves
@@ -11908,7 +11982,8 @@ function drawMonsters(g, lb, w, camX, flyers) {
     if (m.atk) o.attack = m.atk.name === 'dive' ? { name: 'dive', t: m.atk.t, dir: -1, dx: m.atk.dx, dy: m.atk.dy } : { name: m.atk.name, t: m.atk.t };
     else if (m.kind === 'hatmaw' && m.walkT > 0) o.attack = { name: 'hop', t: m.walkT };
     if (m.hitT != null && m.hitT < 0.13) o.hit = m.hitT;
-    if (m.riseT != null && m.riseT < 0.35) o.rise = m.riseT;
+    if (m.riseW != null) continue;     // step 3b: a riser in its warning: only the warning shows (drawWarns)
+    if (m.riseT != null && m.riseT < (m.riseLen || 0.35)) { o.rise = m.riseT; if (m.riseLen) o.riseLen = m.riseLen; }   // step 3b: a riser's deeper rise (the kit's, from its own height)
     w.monster(o);
   }
 }
@@ -12095,11 +12170,11 @@ function drive(g, lb) {
 // The Endless Rot's hands: facing the nearest monster that is in; once the timing has begun and the wave has its most on screen, on to it
 // and the sword swung within its reach (the arena is flat, with no pits or faces)
 const rotOut = (g) => g.mons.reduce((k, m) => k + (alive(m) ? 1 : 0), 0);
-const rotFull = (g) => !!g.wave && rotOut(g) >= g.wave.most && !g.mons.some((m) => alive(m) && m.entry != null);   // the wave's most on screen, all of them in
+const rotFull = (g) => !!g.wave && rotOut(g) >= g.wave.most && !g.mons.some((m) => alive(m) && (m.entry != null || unborn(m)));   // the wave's most on screen, all of them in (and up)
 function driveRot(g, lb, C, inp) {
   const W = g.wave;
   let m = null, ad = Infinity;
-  g.mons.forEach((q) => { const d = Math.abs(q.bx - g.x); if (alive(q) && q.entry == null && d < ad) { m = q; ad = d; } });
+  g.mons.forEach((q) => { const d = Math.abs(q.bx - g.x); if (alive(q) && q.entry == null && !unborn(q) && d < ad) { m = q; ad = d; } });
   if (!m || !W || g.mode !== 'ground') return inp;
   const toward = m.bx >= g.x ? 1 : -1, keep = swordReach(g) + halfW(m) - 6;
   if (C.phase === 'lead' || rotOut(g) < W.most) { g.facing = toward; return inp; }
