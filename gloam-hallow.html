@@ -9895,11 +9895,19 @@ let G = null;                    // the run's state, for the console while testi
 const PLAYTEST = /\/gloam-hallow-playtest\//.test(location.pathname) || /[?&]playtest\b/.test(location.search);
 const CHECK_LINK = /[?&]check\b/.test(location.search);
 const wantCheck = (lb) => CHECK_LINK || !!(lb.test && lb.test.check);
+// The Endless Rot's play check (Barney, 14 November 2026, to check the mode on each device): ?check=rot, or Testing's Play check with
+// The Endless Rot on as well
+const CHECK_ROT = /[?&]check=rot\b/.test(location.search);
+const wantRotCheck = (lb) => CHECK_ROT || !!(lb.test && lb.test.check && lb.test.rot);
 // the play check's figures (see the play check, at the end): seconds to settle, to time a leg's frames and to time its drawing, as the
 // test page's speed check (WARM, RUN, LOAD), and at most 6 s of play while its drawing is timed; eight frames a refresh then; 30 ways for
 // each place's encounters to fall; the picture settled once at one level for 3.2 s (10 s at most); 150 walked before a stretch's timing;
 // at a boss, the sword swung from within 125 of it and a step back nearer than 90
 const CHECK = { warm: 1.5, run: 4, load: 2.5, loadPlay: 6, reps: 8, seeds: 30, settle: 3.2, settleMax: 10, ahead: 150, reach: 125, near: 90 };
+// The Endless Rot's play check: each arena's last wave the first time round and again, harder (waves 3 to 24, the most on screen 3 to 8);
+// while the arena fills, a monster sent every 0.4 s; then the wave's own gap, and he strikes only while the wave has its most on screen, so
+// it stays at its most or one under
+const ROT_CHECK = { waves: [3, 6, 9, 12, 15, 18, 21, 24], fill: 0.4 };
 const CHECK_NAME = 'gh-check:';   // the window's name while a play check's result waits for the title
 const PICTURE_NAMES = { auto: 'Automatic', best: 'Best', faster: 'Faster', fastest: 'Fastest' };
 const PLACE_SHORT = ['Night', 'Blood Red Rain', 'Dawn', 'Mist'];
@@ -10212,7 +10220,7 @@ LanternBox.game({
   chooseRun,   // step 5e-1: the choice of run, once anything is bought
   // Testing (delete for the finished game): where a run starts, and help for trying it out; never in the playtest's copy (step 5f-1)
   test: PLAYTEST ? undefined : { options: [
-    { id: 'check', name: 'Play check', toggle: true, note: 'Start game plays by itself for about two minutes and times each place and its boss. Switch it off to play.' },   // step 5f-1
+    { id: 'check', name: 'Play check', toggle: true, note: 'Start game plays by itself for about two minutes and times each place and its boss (with The Endless Rot on too, each arena\'s waves). Switch it off to play.' },   // step 5f-1
     { id: 'rot', name: 'The Endless Rot', toggle: true, note: "Start game plays The Endless Rot as far as it is built, in Start at's arena. Switch it off for the journey." },   // design system 23, until its way in is built (step 6)
     { id: 'teach', name: 'Teaching in play', choices: [['saved', 'First run only'], ['always', 'Always']] },   // step 5e-4
     { id: 'spell', name: 'Attack spell', choices: [['shrine', 'As chosen'], ['fire', 'Fireball'], ['bolt', 'Lightning bolt'], ['acid', 'Acid spray']] },   // step 5e-2
@@ -11987,10 +11995,19 @@ const pct95 = (a) => { const b = a.slice().sort((x, y) => x - y); return b.lengt
 function startCheck(g, lb) {
   Object.assign(g, { safe: true, teach: false, monsTest: 'normal', loop: 1, orders: null });
   g.check = { legs: [], i: -1, phase: 'settle', t: 0, leadT: 0, inp: noInput(), res: [], work: 0, last: 0, lvl: null, stable: 0, slips: 0, picLost: 0, hooked: false, redone: 0 };
-  PLACES.forEach((p, k) => g.check.legs.push({ p: k, boss: false, n: 0 }, { p: k, boss: true, n: 0 }));
-  withSeed(1, () => loadPlace(g, lb, 0, 0));
+  const rot = g.check.rot = wantRotCheck(lb);
+  if (rot) {                           // The Endless Rot's: in its arenas, with what its run starts with (startRot)
+    g.run = 'rot';
+    ROT_CHECK.waves.forEach((n) => g.check.legs.push({ p: arenaOfWave(n), wave: n, boss: false, n: 0 }));
+    g.spells = { heal: 1 }; g.spells[g.attack] = 1; g.spellList = ['heal', g.attack];
+    g.felled = 0; g.wave = null; g.rotN = 0; lb.hud.counter('Felled', 0);
+    loadArena(g, lb, 0);
+  } else {
+    PLACES.forEach((p, k) => g.check.legs.push({ p: k, boss: false, n: 0 }, { p: k, boss: true, n: 0 }));
+    withSeed(1, () => loadPlace(g, lb, 0, 0));
+  }
   lb.hud.health(1); lb.hud.mana(1); lb.hud.armour(g.armour); lb.hud.lives(LIVES); hudSpells(g, lb); lb.hud.potCap(g.potCap.health, g.potCap.mana); lb.hud.potions(0, 0);
-  lb.fade(0); enterPlace(g, lb); g.mode = 'ground';
+  lb.fade(0); if (rot) enterArena(g, lb); else enterPlace(g, lb); g.mode = 'ground';
   wakeHold(true);                      // 5f-3: the screen kept awake until its result is left
   if (lb.settings.picture !== 'auto') nextLeg(g, lb);
   return g;
@@ -12016,7 +12033,11 @@ function nextLeg(g, lb) {
   if (C.i >= C.legs.length) return finishCheck(g, lb);
   const leg = C.legs[C.i], prev = C.legs[C.i - 1];
   lb.hud.boss(null);
-  if (leg.boss) {                      // at the boss's door: the path's monsters left behind, so it is fought alone, with what it summons
+  if (leg.wave) {                      // The Endless Rot's: the arena, and its wave begun with no line, the arena filling quickly (ROT_CHECK)
+    loadArena(g, lb, leg.p);
+    startWave(g, lb, leg.wave, false);
+    C.gap = g.wave.gap; g.wave.gap = ROT_CHECK.fill;
+  } else if (leg.boss) {               // at the boss's door: the path's monsters left behind, so it is fought alone, with what it summons
     withSeed(1000 * (leg.p + 1), () => loadPlace(g, lb, leg.p, 2));
     g.mons = [];
   } else {
@@ -12034,16 +12055,19 @@ function nextLeg(g, lb) {
   }
   Object.assign(g, { vy: 0, facing: 1, mode: 'ground', mt: 0, walkDist: 0, landT: 9, cast: null, castBuf: 0, atkBuf: 0, lost: null, safeT: 0, hurtT: 9 });
   lb.fade(0);                          // 5f-2: nothing left black from the leg before
-  if (!prev || prev.p !== leg.p) enterPlace(g, lb);
+  if (leg.wave) enterArena(g, lb);
+  else if (!prev || prev.p !== leg.p) enterPlace(g, lb);
   // 5f-2 (Barney's Pixel blacked out under the HUD): each leg named as it begins, under the HUD's top row, without a chime; gone (2 s)
   // before its timing starts, so a tester sees it working and, if the picture ever goes, which leg it went on
-  lb.hud.line(null, checkWord() + ' ' + (C.i + 1) + ' of ' + C.legs.length + ': ' + (leg.boss ? lb.world.bossNames[PLACES[leg.p]] : PLACE_SHORT[leg.p]), { chime: false });
+  lb.hud.line(null, checkWord() + ' ' + (C.i + 1) + ' of ' + C.legs.length + ': ' + (leg.boss ? lb.world.bossNames[PLACES[leg.p]] : PLACE_SHORT[leg.p] + (leg.wave ? ', wave ' + leg.wave : '')), { chime: false });
   C.phase = 'lead'; C.leadT = 0; C.t = 0;
 }
 const checkWord = () => (PLAYTEST ? 'Speed test' : 'Play check');
 // the play check's hands: on, over a pit and up a face (a jump, or a climb where it is too tall), or at a boss, near enough to strike it
 function drive(g, lb) {
   const C = g.check, leg = C.legs[C.i], inp = noInput(), b = g.boss;
+  if (!leg && C.rot) return inp;       // The Endless Rot's, before its first wave: he stands in the arena
+  if (leg && leg.wave) return driveRot(g, lb, C, inp);
   let dir = 1;
   if (leg && leg.boss && b && b.st !== 'wait') {
     const d = b.bx - g.x, ad = Math.abs(d), toward = d >= 0 ? 1 : -1;
@@ -12060,6 +12084,32 @@ function drive(g, lb) {
     if (face || pit) inp.pressed.jump = true;
   }
   return inp;
+}
+// The Endless Rot's hands: facing the nearest monster that is in; once the timing has begun and the wave has its most on screen, on to it
+// and the sword swung within its reach (the arena is flat, with no pits or faces)
+const rotOut = (g) => g.mons.reduce((k, m) => k + (alive(m) ? 1 : 0), 0);
+function driveRot(g, lb, C, inp) {
+  const W = g.wave;
+  let m = null, ad = Infinity;
+  g.mons.forEach((q) => { const d = Math.abs(q.bx - g.x); if (alive(q) && q.entry == null && d < ad) { m = q; ad = d; } });
+  if (!m || !W || g.mode !== 'ground') return inp;
+  const toward = m.bx >= g.x ? 1 : -1, keep = swordReach(g) + halfW(m) - 6;
+  if (C.phase === 'lead' || rotOut(g) < W.most) { g.facing = toward; return inp; }
+  if (ad > keep - 8) { if (toward > 0) inp.right = true; else inp.left = true; } else g.facing = toward;
+  if (ad <= keep && g.facing === toward) inp.pressed.attack = true;
+  return inp;
+}
+// The Endless Rot's wave never ends in the check (as its bosses are never beaten): with under 30% of its bar left, it is put back to 60%,
+// the monsters still to come counted again
+function rotCheckHold(g, lb, C) {
+  const W = g.wave;
+  if (!W) return;
+  if (C.phase !== 'lead') W.gap = C.gap;   // the arena full: the wave's own gap between arrivals
+  if (W.done || (W.size - W.felled) / W.size < 0.3) {
+    const d = W.felled - Math.round(0.4 * W.size);
+    Object.assign(W, { done: false, dt: 0, barGone: false, paid: false, felled: W.felled - d, sent: W.sent - d });
+    lb.hud.boss({ name: 'Wave ' + W.n, hp: (W.size - W.felled) / W.size, full: true });
+  }
 }
 function checkUpdate(g, lb) {
   const C = g.check, u0 = performance.now();
@@ -12080,8 +12130,11 @@ function checkUpdate(g, lb) {
   const leg = C.legs[C.i], b = g.boss;
   if (leg && C.phase === 'lead') {
     C.leadT += 1 / 60;
-    if ((leg.boss ? b && b.st === 'fight' : g.x >= C.xWarm) || C.leadT > 15) { C.phase = 'warm'; C.t = 0; C.legLvl = lb.picture.level; }
+    // The Endless Rot's: its timing begins once the wave has its most on screen, all of them in
+    const ready = leg.wave ? g.wave && rotOut(g) >= g.wave.most && !g.mons.some((m) => alive(m) && m.entry != null) : leg.boss ? b && b.st === 'fight' : g.x >= C.xWarm;
+    if (ready || C.leadT > 15) { C.phase = 'warm'; C.t = 0; C.legLvl = lb.picture.level; }
   }
+  if (leg && leg.wave) rotCheckHold(g, lb, C);
   if (leg && leg.boss && b && b.st === 'fight' && b.hp < b.max * 0.3) { b.hp = b.max * 0.6; lb.hud.boss({ name: b.name, hp: b.hp / b.max }); }   // never beaten
   C.work += performance.now() - u0;
 }
@@ -12114,14 +12167,16 @@ function checkDraw(ctx, g, lb) {
     if (C.t >= CHECK.warm * 1000) { C.phase = 'run'; C.t = 0; C.cur = { gaps: [], work: [] }; }
   } else if (C.phase === 'run') {
     C.cur.gaps.push(gap); C.cur.work.push(work); C.t += gap;
+    if (C.rot) C.cur.most = Math.max(C.cur.most || 0, rotOut(g));   // The Endless Rot's: the most monsters on screen while timed
     if (C.t >= CHECK.run * 1000) { C.phase = 'load'; C.t = 0; C.loadStart = null; C.loadN = 0; C.loadPlay = 0; C.cur.level = lb.picture.level; }
   } else if (C.phase === 'load') {
     if (C.loadStart == null) { C.loadStart = now; C.loadN = 0; } else C.loadN++;
     C.t += gap;
     if (C.t >= CHECK.load * 1000 || C.loadPlay >= CHECK.loadPlay) {
       const c = C.cur, leg = C.legs[C.i], sum = c.gaps.reduce((a, b) => a + b, 0), per = (now - C.loadStart) / Math.max(1, C.loadN);
-      C.res.push({ place: leg.p, boss: leg.boss, n: leg.n, fps: c.gaps.length * 1000 / sum, slow: pct95(c.gaps), max: Math.max(...c.gaps),
+      C.res.push({ place: leg.p, boss: leg.boss, n: leg.wave ? c.most || 0 : leg.n, fps: c.gaps.length * 1000 / sum, slow: pct95(c.gaps), max: Math.max(...c.gaps),
         drawn: per / CHECK.reps, keptUp: per < 18, work: c.work.reduce((a, b) => a + b, 0) / c.work.length, level: c.level });   // kept up: eight frames inside one refresh, so the time is an upper limit
+      if (leg.wave) C.res[C.res.length - 1].wave = leg.wave;   // The Endless Rot's: the wave timed
       nextLeg(g, lb);
     }
   }
@@ -12132,6 +12187,7 @@ function finishCheck(g, lb) {
   lb.hud.boss(null);
   const res = { v: 1, kit: lb.version, day: today(), device: device(), width: p.width, height: p.height, k: p.sharpness, lines: Math.round(lb.W),
     picture: s.picture, effects: !!s.effects, rm: !!s.reduceMotion, slips: C.slips, picLost: C.picLost, legs: C.res, trials: lb.trials || [] };   // trials: kit 0.20.2
+  if (C.rot) res.rot = true;           // The Endless Rot's
   C.result = readCheck(res);
   // 5f-2 (Barney's Pixel: the reload to the title left it black for about 10 s): the result shows at once, over the scene paused as P pauses
   // it (the kit has no call for a game to pause; onPause opens the result in place of the pause plaque, where the menus' keys work and a
@@ -12178,11 +12234,14 @@ function readCheck(o) {
       drawn: num(q.drawn, 0, 1e5), keptUp: q.keptUp === true, work: num(q.work, 0, 1e5) || 0, level: ['best', 'faster', 'fastest'].indexOf(q.level) >= 0 ? q.level : '' };
     if (r.place == null || r.fps == null || r.slow == null || r.max == null || r.drawn == null) return null;
     r.place = Math.round(r.place);
+    if (o.rot === true) { const w = num(q.wave, 1, 1e6); if (w == null) return null; r.wave = Math.round(w); }   // The Endless Rot's: the wave timed
     legs.push(r);
   }
-  return { kit: str(o.kit, 20), day: str(o.day, 10), device: str(o.device, 160), width: num(o.width, 0, 1e5) || 0, height: num(o.height, 0, 1e5) || 0, k: num(o.k, 0, 10) || 1,
+  const out = { kit: str(o.kit, 20), day: str(o.day, 10), device: str(o.device, 160), width: num(o.width, 0, 1e5) || 0, height: num(o.height, 0, 1e5) || 0, k: num(o.k, 0, 10) || 1,
     lines: num(o.lines, 0, 1e5) || 0, picture: PICTURE_NAMES[o.picture] ? o.picture : 'auto', effects: o.effects !== false, rm: o.rm === true, slips: num(o.slips, 0, 99) || 0,
     picLost: num(o.picLost, 0, 99) || 0, legs, trials: Array.isArray(o.trials) ? o.trials.filter((x) => typeof x === 'string').slice(0, 8).map((x) => x.slice(0, 40)) : [] };
+  if (o.rot === true) out.rot = true;
+  return out;
 }
 function checkShown(lb) {
   let o = null;
@@ -12193,7 +12252,8 @@ function checkShown(lb) {
   if (res) lb.ui.open((ui) => checkPlaque(lb, ui, res));
   return !!res;
 }
-const legName = (lb, r) => PLACE_SHORT[r.place] + (r.boss ? ', ' + lb.world.bossNames[PLACES[r.place]] : ', the path (' + r.n + (r.n === 1 ? ' monster)' : ' monsters)'));
+const legName = (lb, r) => PLACE_SHORT[r.place] + (r.wave ? ', wave ' + r.wave + ' (at most ' + r.n + (r.n === 1 ? ' monster)' : ' monsters)') :   // The Endless Rot's
+  r.boss ? ', ' + lb.world.bossNames[PLACES[r.place]] : ', the path (' + r.n + (r.n === 1 ? ' monster)' : ' monsters)'));
 const drawnIn = (r) => (r.keptUp ? 'under ' : '') + r.drawn.toFixed(1) + ' ms';
 const phonePass = (res) => res.legs.every((r) => r.fps >= 29.5 && r.drawn <= 25);
 const computerPass = (res) => res.legs.every((r) => r.fps >= 58);
@@ -12201,7 +12261,7 @@ const computerPass = (res) => res.legs.every((r) => r.fps >= 58);
 function checkText(lb, res) {
   const lvl = res.legs[res.legs.length - 1].level;
   const lines = [
-    'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + ', ' + res.day + ', kit ' + res.kit,
+    'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : '') + ', ' + res.day + ', kit ' + res.kit,
     res.device + ' · ' + res.width + ' × ' + res.height + ' at ' + res.k.toFixed(2) + '× · ' + res.lines + ' lines wide · Picture ' + PICTURE_NAMES[res.picture] +
       (lvl ? ' (' + PICTURE_NAMES[lvl] + ')' : '') + (res.effects ? '' : ' · effects off') + (res.rm ? ' · reduce motion' : '') + (res.slips ? ' · ' + res.slips + ' falls' : '') +
       (res.picLost ? ' · the picture was lost ' + res.picLost + (res.picLost === 1 ? ' time' : ' times') : '') +
@@ -12215,7 +12275,7 @@ function checkText(lb, res) {
 }
 // the result on the title (the plaque built from the kit's parts): each place's path and boss, the targets, and the ways to send it
 function checkPlaque(lb, ui, res, inRun) {   // inRun (5f-2): over the paused scene, so Close leaves the run
-  const phone = ui.phone, text = checkText(lb, res), subject = 'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check');
+  const phone = ui.phone, text = checkText(lb, res), subject = 'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : '');
   const { panel, face } = ui.plaque('gh-ck', 560, 640, phone ? 'gap:6px;padding:12px 16px 12px' : 'gap:10px;padding:18px 20px 14px');
   const head = ui.heading('gh-ck', PLAYTEST ? 'Speed test' : 'Play check');
   const t = ui.el('table', 'lb-scores');
@@ -12226,10 +12286,11 @@ function checkPlaque(lb, ui, res, inRun) {   // inRun (5f-2): over the paused sc
     return tr;
   };
   const thead = document.createElement('thead'), tbody = document.createElement('tbody');
-  thead.append(row(['Place', 'The path', 'Its boss'], true));
+  // The Endless Rot's: each arena's row, its last wave the first time round and again, harder
+  thead.append(row(res.rot ? [ROT_NAME, 'First time', 'Again, harder'] : ['Place', 'The path', 'Its boss'], true));
   const cell = (r) => (r ? Math.round(r.fps) + ' fps · ' + drawnIn(r) : '');
   PLACE_SHORT.forEach((name, p) => {
-    const a = res.legs.find((r) => r.place === p && !r.boss), b = res.legs.find((r) => r.place === p && r.boss);
+    const a = res.legs.find((r) => r.place === p && (res.rot ? r.wave < 13 : !r.boss)), b = res.legs.find((r) => r.place === p && (res.rot ? r.wave >= 13 : r.boss));
     if (a || b) tbody.append(row([name, cell(a), cell(b)]));
   });
   t.append(thead, tbody);
