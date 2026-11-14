@@ -9401,7 +9401,8 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
    The climb (HANDOVER-climb-and-sdk.md, part A, kit 0.25.0): each place from Blood Red Rain on lighter before its halfway lantern, busier after it.
    The CrazyGames SDK (part B, kit 0.27.0): the CrazyGames build's feedback context (portalNote).
    Barney's play of The Endless Rot (14 November 2026, CM211; no kit change): a walker higher than him on a slope sweeps low, everywhere.
-   Then (CM212, with kit 0.33.0's touch fixes): a roll out of a sword swing turns him first to the way he is pressing. */
+   Then (CM212, with kit 0.33.0's touch fixes): a roll out of a sword swing turns him first to the way he is pressing.
+   Then (CM214): the walker sweeps low from 4 higher than him, where it was 20; in The Endless Rot its blow 35% (tuning 5). */
 
 const PLACES = ['night', 'storm', 'dawn', 'mist'];
 const TRACK = { night: 0, storm: 0, dawn: 1, mist: 1 };   // The Long Vigil, then Lantern in the Moor from Dawn's place card
@@ -9469,7 +9470,8 @@ const MON = {
   walker:  { dmg: 0.25, hp: 5, wisps: 5, box: [-28, 31, -193, 0], ground: true, speed: 32, range: 100, keep: 150, cd: 1.2, atk: 'sweep',
     up: true, through: true, zone: { high: [0.74, 0.92, -106, -25, -200, -112], low: [0.74, 0.92, -104, -45, -42, -12] } },   // the arms reach out from 0.74 s
 };
-const WALKER_ABOVE = 20;   // a walker whose feet are this much higher than the ground under him sweeps low (starting figure)
+const WALKER_ABOVE = 4;    // a walker whose feet are this much higher than the ground under him sweeps low (CM211's 20; CM214, Barney:
+                           // "still seems to be doing some high attacks when I am slightly lower on the slope")
 const ATK_T = { lunge: 0.88, dive: 1.4, bite: 1.0, swipe: 1.35, high: 1.3, low: 1.25, spit: 1.1 };   // each attack's length, signal to recovered (the kit's)
 // Step 5e-8 (design system 15, HANDOVER-design-15.md sections 2 to 6; starting figures): the mouth-hat's spit. It spits when he is 160 to
 // 330 from it (beyond the longest sword, 147), the gob's path is clear of hills and pieces and all of it is on screen, at him on its ground,
@@ -10575,7 +10577,10 @@ const ROT = { first: 1.0, barOut: 0.6, endLine: 1.0, refillAt: 0.5, refillT: 0.5
 // mana potions and from Mana Thief; health still half of what is missing. The ramp as tuning 2, to be decided after this is played.
 // Tuning 4 (Barney, 14 November 2026, after run 11 reached wave 15: "heal still overpowered"): the heal costs half the mana bar here
 // (healCost; the journey's 30%), about two heals a minute where the regen and the mode's steady mana potions gave about three and a half
-const ROT_RAMP = { speed: 0.03, speedMax: 1.6, dmg: 0.05, hits: 0.05, healBack: 0.5, manaBack: 0, healCost: 0.5, tune: 4 };
+// Tuning 5 (Barney, 14 November 2026, after runs 16 to 19 reached waves 8, 5, 6 and 17: "the walker doesn't seem to do much damage in
+// the later levels considering he is toughest and biggest monster"; "Fix slope and heavier blow"): the walker's blow and touch here
+// 35% of health before the ramp (walker; its own 25%, the journey's), so from wave 13 one blow takes over half; the ramp as tuning 4
+const ROT_RAMP = { speed: 0.03, speedMax: 1.6, dmg: 0.05, hits: 0.05, healBack: 0.5, manaBack: 0, healCost: 0.5, walker: 0.35, tune: 5 };
 function rotRamp(g, k) {               // hard()'s figures in the mode, by the wave: speed, hits (health) and dmg; never echo or a boss's
   const w = (g.wave ? g.wave.n : 1) - 1;
   if (k === 'speed') return Math.min(ROT_RAMP.speedMax, 1 + ROT_RAMP.speed * w);
@@ -10584,6 +10589,7 @@ function rotRamp(g, k) {               // hard()'s figures in the mode, by the w
   return 1;
 }
 const monDmg = (g) => (g.run === 'rot' ? rotRamp(g, 'dmg') : 1);     // a monster's blow, the mode's ramp on it (the journey's as it was)
+const monBlow = (g, kind) => (g.run === 'rot' && kind === 'walker' ? ROT_RAMP.walker : MON[kind].dmg) * monDmg(g);   // tuning 5: the mode's walker heavier
 const atkPace = (g) => (g.run === 'rot' ? rotRamp(g, 'speed') : 1);  // its attacks' clock and the wait between them
 // step 4: from wave 13 the size restarts at 12 and climbs by 2 a wave, and the most on screen goes on rising as it did, one more every
 // third wave (2 + n / 3: 6, 6, 7, 7, 7, 8), to 8 and no more; the gap stays wave 12's (starting figures: the note says only "rises to 8")
@@ -11717,8 +11723,8 @@ function hurtCheck(g, lb) {
     // the Night pass, part D: what hit him, for the run log: the attack's sweep, or its body in an attack that moves it (a lunge, a dive, a
     // leap), or else its touch
     const a = m.atk && m.atk.name;
-    if (meets(atkZone(m, g))) return hurt(g, lb, MON[m.kind].dmg * monDmg(g), m.px, { by: m.kind, atk: a || 'touch' });   // The Endless Rot: its ramp (monDmg)
-    if (!(rolling && MON[m.kind].through) && meets(monBox(m))) return hurt(g, lb, MON[m.kind].dmg * monDmg(g), m.px, { by: m.kind, atk: a && a !== 'spit' && !MON[m.kind].zone ? a : 'touch' });
+    if (meets(atkZone(m, g))) return hurt(g, lb, monBlow(g, m.kind), m.px, { by: m.kind, atk: a || 'touch' });   // The Endless Rot: its ramp (monBlow)
+    if (!(rolling && MON[m.kind].through) && meets(monBox(m))) return hurt(g, lb, monBlow(g, m.kind), m.px, { by: m.kind, atk: a && a !== 'spit' && !MON[m.kind].zone ? a : 'touch' });
   }
   const hit = bossHits(g, rolling);
   if (hit) return hurt(g, lb, hit.dmg, hit.x, { by: 'boss', atk: hit.atk || 'touch' });
@@ -11917,7 +11923,8 @@ function monsterUpdate(m, g, lb, dt, busy, camX) {
     if (m.cd <= 0 && ad <= K.range && ad > 18) {
       // the walker: a high sweep at him up on a piece; a low sweep when it stands higher than the ground under him on a slope (Barney,
       // 14 November 2026: "still doing the high sweep too much when higher than me on a slope"; from there its high sweep passes 50 to 70
-      // over his head, where the low sweep reaches him); otherwise high or low, half and half
+      // over his head, where the low sweep reaches him; CM214: from 4 higher, where it was 20, as from there too a high sweep passes 25
+      // to 45 over his head); otherwise high or low, half and half
       startAttack(m, K.atk === 'sweep' ? (g.on ? 'high' : g.L.ground(g.x) - m.py > WALKER_ABOVE ? 'low' : lb.rand() < 0.5 ? 'high' : 'low') : K.atk);
       return;
     }
