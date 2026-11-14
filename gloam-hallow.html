@@ -9394,7 +9394,8 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
    full is picked up as 2 echo (take). Design system 18 (HANDOVER-design-18.md, kit 0.22.0): the day's double announced on Night's card
    and in the choice of run (part C); The Moor Mother closes in (part D, kit 0.23.0); a life for each boss, up to five (part G, kit 0.24.0).
    The climb (HANDOVER-climb-and-sdk.md, part A, kit 0.25.0): each place from Blood Red Rain on lighter before its halfway lantern, busier after it.
-   The CrazyGames SDK (part B, kit 0.27.0): the CrazyGames build's feedback context (portalNote). */
+   The CrazyGames SDK (part B, kit 0.27.0): the CrazyGames build's feedback context (portalNote).
+   Barney's play of The Endless Rot (14 November 2026, CM211; no kit change): a walker higher than him on a slope sweeps low, everywhere. */
 
 const PLACES = ['night', 'storm', 'dawn', 'mist'];
 const TRACK = { night: 0, storm: 0, dawn: 1, mist: 1 };   // The Long Vigil, then Lantern in the Moor from Dawn's place card
@@ -9462,6 +9463,7 @@ const MON = {
   walker:  { dmg: 0.25, hp: 5, wisps: 5, box: [-28, 31, -193, 0], ground: true, speed: 32, range: 100, keep: 150, cd: 1.2, atk: 'sweep',
     up: true, through: true, zone: { high: [0.74, 0.92, -106, -25, -200, -112], low: [0.74, 0.92, -104, -45, -42, -12] } },   // the arms reach out from 0.74 s
 };
+const WALKER_ABOVE = 20;   // a walker whose feet are this much higher than the ground under him sweeps low (starting figure)
 const ATK_T = { lunge: 0.88, dive: 1.4, bite: 1.0, swipe: 1.35, high: 1.3, low: 1.25, spit: 1.1 };   // each attack's length, signal to recovered (the kit's)
 // Step 5e-8 (design system 15, HANDOVER-design-15.md sections 2 to 6; starting figures): the mouth-hat's spit. It spits when he is 160 to
 // 330 from it (beyond the longest sword, 147), the gob's path is clear of hills and pieces and all of it is on screen, at him on its ground,
@@ -9570,7 +9572,7 @@ function feast(g, lb, boss) {        // step 5e-6b: a defeat feeds Marrow Feast 
 }
 const swordBite = (g) => 1 + 0.5 * (g.sword.bite + (g.graces.keen ? GRACE.keen : 0));
 const swordReach = (g) => SWORD_REACH + REACH_UP * (g.sword.reach + (g.graces.reach ? GRACE.reach : 0));
-const spellCost = (g, sp) => (sp === 'heal' ? SPELL.heal.cost : SPELL[sp].cost * (g.graces.surge ? GRACE.surge : 1));
+const spellCost = (g, sp) => (sp === 'heal' ? (g.run === 'rot' ? ROT_RAMP.healCost : SPELL.heal.cost) : SPELL[sp].cost * (g.graces.surge ? GRACE.surge : 1));   // The Endless Rot's heal: its own cost (tuning 4)
 const rollAt = (g) => g.mt * (g.graces && g.graces.fleet ? GRACE.fleet : 1);
 
 // the bolt and the acid (step 5e-2; all starting figures, to judge in play): a body-length is his height
@@ -10565,7 +10567,9 @@ const ROT = { first: 1.0, barOut: 0.6, endLine: 1.0, refillAt: 0.5, refillT: 0.5
 // Tuning 3 (Barney, 14 November 2026, after his second run reached wave 18: "I was able to spam the heal spell almost every time and
 // didn't have to use potions at all"): no mana between waves (manaBack 0), so it comes back only as on the journey, 1% a second, from
 // mana potions and from Mana Thief; health still half of what is missing. The ramp as tuning 2, to be decided after this is played.
-const ROT_RAMP = { speed: 0.03, speedMax: 1.6, dmg: 0.05, hits: 0.05, healBack: 0.5, manaBack: 0, tune: 3 };
+// Tuning 4 (Barney, 14 November 2026, after run 11 reached wave 15: "heal still overpowered"): the heal costs half the mana bar here
+// (healCost; the journey's 30%), about two heals a minute where the regen and the mode's steady mana potions gave about three and a half
+const ROT_RAMP = { speed: 0.03, speedMax: 1.6, dmg: 0.05, hits: 0.05, healBack: 0.5, manaBack: 0, healCost: 0.5, tune: 4 };
 function rotRamp(g, k) {               // hard()'s figures in the mode, by the wave: speed, hits (health) and dmg; never echo or a boss's
   const w = (g.wave ? g.wave.n : 1) - 1;
   if (k === 'speed') return Math.min(ROT_RAMP.speedMax, 1 + ROT_RAMP.speed * w);
@@ -11903,8 +11907,10 @@ function monsterUpdate(m, g, lb, dt, busy, camX) {
   m.patrol = !reach;
   if (reach) {
     if (m.cd <= 0 && ad <= K.range && ad > 18) {
-      // the walker: a high sweep at him up on a piece, otherwise high or low, half and half
-      startAttack(m, K.atk === 'sweep' ? (g.on || lb.rand() < 0.5 ? 'high' : 'low') : K.atk);
+      // the walker: a high sweep at him up on a piece; a low sweep when it stands higher than the ground under him on a slope (Barney,
+      // 14 November 2026: "still doing the high sweep too much when higher than me on a slope"; from there its high sweep passes 50 to 70
+      // over his head, where the low sweep reaches him); otherwise high or low, half and half
+      startAttack(m, K.atk === 'sweep' ? (g.on ? 'high' : g.L.ground(g.x) - m.py > WALKER_ABOVE ? 'low' : lb.rand() < 0.5 ? 'high' : 'low') : K.atk);
       return;
     }
     goal = g.x - m.f * (m.cd <= 0 ? K.range * 0.8 : K.keep);   // in to striking range, or holding off while it gathers itself
