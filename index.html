@@ -73,7 +73,7 @@
   // the version on the server, never a kept copy; the links carry it, so a phone opens the new files at once
   // this page's own version (kept the same as version.txt with every push): a phone may show a kept copy of this page for up to
   // 10 minutes, so when the server's version is newer the page loads itself afresh at a new address, once for each version
-  const PAGE = '0.31.0-r1';
+  const PAGE = '0.31.0-r2';
   fetch('version.txt', { cache: 'no-store' }).then((r) => (r.ok ? r.text() : Promise.reject())).then((t) => {
     const v = t.trim(), tried = (/[?&]fresh=([^&]*)/.exec(location.search) || [])[1];
     if (v !== PAGE && tried !== encodeURIComponent(v)) { location.replace(location.pathname + '?fresh=' + encodeURIComponent(v)); return; }

@@ -9907,7 +9907,9 @@ const CHECK = { warm: 1.5, run: 4, load: 2.5, loadPlay: 6, reps: 8, seeds: 30, s
 // The Endless Rot's play check: each arena's last wave the first time round and again, harder (waves 3 to 24, the most on screen 3 to 8);
 // while the arena fills, a monster sent every 0.4 s; then the wave's own gap, and he strikes only while the wave has its most on screen, so
 // it stays at its most or one under
-const ROT_CHECK = { waves: [3, 6, 9, 12, 15, 18, 21, 24], fill: 0.4 };
+// settle: the picture settled once its level has held 8.5 s with the arena full (Automatic watches 4 s of frames at a time, so a whole
+// one of them falls in it), 25 s at most
+const ROT_CHECK = { waves: [3, 6, 9, 12, 15, 18, 21, 24], fill: 0.4, settle: 8.5, settleMax: 25 };
 const CHECK_NAME = 'gh-check:';   // the window's name while a play check's result waits for the title
 const PICTURE_NAMES = { auto: 'Automatic', best: 'Best', faster: 'Faster', fastest: 'Fastest' };
 const PLACE_SHORT = ['Night', 'Blood Red Rain', 'Dawn', 'Mist'];
@@ -12002,6 +12004,11 @@ function startCheck(g, lb) {
     g.spells = { heal: 1 }; g.spells[g.attack] = 1; g.spellList = ['heal', g.attack];
     g.felled = 0; g.wave = null; g.rotN = 0; lb.hud.counter('Felled', 0);
     loadArena(g, lb, 0);
+    // Barney, 14 November 2026 (the Fire's first run: in the empty arena Automatic stayed at Best, so the first legs were timed at
+    // Best and Faster): the picture settles while the first leg's wave fills Night's arena and comes at him, as play begins, where the
+    // journey's check settles on Night's path among its monsters; the first leg then begins afresh
+    startWave(g, lb, ROT_CHECK.waves[0], false);
+    g.wave.gap = ROT_CHECK.fill;
   } else {
     PLACES.forEach((p, k) => g.check.legs.push({ p: k, boss: false, n: 0 }, { p: k, boss: true, n: 0 }));
     withSeed(1, () => loadPlace(g, lb, 0, 0));
@@ -12088,6 +12095,7 @@ function drive(g, lb) {
 // The Endless Rot's hands: facing the nearest monster that is in; once the timing has begun and the wave has its most on screen, on to it
 // and the sword swung within its reach (the arena is flat, with no pits or faces)
 const rotOut = (g) => g.mons.reduce((k, m) => k + (alive(m) ? 1 : 0), 0);
+const rotFull = (g) => !!g.wave && rotOut(g) >= g.wave.most && !g.mons.some((m) => alive(m) && m.entry != null);   // the wave's most on screen, all of them in
 function driveRot(g, lb, C, inp) {
   const W = g.wave;
   let m = null, ad = Infinity;
@@ -12131,7 +12139,7 @@ function checkUpdate(g, lb) {
   if (leg && C.phase === 'lead') {
     C.leadT += 1 / 60;
     // The Endless Rot's: its timing begins once the wave has its most on screen, all of them in
-    const ready = leg.wave ? g.wave && rotOut(g) >= g.wave.most && !g.mons.some((m) => alive(m) && m.entry != null) : leg.boss ? b && b.st === 'fight' : g.x >= C.xWarm;
+    const ready = leg.wave ? rotFull(g) : leg.boss ? b && b.st === 'fight' : g.x >= C.xWarm;
     if (ready || C.leadT > 15) { C.phase = 'warm'; C.t = 0; C.legLvl = lb.picture.level; }
   }
   if (leg && leg.wave) rotCheckHold(g, lb, C);
@@ -12159,9 +12167,9 @@ function checkDraw(ctx, g, lb) {
   if ((C.phase === 'warm' || C.phase === 'run' || C.phase === 'load') && lb.picture.level !== C.legLvl) { C.redone++; C.i--; nextLeg(g, lb); return; }
   if (C.phase === 'settle') {          // Picture Automatic finding its level
     const lv = lb.picture.level;
-    if (lv !== C.lvl) { C.lvl = lv; C.stable = 0; } else C.stable += gap;
+    if (lv !== C.lvl || (C.rot && !rotFull(g))) { C.lvl = lv; C.stable = 0; } else C.stable += gap;   // The Endless Rot's: counted once its arena is full
     C.t += gap;
-    if (C.stable >= CHECK.settle * 1000 || C.t >= CHECK.settleMax * 1000) nextLeg(g, lb);
+    if (C.stable >= (C.rot ? ROT_CHECK.settle : CHECK.settle) * 1000 || C.t >= (C.rot ? ROT_CHECK.settleMax : CHECK.settleMax) * 1000) nextLeg(g, lb);
   } else if (C.phase === 'warm') {
     C.t += gap;
     if (C.t >= CHECK.warm * 1000) { C.phase = 'run'; C.t = 0; C.cur = { gaps: [], work: [] }; }
