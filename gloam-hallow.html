@@ -10547,7 +10547,7 @@ function startRot(g, lb, t) {
    come in over either end, then come for him as on the journey. The boss's bar is the wave's ("Wave 4", emptying as its monsters fall);
    each felled monster's wisp rises to the counter with its echo sound, as loud as that monster's on the journey (the handover's reading 10),
    and the counter steps up as it arrives. When the last falls: the bar goes, "Wave 4 endured · 7 echo" (wave n pays n + 3, kept out of
-   sight with the run's echo), health and mana refill, and after a short pause "Wave 5" and the next wave, as play.js's loopWave times
+   sight with the run's echo), health refills (ROT_RAMP: half of what is missing, and no mana since tuning 3), and after a short pause "Wave 5" and the next wave, as play.js's loopWave times
    them. After a card the card is the wave's announcement, so its first wave has no line. Waves 1 to 3 bring crawlers and flyers; the others
    join in step 3 (ROT_KINDS), with the card and a new arena after every third wave (arenaCard). Rising through a warning waits on a kit
    job (a warning drawn on its own, and a deeper rise of 0.6 s). */
@@ -10555,14 +10555,17 @@ const ROT_WAVES = [[6, 2, 3.0], [8, 2, 3.0], [10, 3, 3.0], [8, 3, 3.0], [10, 3, 
   [14, 5, 2.0], [12, 5, 2.0], [14, 5, 1.7], [16, 6, 1.7]];   // waves 1 to 12: [monsters, most on screen, seconds between arrivals]
 const ROT = { first: 1.0, barOut: 0.6, endLine: 1.0, refillAt: 0.5, refillT: 0.5, next: 2.3, out: 60, inside: 40, flyer: 1 / 3 };
 // first: the first arrival after a wave begins; barOut: the bar goes after the last falls (play.js: 0.6 s); endLine: its line, once the
-// last wisp has reached the counter (0.9 s); refill: health and mana from 0.5 s after the end line, over 0.5 s (play.js); next: the next
+// last wisp has reached the counter (0.9 s); refill: health (and mana, by ROT_RAMP's shares) from 0.5 s after the end line, over 0.5 s (play.js); next: the next
 // wave's line after the end line (play.js: 2.3 s); out: how far beyond an end a monster starts; inside: how far in it walks before it
 // comes for him; flyer: the share of arrivals that fly (starting figure, about Night's own mix)
 // Barney, 14 November 2026 (his first run reached wave 21, where the mode means a player who beats The Veiled Ghost to reach wave 6 to
 // 9): a ramp every wave in place of the step at wave 13 (hits 1.5, speed 1.2), starting figures: the monsters 3% faster a wave, moving
 // and attacking (their wind-ups and the wait between attacks), up to 1.6 times; 5% more damage and 5% more health a wave, without end;
-// between waves health refills half of what is missing, mana in full. tune: the figures' number, kept with each run in the run log
-const ROT_RAMP = { speed: 0.03, speedMax: 1.6, dmg: 0.05, hits: 0.05, healBack: 0.5, tune: 2 };
+// between waves health refills half of what is missing, mana in full. tune: the figures' number, kept with each run in the run log.
+// Tuning 3 (Barney, 14 November 2026, after his second run reached wave 18: "I was able to spam the heal spell almost every time and
+// didn't have to use potions at all"): no mana between waves (manaBack 0), so it comes back only as on the journey, 1% a second, from
+// mana potions and from Mana Thief; health still half of what is missing. The ramp as tuning 2, to be decided after this is played.
+const ROT_RAMP = { speed: 0.03, speedMax: 1.6, dmg: 0.05, hits: 0.05, healBack: 0.5, manaBack: 0, tune: 3 };
 function rotRamp(g, k) {               // hard()'s figures in the mode, by the wave: speed, hits (health) and dmg; never echo or a boss's
   const w = (g.wave ? g.wave.n : 1) - 1;
   if (k === 'speed') return Math.min(ROT_RAMP.speedMax, 1 + ROT_RAMP.speed * w);
@@ -10615,8 +10618,12 @@ function rotUpdate(g, lb, dt) {
   if (R && g.mode !== 'lost' && g.mode !== 'return') {
     R.t += dt;
     const u = ease3(Math.max(0, Math.min(1, (R.t - ROT.refillAt) / ROT.refillT)));
-    // Barney, 14 November 2026: health back by half of what is missing (ROT_RAMP.healBack), mana in full
-    if (u > 0) { g.health = Math.max(g.health, R.h + (1 - R.h) * ROT_RAMP.healBack * u); g.mana = Math.max(g.mana, R.m + (1 - R.m) * u); lb.hud.health(g.health); hudMana(g, lb, true); }
+    // Barney, 14 November 2026: health back by half of what is missing (ROT_RAMP.healBack); mana by its share (manaBack), none since
+    // tuning 3, and then left alone (a spell cast during the refill is not given back)
+    if (u > 0) {
+      g.health = Math.max(g.health, R.h + (1 - R.h) * ROT_RAMP.healBack * u); lb.hud.health(g.health);
+      if (ROT_RAMP.manaBack > 0) { g.mana = Math.max(g.mana, R.m + (1 - R.m) * ROT_RAMP.manaBack * u); hudMana(g, lb, true); }
+    }
     if (u >= 1) g.refill = null;
   }
 }
