@@ -9595,7 +9595,7 @@ const LOOT_SIZE = 1.4;           // loot drawn 1.4 times its old size, and reach
 // a defeat's drop (the gameplay note): a health or a mana potion 1 in 6 each, armour 1 in 20; a walker first has 1 in 4 to drop a
 // spell scroll or a sword upgrade (one he can still use)
 const SPARE_ARMOUR = 2;          // echo for armour found with three pips full (the playtest pass, part A)
-const DROP = { health: 1 / 9, mana: 1 / 12, shield: 1 / 20, upgrade: 1 / 4 };   // potions halved from 1 in 6, then health back up to 1 in 9 (Barney, 5 November 2026)
+const DROP = { health: 1 / 9, mana: 1 / 12, shield: 1 / 20, upgrade: 1 / 4, rotUpgrade: 1 / 30 };   // rotUpgrade: The Endless Rot's own rule (Barney, 14 November 2026), an ordinary monster's sword or spell upgrade   // potions halved from 1 in 6, then health back up to 1 in 9 (Barney, 5 November 2026)
 const PIECE_POTION = 0.35;       // the scenery potions made real: about one piece in three holds a health potion, and each big hill's crest
 const LINES = { heal: ['Heal mastered', 'Heal: restores deeper'], fire: ['Fireball mastered', 'Fireball: glows brighter'],
   bolt: ['Lightning bolt mastered', 'Lightning bolt: strikes harder'], acid: ['Acid spray mastered', 'Acid spray: burns deeper'],   // step 5e-2 (Barney)
@@ -11476,7 +11476,10 @@ function drawBoss(g, lb, w) {
 function dropLoot(g, lb, m) {
   let kind = null;
   const more = g.graces.robber ? GRACE.robber : 1;   // step 5e-6b: Grave Robber, loot half as often again
-  if (m.kind === 'walker' && lb.rand() < DROP.upgrade * more) {
+  // The Endless Rot's own rule (Barney, 14 November 2026: "Sword and spell upgrades should drop from normal monsters as well", at 1 in
+  // 30): in the mode every monster but a walker has its own chance of an upgrade, checked first as a walker's is; a walker keeps its 1 in 4
+  const up = m.kind === 'walker' ? DROP.upgrade : g.run === 'rot' ? DROP.rotUpgrade : 0;
+  if (up && lb.rand() < up * more) {
     const can = [];
     if (g.spells.heal < 3) can.push('heal'); if (g.spells[g.attack] < 3) can.push(g.attack);   // step 5e-2: the run's attack spell
     if (g.sword.reach < 2) can.push('reach'); if (g.sword.bite < 2) can.push('rune');
