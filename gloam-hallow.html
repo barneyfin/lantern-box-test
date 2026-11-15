@@ -9576,7 +9576,9 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
    Barney's play of The Endless Rot (14 November 2026, CM211; no kit change): a walker higher than him on a slope sweeps low, everywhere.
    Then (CM212, with kit 0.33.0's touch fixes): a roll out of a sword swing turns him first to the way he is pressing.
    Then (CM214): the walker sweeps low from 4 higher than him, where it was 20; in The Endless Rot its blow 35% (tuning 5).
-   Then (CM215): in the playtest's copy The Endless Rot is open from the start. */
+   Then (CM215): in the playtest's copy The Endless Rot is open from the start.
+   Then (CM228): on a touch device the roll's hint goes once he has rolled (teachOnce); the difficulty settings' figures (DIFF, ROT_DIFF),
+   set from the test link's Testing screen until their picker is designed. */
 
 const PLACES = ['night', 'storm', 'dawn', 'mist'];
 const TRACK = { night: 0, storm: 0, dawn: 1, mist: 1 };   // The Long Vigil, then Lantern in the Moor from Dawn's place card
@@ -9605,7 +9607,30 @@ const LIFE_ECHO = 10;
 // the second loop (step 5e-5; the gameplay note's How it gets harder): monsters take 1.5 times the hits and come 1.2 times faster, bosses have
 // 1.5 times the health, echo is doubled (all starting figures but the doubling)
 const HARD = { hits: 1.5, speed: 1.2, boss: 1.5, echo: 2 };
-const hard = (g, k) => (g.run === 'rot' ? rotRamp(g, k) : g.loop === 2 ? HARD[k] : 1);   // The Endless Rot: its own ramp, wave by wave (rotRamp)           // echo for each life still lit at the win (the win's words below)
+// The difficulty settings (Barney, 15 November 2026, after winning both loops first time in CrazyGames' preview: "the game seem incredibly
+// easier now"). Three settings for The Echo Infusion: Easy is the journey as it was, Normal climbs place by place, Hard climbs more; The
+// Bare Reckoning is always Normal (one fair table). By place (Night, Blood Red Rain, Dawn, Mist): blow, a share on every monster's blow and
+// spit (not a boss's own); hits, a share on every monster's health (not a boss's). The second loop's own figures come on top: hits by
+// HARD.hits, as before, and blows by loopBlow. echo: the share of the run's echo banked (bankRun, endSaved), never The Bare Reckoning's.
+// All starting figures. The Endless Rot has its own three (ROT_DIFF). The picker waits for design system 25 (BRIEF-design-25.md): until
+// it is built only the test link's Testing screen sets one (Difficulty), and with none (g.diff null: every other copy, and Testing's
+// "As today") the game plays exactly as it did, echo and all.
+const DIFF = {
+  easy:   { blow: [1, 1, 1, 1], hits: [1, 1, 1, 1], loopBlow: 1, echo: 0.75 },
+  normal: { blow: [1, 1.1, 1.25, 1.4], hits: [1, 1, 1.25, 1.5], loopBlow: 1.3, echo: 1 },
+  hard:   { blow: [1.2, 1.35, 1.5, 1.7], hits: [1.25, 1.25, 1.5, 1.75], loopBlow: 1.3, echo: 1.5 },
+};
+const DIFF_NAME = { easy: 'Easy', normal: 'Normal', hard: 'Hard' };
+const diffOk = (d) => typeof d === 'string' && Object.prototype.hasOwnProperty.call(DIFF, d);
+const diffFor = (run, d) => (diffOk(d) ? (run === 'bare' ? 'normal' : d) : null);   // the run's setting, from the one chosen
+const echoScale = (run, d) => (run !== 'bare' && diffOk(d) ? DIFF[d].echo : 1);
+const scaled = (n, run, d) => { const k = echoScale(run, d); return k === 1 ? n : Math.round(n * k); };   // a run's echo by its setting
+const journeyBlow = (g) => { const D = DIFF[g.diff]; return D ? D.blow[g.p] * (g.loop === 2 ? D.loopBlow : 1) : 1; };
+const hard = (g, k) => {
+  if (g.run === 'rot') return rotRamp(g, k);
+  const h = g.loop === 2 ? HARD[k] : 1, D = DIFF[g.diff];
+  return D && k === 'hits' ? h * D.hits[g.p] : h;   // a setting: the place's share of health on top
+};   // The Endless Rot: its own ramp, wave by wave (rotRamp)           // echo for each life still lit at the win (the win's words below)
 const RETURN_AT = 46;            // he forms again this far past the checkpoint that brought him back
 
 // Fighting (4d-2a; starting figures)
@@ -9757,7 +9782,7 @@ function feast(g, lb, boss) {        // step 5e-6b: a defeat feeds Marrow Feast 
 }
 const swordBite = (g) => 1 + 0.5 * (g.sword.bite + (g.graces.keen ? GRACE.keen : 0));
 const swordReach = (g) => SWORD_REACH + REACH_UP * (g.sword.reach + (g.graces.reach ? GRACE.reach : 0));
-const spellCost = (g, sp) => (sp === 'heal' ? (g.run === 'rot' ? ROT_RAMP.healCost : SPELL.heal.cost) : SPELL[sp].cost * (g.graces.surge ? GRACE.surge : 1));   // The Endless Rot's heal: its own cost (tuning 4)
+const spellCost = (g, sp) => (sp === 'heal' ? (g.run === 'rot' ? rotFig(g, 'healCost') : SPELL.heal.cost) : SPELL[sp].cost * (g.graces.surge ? GRACE.surge : 1));   // The Endless Rot's heal: its own cost (tuning 4)
 const rollAt = (g) => g.mt * (g.graces && g.graces.fleet ? GRACE.fleet : 1);
 
 // the bolt and the acid (step 5e-2; all starting figures, to judge in play): a body-length is his height
@@ -9871,7 +9896,7 @@ function bankRun(g, lb, ended, bonus) {
   if (g.echoDue > 0) { lb.addWisps(g.echoDue); g.echoDue = 0; }
   const rec = lb.progress, earned = lb.wisps + (bonus || 0), day = today();
   const daily = ended && earned > 0 && dailyDue(lb, g.run);
-  const stolen = daily ? earned * DAILY : earned;
+  const base = scaled(earned, g.run, g.diff), stolen = daily ? base * DAILY : base;   // the setting's share first (DIFF), then the day's double
   const b = { was: rec.echo, stolen, daily: daily ? stolen : null, first: ended && !rec.played, furthest: rec.furthest };
   rec.echo += stolen;
   if (daily) rec.doubled = day;
@@ -9899,7 +9924,7 @@ function runEndInfo(g, lb) {
   const next = u ? { kind: u.kind, name: u.name, towards: u.towards, price: u.price, was: rec.echo - now, now } : null, news = rotNews(g, lb);
   if (g.run === 'rot') return rotEndInfo(g, lb, b, next, news);
   const o = { near, daily: b.daily, first: b.first, scored: g.run === 'bare', shrine: { bank: rec.echo }, next };
-  if (g.run === 'infusion') o.best = { id: 'infusion', n: lb.wisps, words: 'echo' };   // design system 23 (HighScores): the most echo in one Echo Infusion run, its "New best"
+  if (g.run === 'infusion') o.best = { id: 'infusion', n: scaled(lb.wisps, g.run, g.diff), words: 'echo' };   // design system 23 (HighScores): the most echo in one Echo Infusion run, its "New best"
   if (news) o.news = news;
   return o;
 }
@@ -9910,7 +9935,9 @@ function rotEndInfo(g, lb, b, next, news) {
   const W = g.wave, felled = g.felled + (g.felledDue || 0), wave = W ? W.n : 1;
   const left = W && !W.done ? W.size - W.felled : 0;
   const o = { near: W ? { wave: 'Wave ' + wave, left: W.size ? left / W.size : 0, count: left } : null, first: b.first, scored: false, shrine: { bank: lb.progress.echo }, next,
-    count: { n: felled, unit: 'felled' }, stolen: b.stolen, best: { id: 'rot', n: felled, words: 'felled \u00b7 wave ' + wave } };
+    count: { n: felled, unit: 'felled' }, stolen: b.stolen };
+  // its best run is kept at Normal only (and with no setting), until Personal bests has one for each setting (BRIEF-design-25.md)
+  if (!g.diff || g.diff === 'normal') o.best = { id: 'rot', n: felled, words: 'felled \u00b7 wave ' + wave };
   if (news) o.news = news;
   return o;
 }
@@ -10176,6 +10203,7 @@ function runBegin(g, lb) {
   if (runLeft) { runLeft.end = 'restart'; runLeft = null; }
   R.n++;
   g.log = { n: R.n, day: today(), run: g.run, loop: g.loop, t: 0, p: g.p, sec: '', boss: false, lost: [], end: '', echo: null, won1: null };
+  if (g.diff) g.log.diff = g.diff;
   if (g.run === 'rot') Object.assign(g.log, { tune: ROT_RAMP.tune, wave: 0, felled: 0, wt: {}, graces: [], gained: [] });   // The Endless Rot's own (rotRunLine)
   R.runs.unshift(g.log);
   if (R.runs.length > RUNS_KEPT) R.runs.length = RUNS_KEPT;
@@ -10274,7 +10302,7 @@ function runLine(lb, r) {
   else end = (num(r.won1) != null && r.loop !== 2 ? 'won the first loop, then ' : '') + (RUN_END[r.end] || 'left by closing the page') + ' ' +
     (r.boss === true ? 'at ' : 'in ') + runWhereText(lb, r, twice);
   const echo = num(r.echo) != null ? Math.round(r.echo) + ' echo' : 'no echo banked';
-  return 'Run ' + (num(r.n) || '?') + (typeof r.day === 'string' && /^\d{4}-\d\d-\d\d$/.test(r.day) ? ', ' + r.day : '') + ', ' + (run ? run.name : 'a run') + ', ' +
+  return 'Run ' + (num(r.n) || '?') + (typeof r.day === 'string' && /^\d{4}-\d\d-\d\d$/.test(r.day) ? ', ' + r.day : '') + ', ' + (run ? run.name : 'a run') + (diffOk(r.diff) ? ' (' + DIFF_NAME[r.diff] + ')' : '') + ', ' +
     (twice ? 'into the second loop' : 'first loop') + ': ' + end + ' after ' + clockText(num(r.t) || 0) + ' played, ' + echo + '. ' +
     (lost.length ? 'Lives lost: ' + lost.map(life).join('; ') + '.' : 'No lives lost.') + runGainedText(lb, r, twice);
 }
@@ -10298,7 +10326,7 @@ function rotRunLine(lb, r) {
   const cause = (q) => (RUN_MON[q.by] ? RUN_MON[q.by] + "'s " + (RUN_ATK[q.atk] || 'blow') : 'a blow');
   const day = typeof r.day === 'string' && /^\d{4}-\d\d-\d\d$/.test(r.day) ? ', ' + r.day : '';
   const echo = num(r.echo) != null ? Math.round(r.echo) + ' echo' : 'no echo banked', felled = num(r.felled) != null ? Math.round(r.felled) + ' felled, ' : '';
-  const out = ['Run ' + (num(r.n) || '?') + day + ', ' + ROT_NAME + (int(r.tune) ? ' (tuning ' + r.tune + ')' : '') + ': ' + (RUN_END[r.end] || 'left by closing the page') +
+  const out = ['Run ' + (num(r.n) || '?') + day + ', ' + ROT_NAME + (int(r.tune) ? ' (tuning ' + r.tune + (diffOk(r.diff) ? ', ' + DIFF_NAME[r.diff] : '') + ')' : '') + ': ' + (RUN_END[r.end] || 'left by closing the page') +
     ' in ' + wv(r) + ' after ' + clockText(num(r.t) || 0) + ' played, ' + felled + echo + '.'];
   const wt = r.wt && typeof r.wt === 'object' && !Array.isArray(r.wt) ? r.wt : {};
   const arenas = Object.keys(wt).map(Number).filter((n) => int(n) && n > 1 && n % 3 === 1 && num(wt[n]) != null).sort((a, b) => a - b).slice(0, 30);
@@ -10358,7 +10386,7 @@ function readSaved(o, lb) {            // a saved run read back, every value che
     orders = o.orders.slice();
   }
   const took = obj(o.took) ? o.took : {}, pl = obj(o.potLine) ? o.potLine : {};
-  return { v: RUN_V, used: o.used === true, run: o.run, loop: o.loop, orders, p: o.p, cp: o.cp, lives: o.lives,
+  return { v: RUN_V, used: o.used === true, run: o.run, diff: diffOk(o.diff) ? o.diff : null, loop: o.loop, orders, p: o.p, cp: o.cp, lives: o.lives,
     slots: o.slots != null ? o.slots : Math.max(LIVES, Math.min(LIVES_MAX, o.lives)), health: o.health, mana: o.mana,
     armour: o.armour, sword: { reach: o.sword.reach, bite: o.sword.bite }, attack: o.attack, spells: { heal: o.spells.heal, atk: o.spells.atk },
     list: o.list.slice(), sel: o.sel, pots: { health: o.pots.health, mana: o.pots.mana }, cap: { health: o.cap.health, mana: o.cap.mana },
@@ -10373,7 +10401,7 @@ function runSave(g, lb, o) {
   o = o || {};
   if (o.fresh) g.usedSave = false;
   const bar = (v) => Math.round(Math.max(0, Math.min(1, v)) * 1000) / 1000;
-  lb.progress.saved = { v: RUN_V, used: !!g.usedSave, run: g.run, loop: g.loop, orders: g.orders ? g.orders.slice() : null, p: g.p, cp: g.lastCp,
+  lb.progress.saved = { v: RUN_V, used: !!g.usedSave, run: g.run, diff: g.diff || null, loop: g.loop, orders: g.orders ? g.orders.slice() : null, p: g.p, cp: g.lastCp,
     lives: Math.max(0, g.lives), slots: g.slots, health: o.full ? 1 : bar(o.health != null ? o.health : g.health), mana: o.full ? 1 : bar(g.mana), armour: g.armour,
     sword: { reach: g.sword.reach, bite: g.sword.bite }, attack: g.attack, spells: { heal: g.spells.heal, atk: g.spells[g.attack] },
     list: g.spellList.slice(), sel: g.sel, pots: { health: g.pots.health, mana: g.pots.mana }, cap: { health: g.potCap.health, mana: g.potCap.mana },
@@ -10386,7 +10414,7 @@ function runSave(g, lb, o) {
 // echo is banked the way Quit to menu banks it: no run's end, and it uses neither the day's doubled run nor the first run. raw: as stored.
 function endSaved(lb, raw, end) {
   const rec = lb.progress, num = (v, a, b) => (typeof v === 'number' && isFinite(v) ? Math.max(a, Math.min(b, Math.floor(v))) : a);
-  const echo = num(raw.run === 'rot' && raw.now && typeof raw.now === 'object' ? raw.now.echo : raw.echo, 0, 1e9), n = num(raw.n, 0, 1e9);   // step 5: The Endless Rot's echo so far
+  const echo = scaled(num(raw.run === 'rot' && raw.now && typeof raw.now === 'object' ? raw.now.echo : raw.echo, 0, 1e9), raw.run, raw.diff), n = num(raw.n, 0, 1e9);   // step 5: The Endless Rot's echo so far
   rec.echo += echo;
   if (Number.isInteger(raw.p) && raw.p >= 0 && raw.p < PLACES.length) rec.furthest = Math.max(rec.furthest, raw.p);   // only a place that can be read
   const L = n > 0 && rec.runLog ? rec.runLog.runs.find((r) => r.n === n && !r.end) : null;   // the playtest's run log
@@ -10401,7 +10429,7 @@ function settleSaved(lb) {             // as the page opens
   if (!raw) return;
   const sv = readSaved(raw, lb);
   if (sv && !sv.used && sv.lives > 0) { rec.saved = sv; return; }   // it waits on the title
-  if (raw.run === 'rot') { const nw = (readRotSaved(raw) || {}).now; if (nw && nw.felled > 0) lb.bests.offer('rot', nw.felled, 'felled \u00b7 wave ' + nw.wave); }   // step 5 (Barney, 14 November 2026): its felled count still stands for the personal best
+  if (raw.run === 'rot') { const nw = (readRotSaved(raw) || {}).now; if (nw && nw.felled > 0 && (!diffOk(raw.diff) || raw.diff === 'normal')) lb.bests.offer('rot', nw.felled, 'felled \u00b7 wave ' + nw.wave); }   // step 5 (Barney, 14 November 2026): its felled count still stands for the personal best
   const echo = endSaved(lb, raw, 'closed');
   lb.titleLine(echo > 0 ? 'Your last run ended. Its ' + echo + ' echo was kept.' : 'Your last run ended.');   // Barney's words (PlaqueLine)
 }
@@ -10412,7 +10440,7 @@ function resumeRun(g, lb, sv) {
   Object.assign(g, { lives: sv.lives, slots: Math.max(sv.slots, Math.min(LIVES_MAX, sv.lives)), armour: sv.armour, sword: { reach: sv.sword.reach, bite: sv.sword.bite }, attack: sv.attack, sel: sv.sel,
     pots: { health: sv.pots.health, mana: sv.pots.mana }, potCap: { health: sv.cap.health, mana: sv.cap.mana }, potLine: { health: sv.potLine.health, mana: sv.potLine.mana },
     warded: sv.warded, graveSpent: sv.grave, loop: sv.loop, orders: sv.orders ? sv.orders.slice() : null, teach: sv.teach && !lb.progress.hintsHidden,
-    took: { scroll: sv.took.scroll, sword: sv.took.sword }, t0: sv.t, usedSave: true });
+    took: { scroll: sv.took.scroll, sword: sv.took.sword }, t0: sv.t, usedSave: true, diff: sv.diff || null });   // its own setting, whatever Testing says now
   g.spells = { heal: sv.spells.heal }; g.spells[g.attack] = sv.spells.atk; g.spellList = sv.list.slice();
   g.graces = {}; g.bound = []; sv.graces.forEach((id) => { g.graces[id] = true; g.bound.push(id); }); heldToKit(g, lb);
   g.taught = {}; sv.taught.forEach((id) => { g.taught[id] = true; });
@@ -10479,6 +10507,7 @@ LanternBox.game({
     { id: 'spell', name: 'Attack spell', choices: [['shrine', 'As chosen'], ['fire', 'Fireball'], ['bolt', 'Lightning bolt'], ['acid', 'Acid spray']] },   // step 5e-2
     { id: 'place', name: 'Start at', choices: [['night', 'Night'], ['storm', 'Blood Red Rain'], ['dawn', 'Dawn'], ['mist', 'Mist']] },
     { id: 'loop', name: 'Loop', choices: [['1', 'The first'], ['2', 'The second, harder']] },   // step 5e-5
+    { id: 'diff', name: 'Difficulty', choices: [['today', 'As today'], ['easy', 'Easy'], ['normal', 'Normal'], ['hard', 'Hard']] },   // DIFF: a new run's setting (The Bare Reckoning plays Normal with any of the three)
     { id: 'where', name: 'From', choices: [['start', 'The start'], ['half', 'Halfway'], ['boss', "The boss's door"]] },
     { id: 'mons', name: 'Monsters', choices: [['normal', 'Normal'], ['none', 'None'], ['crowd', 'A crowd'], ['hatmaw', 'Mouth-hats']] },   // step 5e-8: every ground spot a mouth-hat
     { id: 'safe', name: "Can't be hurt", toggle: true, note: 'Nothing takes health, armour or lives.' },
@@ -10515,6 +10544,7 @@ LanternBox.game({
     g.graces = {}; g.warded = false;              // step 5e-3: the Graces held this run, and Lantern Ward used in this place
     g.bound = []; g.justBound = null; g.graveSpent = false; g.wardT = 9;   // step 5e-6b: the order bound, The Grave Refuses spent, the ward's flare
     g.teach = t.teach === 'always' || (!rec.played && !rec.hintsHidden); g.taught = {};   // step 5e-4: teaching in play on a first run
+    g.diff = wantCheck(lb) ? null : diffFor(g.run, t.diff);   // the difficulty setting (DIFF): Testing's, until the picker is built
     g.loop = t.loop === '2' ? 2 : 1;               // step 5e-5: the first loop, each place in its own order (Testing can start in the second)
     g.orders = g.loop === 2 ? PLACES.map((p) => shuffledOrder(lb, lb.world.level(p).order)) : null;
     lb.world.belt(rec.belt);
@@ -10677,7 +10707,7 @@ function leavePlace(g, lb) {         // walking on out of the boss's arena: the 
   if (g.p === PLACES.length - 1) {   // the win (step 5e-5): after the first loop it offers the second, and Finish banks the run; after the second, banked now
     g.mode = 'over'; g.won = true;
     const o = { scored: g.run === 'bare', shrine: { bank: lb.progress.echo } };
-    if (g.run === 'infusion') lb.bests.offer('infusion', Math.round(lb.wisps + g.echoDue + g.lives * LIFE_BONUS * hard(g, 'echo')), 'echo');   // design system 23: its best kept, as the win's total, unshown
+    if (g.run === 'infusion') lb.bests.offer('infusion', scaled(Math.round(lb.wisps + g.echoDue + g.lives * LIFE_BONUS * hard(g, 'echo')), g.run, g.diff), 'echo');   // design system 23: its best kept, as the win's total, unshown
     const news = rotNews(g, lb); if (news) o.news = news;   // design system 23 (NewRun): the news before the win
     if (g.loop === 1) {              // the Night pass, part D: the run log notes the first loop's win, and Finish as the run's end
       runWon(g, lb);
@@ -10761,15 +10791,20 @@ const ROT = { first: 1.0, barOut: 0.6, endLine: 1.0, refillAt: 0.5, refillT: 0.5
 // the later levels considering he is toughest and biggest monster"; "Fix slope and heavier blow"): the walker's blow and touch here
 // 35% of health before the ramp (walker; its own 25%, the journey's), so from wave 13 one blow takes over half; the ramp as tuning 4
 const ROT_RAMP = { speed: 0.03, speedMax: 1.6, dmg: 0.05, hits: 0.05, healBack: 0.5, manaBack: 0, healCost: 0.5, walker: 0.35, tune: 5 };
+// The mode's own difficulty settings (Barney, 15 November 2026): Normal is ROT_RAMP as it stands (tuning 5); Easy climbs 3% a wave with the
+// journey's walker (25%) and a heal at 40% of mana; Hard climbs 7% a wave and gives back a quarter of the health missing between waves.
+// The speed's climb is the same in all three. Starting figures; set as the journey's (g.diff), with the same share of echo (DIFF)
+const ROT_DIFF = { easy: { dmg: 0.03, hits: 0.03, walker: 0.25, healCost: 0.4 }, hard: { dmg: 0.07, hits: 0.07, healBack: 0.25 } };
+const rotFig = (g, k) => { const D = ROT_DIFF[g.diff]; return D && D[k] != null ? D[k] : ROT_RAMP[k]; };
 function rotRamp(g, k) {               // hard()'s figures in the mode, by the wave: speed, hits (health) and dmg; never echo or a boss's
   const w = (g.wave ? g.wave.n : 1) - 1;
   if (k === 'speed') return Math.min(ROT_RAMP.speedMax, 1 + ROT_RAMP.speed * w);
-  if (k === 'hits') return 1 + ROT_RAMP.hits * w;
-  if (k === 'dmg') return 1 + ROT_RAMP.dmg * w;
+  if (k === 'hits') return 1 + rotFig(g, 'hits') * w;
+  if (k === 'dmg') return 1 + rotFig(g, 'dmg') * w;
   return 1;
 }
-const monDmg = (g) => (g.run === 'rot' ? rotRamp(g, 'dmg') : 1);     // a monster's blow, the mode's ramp on it (the journey's as it was)
-const monBlow = (g, kind) => (g.run === 'rot' && kind === 'walker' ? ROT_RAMP.walker : MON[kind].dmg) * monDmg(g);   // tuning 5: the mode's walker heavier
+const monDmg = (g) => (g.run === 'rot' ? rotRamp(g, 'dmg') : journeyBlow(g));     // a monster's blow, the mode's ramp on it (the journey's as it was)
+const monBlow = (g, kind) => (g.run === 'rot' && kind === 'walker' ? rotFig(g, 'walker') : MON[kind].dmg) * monDmg(g);   // tuning 5: the mode's walker heavier
 const atkPace = (g) => (g.run === 'rot' ? rotRamp(g, 'speed') : 1);  // its attacks' clock and the wait between them
 // step 4: from wave 13 the size restarts at 12 and climbs by 2 a wave, and the most on screen goes on rising as it did, one more every
 // third wave (2 + n / 3: 6, 6, 7, 7, 7, 8), to 8 and no more; the gap stays wave 12's (starting figures: the note says only "rises to 8")
@@ -10817,7 +10852,7 @@ function rotUpdate(g, lb, dt) {
     // Barney, 14 November 2026: health back by half of what is missing (ROT_RAMP.healBack); mana by its share (manaBack), none since
     // tuning 3, and then left alone (a spell cast during the refill is not given back)
     if (u > 0) {
-      g.health = Math.max(g.health, R.h + (1 - R.h) * ROT_RAMP.healBack * u); lb.hud.health(g.health);
+      g.health = Math.max(g.health, R.h + (1 - R.h) * rotFig(g, 'healBack') * u); lb.hud.health(g.health);
       if (ROT_RAMP.manaBack > 0) { g.mana = Math.max(g.mana, R.m + (1 - R.m) * ROT_RAMP.manaBack * u); hudMana(g, lb, true); }
     }
     if (u >= 1) g.refill = null;
@@ -10918,7 +10953,7 @@ const arenaOfWave = (n) => Math.floor((n - 1) / 3) % PLACES.length;
 function rotSave(g, lb, wave) {
   if (g.banked || !lb.progress) return;
   const echo = Math.max(0, Math.round(lb.wisps + g.echoDue));
-  lb.progress.saved = { v: RUN_V, used: false, run: 'rot', wave, lives: Math.max(0, g.lives), slots: g.slots, armour: g.armour,
+  lb.progress.saved = { v: RUN_V, used: false, run: 'rot', diff: g.diff || null, wave, lives: Math.max(0, g.lives), slots: g.slots, armour: g.armour,
     sword: { reach: g.sword.reach, bite: g.sword.bite }, attack: g.attack, spells: { heal: g.spells.heal, atk: g.spells[g.attack] },
     list: g.spellList.slice(), sel: g.sel, pots: { health: g.pots.health, mana: g.pots.mana }, cap: { health: g.potCap.health, mana: g.potCap.mana },
     graces: g.bound.slice(), grave: !!g.graveSpent, felled: g.felled, echo, t: Math.round(lb.time + (g.t0 || 0)), n: g.log ? g.log.n : 0,
@@ -10949,7 +10984,7 @@ function readRotSaved(o) {             // a saved Endless Rot run read back, eve
   if (!obj(o.cap) || !int(o.cap.health, 1, 3) || !int(o.cap.mana, 1, 3) || !obj(o.pots) || !int(o.pots.health, 0, o.cap.health) || !int(o.pots.mana, 0, o.cap.mana)) return null;
   if (!ids(o.graces, (k) => !!graceOf(k)) || !int(o.felled, 0, 1e9) || !int(o.echo, 0, 1e9) || !int(o.t, 0, 1e7)) return null;
   const nw = obj(o.now) && int(o.now.felled, o.felled, 1e9) && int(o.now.echo, 0, 1e9) && int(o.now.wave, o.wave, 1e6) ? o.now : { felled: o.felled, echo: o.echo, wave: o.wave };
-  return { v: RUN_V, used: o.used === true, run: 'rot', wave: o.wave, lives: o.lives, slots: o.slots, armour: o.armour,
+  return { v: RUN_V, used: o.used === true, run: 'rot', diff: diffOk(o.diff) ? o.diff : null, wave: o.wave, lives: o.lives, slots: o.slots, armour: o.armour,
     sword: { reach: o.sword.reach, bite: o.sword.bite }, attack: o.attack, spells: { heal: o.spells.heal, atk: o.spells.atk },
     list: o.list.slice(), sel: o.sel, pots: { health: o.pots.health, mana: o.pots.mana }, cap: { health: o.cap.health, mana: o.cap.mana },
     graces: o.graces.slice(), grave: o.grave === true, felled: o.felled, echo: o.echo, t: o.t, n: Number.isInteger(o.n) && o.n > 0 ? o.n : 0,
@@ -10960,7 +10995,7 @@ function readRotSaved(o) {             // a saved Endless Rot run read back, eve
 function resumeRot(g, lb, sv) {
   Object.assign(g, { lives: sv.lives, slots: Math.max(sv.slots, Math.min(LIVES_MAX, sv.lives)), armour: sv.armour, sword: { reach: sv.sword.reach, bite: sv.sword.bite },
     attack: sv.attack, sel: sv.sel, pots: { health: sv.pots.health, mana: sv.pots.mana }, potCap: { health: sv.cap.health, mana: sv.cap.mana },
-    graveSpent: sv.grave, teach: false, orders: null, t0: sv.t, usedSave: true });
+    graveSpent: sv.grave, teach: false, orders: null, t0: sv.t, usedSave: true, diff: sv.diff || null });
   g.spells = { heal: sv.spells.heal }; g.spells[g.attack] = sv.spells.atk; g.spellList = sv.list.slice();
   g.graces = {}; g.bound = []; sv.graces.forEach((id) => { g.graces[id] = true; g.bound.push(id); }); heldToKit(g, lb);
   sv.used = true; lb.progress.saved = sv;   // one continue for each save
@@ -11408,7 +11443,10 @@ function startTeaching(g, lb) {  // as Night's card lifts: walk, jump, attack; o
 function teachOnce(g, lb, id) {  // the first time a control matters in a taught run
   if (!g.teach || g.taught[id]) return;
   g.taught[id] = true;
-  if (id === 'roll' && lb.touch) return;   // a touch device has had "Pull down to the side to roll" from the start
+  // A touch device has had "Pull down to the side to roll" from the start, shown as not yet in use (later), and the kit never dims a hint
+  // shown that way. Until 15 November 2026 this returned here on a touch device, so the hint stayed later for good and never went, however
+  // often he rolled (Barney, a first run in CrazyGames' phone app: it stayed the whole run, into the next place). Shown again without later,
+  // it is the same hint, now in use: it dims at his next roll and goes a second after, as on a computer.
   lb.teach.show(id);
 }
 
