@@ -1176,7 +1176,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.34.2';
+  const VERSION = '0.34.3';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -6352,17 +6352,21 @@ function makeTools(env){
         // each pose's picture is kept and shared (below). A planted foot then slides by up to a step (2.7 lines for the walker, 5.3 for the
         // ghoul) and snaps on. At Best and Faster the legs are smooth, as before
         if(m.walk!=null&&env.quick&&env.quick()){const q=MO_GAIT_P[m.kind].L/MO_QUICK_STEPS[m.kind];m.walk=Math.round(m.walk/q)*q;
-          if(m.gnd){const k=Math.round((m.gnd(16)-m.gnd(-16))/32*10)/10;m.gnd=d=>k*d;}
+          let k=0;if(m.gnd){k=Math.round((m.gnd(16)-m.gnd(-16))/32*10)/10;m.gnd=d=>k*d;}
+          // kit 0.34.3 (the Fire on 0.34.2: waves 15 and 18 still 6 ms slower than on 0.33.1): attacking, it stands in its kind's standing stance
+          // (no walk), so its attack's pictures depend only on the pose and the slope and are kept and shared again, as they were before the
+          // legs (scene.monster's store, m.pk); its legs step from where they walked to that stance as the attack begins, and back after
+          if(at){m.walk=null;m.qs="|s"+k;}
           // and what else its unposed picture is drawn from is stepped too, so every monster of its kind in the same pose can share one kept
           // picture (m.qk names it; Scene.monster): the walker's is its legs alone; the ghoul's jaw, which opens and shuts on its puppet clock,
           // takes three openings (3, 4.5 and 6) in place of any between 3 and 6
-          if(m.kind==="ghoulP"){const tq=pz(f.t+m.ph,false);m.op=3+Math.round(Math.max(0,Math.sin(tq*1.7))*2)*1.5;m.qk="j"+m.op;}else m.qk="";}}
+          if(m.walk==null){}else if(m.kind==="ghoulP"){const tq=pz(f.t+m.ph,false);m.op=3+Math.round(Math.max(0,Math.sin(tq*1.7))*2)*1.5;m.qk="j"+m.op;}else m.qk="";}}
       if(at&&at.pose)m.P=at.pose(m);   // the walker's stooping sweep: its pose from how far its hips have already sunk to reach the ground
       // kit 0.17.4 (after the Amazon Fire HD 8's parts check, 8 November 2026): at Fastest an attacking monster's pose is taken at
       // its time stepped to 12 a second, the puppet's own rate, and painted once for every monster of its kind (scene.monster's store);
       // where it is, its movement, stays smooth. At Best and Faster it is repainted every frame (kit 0.18.0, design system 14: Fastest only).
       if(at&&!hit&&o.rise==null&&env.quick&&env.quick()){const aq=moAttack(o.kind,Object.assign({},o.attack,{t:Math.floor((o.attack.t||0)*MV_RATE)/MV_RATE}));
-        m.P=aq.pose?aq.pose(m):aq.P;m.pk=poseKey(m.P);}
+        m.P=aq.pose?aq.pose(m):aq.P;m.pk=poseKey(m.P)+(m.qs||"");}
       const out=at?{phase:at.phase,dx,dy}:{phase:null,dx,dy};
       const c=f.ctx,Xs=Math.round(X*s)/s;   // mirrored about a whole device pixel, so its painted picture stays sharp
       if(fc===1){c.save();c.translate(Xs,0);c.scale(-1,1);c.translate(-Xs,0);}
