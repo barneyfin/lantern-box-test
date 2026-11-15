@@ -1173,7 +1173,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.33.1';
+  const VERSION = '0.34.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2890,46 +2890,57 @@ class Scene{
     const px=W*0.28;drawWanderer(ctx,px,gY(camX+px)+1,t,o.walking,o.facing,o.rm,this.ver<5?null:LV[o.level].edge);
   }
   monsterInto(c,s,m,t,o,dx,dy,H){ // a monster with its rim, glow and ember details, drawn into canvas c with its origin at (dx+130s, dy+230s)
-    H=H||this;if(!H.tmp||H.tmpS!==s){H.tmp=mk(260*s,250*s);H.tmpS=s;}
+    /* kit 0.34.0 (design system 24, bundle.js): a caller's own holder H may ask for more room than 260 by 250 with the monster's place at (130, 230): H.tw and H.th (the working
+       canvas, in lines), H.ox and H.oy (the monster's place in it) and H.box (what to copy across, in place of MON_BOX). The stooping walker needs it (MON_ROOM). */
+    H=H||this;const ox=H.ox||130,oy=H.oy||230;if(!H.tmp||H.tmpS!==s){H.tmp=mk((H.tw||260)*s,(H.th||250)*s);H.tmpS=s;}
     const T=H.tmp,tc=T.getContext("2d");
-    tc.setTransform(1,0,0,1,0,0);tc.globalCompositeOperation="source-over";tc.clearRect(0,0,T.width,T.height);tc.setTransform(s,0,0,s,130*s,230*s);
+    tc.setTransform(1,0,0,1,0,0);tc.globalCompositeOperation="source-over";tc.clearRect(0,0,T.width,T.height);tc.setTransform(s,0,0,s,ox*s,oy*s);
     tc.fillStyle=INK;tc.strokeStyle=INK;tc.lineCap="round";tc.lineJoin="round";
     {const bk=(typeof MON_BASE!=="undefined"&&MON_BASE[m.kind])||m.kind,b=MON_BOX[bk]||[-128,-228,128,18],w=b[2]-b[0],h=b[3]-b[1];CARD={box:[b[0]+w*0.44,b[1]+h*0.3,Math.max(w,h)*0.62],edge:bk==="bat2"||bk==="crawler"?1.2:1.7};} // version 8: a posable monster graded as its own kind (Barney, 4 November 2026)
     let det;try{det=MONSTER[m.kind](tc,t,m,o.rm);}finally{CARD=null;} // graded card pieces while the monster draws (version 6)
     c.save();c.setTransform(1,0,0,1,0,0);
-    const bb=MON_BOX[m.kind]||[-128,-228,128,18],sx=Math.max(0,Math.floor((130+bb[0])*s)),sy=Math.max(0,Math.floor((230+bb[1])*s)),sw=Math.min(T.width-sx,Math.ceil((bb[2]-bb[0])*s)),sh=Math.min(T.height-sy,Math.ceil((bb[3]-bb[1])*s));
+    const bb=H.box||MON_BOX[m.kind]||[-128,-228,128,18],sx=Math.max(0,Math.floor((ox+bb[0])*s)),sy=Math.max(0,Math.floor((oy+bb[1])*s)),sw=Math.min(T.width-sx,Math.ceil((bb[2]-bb[0])*s)),sh=Math.min(T.height-sy,Math.ceil((bb[3]-bb[1])*s));
     const put=()=>c.drawImage(T,sx,sy,sw,sh,dx+sx,dy+sy,sw,sh);
     if(FX){c.shadowColor=rgba(o.dcol,0.95);c.shadowBlur=2.5*s;put();   // the rim
     c.shadowColor=rgba(o.dglow,0.6);c.shadowBlur=11*s;put();}    // the glow
     else hardRim(c,rgba(o.dcol,0.95),s,put,T,(img)=>c.drawImage(img,sx,sy,sw,sh,dx+sx,dy+sy,sw,sh));
     c.shadowColor="transparent";c.shadowBlur=0;put();
-    c.setTransform(s,0,0,s,dx+130*s,dy+230*s);det(c,o);
+    c.setTransform(s,0,0,s,dx+ox*s,dy+oy*s);det(c,o);
     c.restore();
   }
   monster(ctx,s,m,t,o,flare){ // version 8 (4c-5a): flare, the hit's ember rim flaring once (a second rim in a hotter ember, as play.js's moDraw)
-    const into=(c,dx,dy)=>{this.monsterInto(c,s,m,t,o,dx,dy);if(flare)this.monsterInto(c,s,m,t,Object.assign({},o,{dcol:"#ffb070",dglow:MO.glow}),dx,dy);};
-    if(!this.kit){into(ctx,Math.round((m.X-130)*s),Math.round((m.Y-230)*s));return;}
-    if(m.pk!=null&&!flare){ // kit 0.17.4: at Faster and Fastest an attack's pose, stepped 12 times a second, painted once and kept for every monster of its kind
-      const bb=MON_BOX[m.kind]||[-128,-228,128,18],G=18,key=m.kind+"|"+(FX?1:0)+"|"+m.pk;if(!this.atk)this.atk=new Map();
+    // kit 0.34.0 (design system 24): a kind with its own room (MON_ROOM) is painted in it: the walker's stooped arm, its raised arms and its feet on a
+    // slope reach beyond the 260 by 250 every monster was painted in. Posed (an attack) it takes its posed room; unposed, standing or walking, its
+    // smaller one (still), so a picture repainted every frame of a walk is no bigger than it must be (painting one costs by its room's and its box's size)
+    const RM=(typeof MON_ROOM!=="undefined"&&MON_ROOM[m.kind])||null,posed=!!(m.P&&Object.keys(m.P).length>0),R=RM?(posed?RM.posed:RM.still):null,
+      bb=(R&&R.box)||MON_BOX[m.kind]||[-128,-228,128,18],ox=R?R.ox:130,oy=R?R.oy:230,rk=m.kind+(posed?"|P":""),
+      RH=R?((this.roomH||(this.roomH={}))[rk]||(this.roomH[rk]=Object.assign({},R))):undefined;
+    // and one whose legs follow its own walk (m.walk; MO_GAIT) is painted from them: lg names its legs' pose, so no two with different legs share a
+    // picture. It is repainted whenever its legs move (every frame of a walk, at every Picture setting: Barney, 15 November 2026, smooth legs)
+    const lg=typeof moLegKey!=="undefined"?moLegKey(m):"";
+    const into=(c,dx,dy)=>{this.monsterInto(c,s,m,t,o,dx,dy,RH);if(flare)this.monsterInto(c,s,m,t,Object.assign({},o,{dcol:"#ffb070",dglow:MO.glow}),dx,dy,RH);};
+    if(!this.kit){into(ctx,Math.round((m.X-ox)*s),Math.round((m.Y-oy)*s));return;}
+    if(m.pk!=null&&!flare&&!lg){ // (kit 0.34.0: not one with its own legs; it keeps its own picture below, repainted as its stepped pose or its legs change) kit 0.17.4: at Faster and Fastest an attack's pose, stepped 12 times a second, painted once and kept for every monster of its kind
+      const G=18,key=m.kind+"|"+(FX?1:0)+"|"+m.pk;if(!this.atk)this.atk=new Map();
       let A=this.atk.get(key);
       if(A){this.atk.delete(key);this.atk.set(key,A);}   // the most recently used last, so the oldest goes first
-      else{A=mk((bb[2]-bb[0]+2*G)*s,(bb[3]-bb[1]+2*G)*s);const c=A.getContext("2d");into(c,Math.round((G-130-bb[0])*s),Math.round((G-230-bb[1])*s));KIT.poses++;
+      else{A=mk((bb[2]-bb[0]+2*G)*s,(bb[3]-bb[1]+2*G)*s);const c=A.getContext("2d");into(c,Math.round((G-ox-bb[0])*s),Math.round((G-oy-bb[1])*s));KIT.poses++;
         this.atk.set(key,A);if(this.atk.size>ATK_KEEP)this.atk.delete(this.atk.keys().next().value);}
       ctx.drawImage(A,Math.round((m.X+bb[0]-G)*s)/s,Math.round((m.Y+bb[1]-G)*s)/s,A.width/s,A.height/s);
       return;}
     // kit 0.20.5, the mon trial: a monster standing or hovering drawn from its kind's picture of its waiting animation's step, the
     // animation looping every 24 of its puppet steps (3 units of its puppet time), the mouth-hat's smooth hop taken 29 times a hop
-    if(TRIAL.mon&&!flare&&!o.rm&&!(m.P&&Object.keys(m.P).length>0)){
+    if(TRIAL.mon&&!flare&&!o.rm&&!lg&&!(m.P&&Object.keys(m.P).length>0)){
       const tb=(typeof MON_BASE!=="undefined"&&MON_BASE[m.kind])||m.kind,hat=tb==="hatmaw",tr=POSE_RATE[tb];
       if(hat||tr){const N=hat?29:24,u=hat?(2.6*t+m.ph)/(2*Math.PI):(tr*t+m.ph)/3,sm=((Math.floor(u*N)%N)+N)%N;
-        const tbb=MON_BOX[m.kind]||[-128,-228,128,18],TG=18,key=m.kind+"|"+(FX?1:0)+"|"+sm;if(!this.idleP)this.idleP=new Map();
+        const tbb=bb,TG=18,key=m.kind+"|"+(FX?1:0)+"|"+sm;if(!this.idleP)this.idleP=new Map();
         let A=this.idleP.get(key);
         if(!A){A=mk((tbb[2]-tbb[0]+2*TG)*s,(tbb[3]-tbb[1]+2*TG)*s);const t2=hat?((sm+0.5)/N*2*Math.PI)/2.6:((sm+0.5)/N*3)/tr;
-          this.monsterInto(A.getContext("2d"),s,Object.assign({},m,{ph:0}),t2,o,Math.round((TG-130-tbb[0])*s),Math.round((TG-230-tbb[1])*s));this.idleP.set(key,A);KIT.poses++;}
+          this.monsterInto(A.getContext("2d"),s,Object.assign({},m,{ph:0}),t2,o,Math.round((TG-ox-tbb[0])*s),Math.round((TG-oy-tbb[1])*s),RH);this.idleP.set(key,A);KIT.poses++;}
         ctx.drawImage(A,Math.round((m.X+tbb[0]-TG)*s)/s,Math.round((m.Y+tbb[1]-TG)*s)/s,A.width/s,A.height/s);
         return;}}
-    const bb=MON_BOX[m.kind]||[-128,-228,128,18],G=18,id=m.id||(m.kind+"|"+m.ph),bk=(typeof MON_BASE!=="undefined"&&MON_BASE[m.kind])||m.kind,moving=flare||(m.P&&Object.keys(m.P).length>0),r=moving?0:POSE_RATE[bk];
-    const step=(r&&!o.rm)?Math.floor((r*t+m.ph)*8):-KIT.frame;
+    const G=18,id=(m.id||(m.kind+"|"+m.ph))+(RM&&posed?"|P":""),bk=(typeof MON_BASE!=="undefined"&&MON_BASE[m.kind])||m.kind,moving=flare||(m.P&&Object.keys(m.P).length>0),r=moving?0:POSE_RATE[bk];
+    const still=r&&!o.rm,st0=still?Math.floor((r*t+m.ph)*8):-KIT.frame,step=lg?(still?st0+lg:m.pk!=null&&!flare?m.pk+lg:st0):st0;   // kit 0.34.0: its legs' pose too
     // kit 0.20.13 (design system 16, section 2): at Fastest, a waiting mouth-hat is drawn from its kind's picture of its hop's step
     // (hopStep), shared as below and kept for all 15 steps; each is painted from the step's own clock with the phase at 0 (hopClock), so
     // it is the same whichever mouth-hat gets there first. Moving, attacking, hit or rising (m.P or flare), or Reduce motion: as before
@@ -2940,7 +2951,7 @@ class Scene{
     // draw it when they get there. The same pixels as each painting its own. A kind with more than one monster drawn last frame keeps
     // its last 10 steps (a game's phases from 0 to 1 keep its monsters within 8 steps of each other), a kind with one keeps 2; the
     // canvas let go is painted over for the next step
-    if((r||hk>=0)&&!o.rm){
+    if((r||hk>=0)&&!o.rm&&!lg){
       if(!this.share)this.share=new Map();
       let K=this.share.get(m.kind);if(!K){K={pics:new Map(),n:0,seen:0,nf:-1};this.share.set(m.kind,K);}
       if(K.nf!==KIT.frame){K.n=K.seen;K.seen=0;K.nf=KIT.frame;}   // how many of its kind were drawn in its last frame
@@ -2952,8 +2963,8 @@ class Scene{
         while(K.pics.size>=cap){const k0=K.pics.keys().next().value;old=K.pics.get(k0);K.pics.delete(k0);}
         A=old&&old.width===w&&old.height===h?old:mk(w,h);
         const c=A.getContext("2d");c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,A.width,A.height);
-        const px=Math.round((G-130-bb[0])*s),py=Math.round((G-230-bb[1])*s);
-        if(hk>=0)this.monsterInto(c,s,Object.assign({},m,{ph:0}),hopClock(hk),o,px,py);else into(c,px,py);KIT.poses++;}
+        const px=Math.round((G-ox-bb[0])*s),py=Math.round((G-oy-bb[1])*s);
+        if(hk>=0)this.monsterInto(c,s,Object.assign({},m,{ph:0}),hopClock(hk),o,px,py,RH);else into(c,px,py);KIT.poses++;}
       K.pics.set(key,A);
       ctx.drawImage(A,Math.round((m.X+bb[0]-G)*s)/s,Math.round((m.Y+bb[1]-G)*s)/s,A.width/s,A.height/s);
       return;}
@@ -2962,7 +2973,7 @@ class Scene{
     // walker drawn into a flyer's smaller canvas showed only its head and chest, floating)
     if(!E||E.kind!==m.kind){E={cv:mk((bb[2]-bb[0]+2*G)*s,(bb[3]-bb[1]+2*G)*s),step:null,kind:m.kind};this.poses.set(id,E);}
     if(E.step!==step){const c=E.cv.getContext("2d");c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,E.cv.width,E.cv.height);
-      into(c,Math.round((G-130-bb[0])*s),Math.round((G-230-bb[1])*s));E.step=step;KIT.poses++;}
+      into(c,Math.round((G-ox-bb[0])*s),Math.round((G-oy-bb[1])*s));E.step=step;KIT.poses++;}
     E.used=KIT.frame;
     ctx.drawImage(E.cv,Math.round((m.X+bb[0]-G)*s)/s,Math.round((m.Y+bb[1]-G)*s)/s,E.cv.width/s,E.cv.height/s);
   }
@@ -5547,7 +5558,74 @@ function moSealed(c,sl){const fxOff=!FX; /* the kit: Effects off */c.save();c.gl
   if(!fxOff){c.shadowColor=MO.glow;c.shadowBlur=4+6*sl;}c.strokeStyle=MO.ember;c.lineWidth=1.3+1.5*sl;path();c.stroke();c.shadowBlur=0;
   c.strokeStyle="#ffc27a";c.lineWidth=0.5+0.7*sl;path();c.stroke();c.restore();}
 const _pivot=(x,P,px,py)=>{x.translate(px,py);x.rotate(P.tilt||0);x.scale(P.sx||1,P.sy||1);x.translate(-px,-py);x.translate(P.dx||0,P.dy||0);};
-Object.assign(MON_BOX,{crawlerP:[-60,-60,52,20],bat2P:[-52,-60,52,40],hatmawP:[-70,-110,60,14],ghoulP:[-95,-140,40,12],walkerP:[-125,-226,70,12]});
+/* ---------- kit 0.34.0 (design system version 24, play.js 1.11.0; HANDOVER-design-24.md): the walker's and the ghoul's legs and the walker's stoop ----------
+   Barney, 15 November 2026, of the walker: "He floats slightly above the ground with a small disconnect/ gap. He glides through the air with only
+   intermittent leg movement / I would like to remove the gap and have him walk rather than glide", and the same for the ghoul; and of its high sweep,
+   "too many walkers over headshots are missing", then "Stooping swing". moIK, moGaitFoot, MO_GAIT, moLegs, MO_WK_BEND, MO_WK_SINK, MO_WK_PIV and
+   moWalkerHandAt below are play.js's, word for word. The kit's own: MO_GAIT_P (the posable kinds that have legs), moLegKey (a name for a monster's
+   legs' pose, for the stores of painted pictures) and MON_ROOM (the room each needs, Scene.monster). */
+/* ---- version 24: legs that reach the ground, and a walk that follows the lines walked ----
+   moIK: a thigh and a shin from the hip (ax, ay) to the ankle (tx, ty), the knee bending forward (monsters face left, so towards -x).
+   Angles are moLimb's: 0 hangs straight down, positive swings towards +x. */
+function moIK(ax, ay, tx, ty, l1, l2) {
+  let dx = tx - ax, dy = ty - ay, d = Math.hypot(dx, dy); const mx = (l1 + l2) * 0.998, mn = Math.abs(l1 - l2) + 0.5, k = d > mx ? mx / d : d < mn ? mn / d : 1;
+  dx *= k; dy *= k; d *= k;
+  const base = Math.atan2(dx, dy), A = Math.acos(Math.max(-1, Math.min(1, (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d)))), a1 = base - A,
+    kx = ax + Math.sin(a1) * l1, ky = ay + Math.cos(a1) * l1;
+  return [a1, Math.atan2(ax + dx - kx, ay + dy - ky)];
+}
+/* a foot's place in a walk. d: the lines walked. L: the stride, the ground covered in one full cycle of both legs. beta: the share of
+   the cycle a foot stays planted. lift: how high the swinging foot rises. off: 0 for one leg, 0.5 for the other.
+   Returns {ahead, up, u}: lines in front of the hips, lines above the ground, and u, 0 to 1 through the swing (-1 while planted).
+   While planted, ahead falls by exactly the lines walked, so the foot stays where it was put down. n > 0 steps the swing in n poses. */
+function moGaitFoot(d, L, beta, lift, off, n) {
+  const ph = ((d / L + off) % 1 + 1) % 1; if (ph < beta) return { ahead: beta * L / 2 - ph * L, up: 0, u: -1 };
+  let u = (ph - beta) / (1 - beta); if (n > 0) u = Math.min(1, (Math.floor(u * n) + 0.5) / n); const e = u * u * (3 - 2 * u);
+  return { ahead: -beta * L / 2 + e * beta * L, up: Math.sin(Math.PI * u) * lift, u };
+}
+const MO_GAIT = {
+  walker: { L: 64, beta: 0.62, lift: 13, thigh: 44, shin: 46, foot: 20, hips: [-3, 5], hip: 112, drop: 5, sink: 1, rest: -0.12, swing: 0.5, stand: [7, -7] },
+  ghoul: { L: 84, beta: 0.5, lift: 10, thigh: 21, shin: 19, foot: 11, hips: [5, 11], hip: 48, drop: 0, sink: -0.5, rest: -0.25, swing: 0.75, stand: [5, -5] }   // a lope; it is placed 2 below the ground line, as before
+};
+/* the two legs for a pose. m.walk: the lines walked (null: standing, feet a little apart). m.gnd(dx): how far the ground at dx from
+   the monster's place lies below the ground at its place (so each foot meets the ground under it). sx: the puppet's sideways stretch.
+   lowMin: how far the hips are held down at least (a crouch, a stoop). Returns {legs: [[hipX, [a1, a2, footAngle]], ...], low}:
+   low is how far the hips sink, at least lowMin, and as far as the planted feet need to reach the ground. */
+function moLegs(g, m, sx, lowMin) {
+  const gnd = m.gnd || (() => 0), walking = m.walk != null, R = (g.thigh + g.shin) * 0.975, feet = [];
+  [0, 0.5].forEach((off, i) => {
+    const f = walking ? moGaitFoot(m.walk, m.L || g.L, g.beta, g.lift, off, m.stepN || 0) : { ahead: g.stand[i], up: 0, u: -1 };
+    const X = -f.ahead + g.hips[i] * sx, fa = f.u < 0 ? g.rest : g.rest + g.swing * Math.sin(Math.PI * f.u),
+      ty = gnd(X) + g.sink - f.up, tx = X / sx, ax = tx - Math.sin(fa) * g.foot, ay = ty - Math.cos(fa) * g.foot;
+    feet.push({ i, fa, ax, ay, planted: f.u < 0 });
+  });
+  let low = Math.max(lowMin || 0, g.drop);
+  for (const f of feet) if (f.planted) { const dx = f.ax - g.hips[f.i]; low = Math.max(low, f.ay - Math.sqrt(Math.max(0, R * R - dx * dx)) + g.hip); }
+  return { low, legs: feet.map((f) => [g.hips[f.i], moIK(g.hips[f.i], -g.hip + low, f.ax, f.ay, g.thigh, g.shin).concat([f.fa])]) };
+}
+/* ---- version 24: the walker's stoop ---- its body bends forward from the hips by up to MO_WK_BEND and its hips sink by up to MO_WK_SINK, its feet staying planted */
+const MO_WK_BEND = 0.75, MO_WK_SINK = 32, MO_WK_PIV = [1, -108];
+// the walker's hand in its own frame (before its sideways stretch), for arm angles an, a stoop st (0 to 1) and hips sunk by low
+function moWalkerHandAt(arm, an, st, low) {
+  const sh = [arm ? 8 : -6, -164], e = [sh[0] + Math.sin(an[0]) * 30, sh[1] + Math.cos(an[0]) * 30], w = [e[0] + Math.sin(an[1]) * 34, e[1] + Math.cos(an[1]) * 34],
+    h = [w[0] + Math.sin(an[2]) * 14, w[1] + Math.cos(an[2]) * 14], th = st * MO_WK_BEND, x = h[0] - MO_WK_PIV[0], y = h[1] - MO_WK_PIV[1];
+  return [MO_WK_PIV[0] + x * Math.cos(th) + y * Math.sin(th), MO_WK_PIV[1] - x * Math.sin(th) + y * Math.cos(th) + low];
+}
+const MO_GAIT_P={walkerP:MO_GAIT.walker,ghoulP:MO_GAIT.ghoul},MO_GAIT_SX={walkerP:1.15,ghoulP:1};
+// a name for the pose of a monster's legs, when they follow its own walk (m.walk): its hips' sink to a tenth of a line and its legs' angles to a
+// thousandth of a radian (a twentieth of a line at the walker's foot), so a picture is kept only while its legs are where they were. "" for a
+// monster with no walk given (its legs stand as its kind's do, so its picture can be shared as before)
+function moLegKey(m){const g=m.walk!=null&&MO_GAIT_P[m.kind];if(!g)return"";const L=moLegs(g,m,MO_GAIT_SX[m.kind],0);
+  return"|"+Math.round(L.low*10)+L.legs.map(q=>";"+q[1].map(a=>Math.round(a*1000)).join(",")).join("");}
+// the room a kind is painted in (Scene.monster; monsterInto's H: ox, oy, tw, th and box). posed, the walker: play.js's moDrawWide, 180 in front of its
+// place, 110 behind, 260 up and 40 below, for its stooped arm (139 in front, its trail further), its raised arms (240 up), its arms drawn back (103
+// behind) and a foot on a steep slope. still: an unposed one, standing or walking, the kit's own. Measured over a whole stride on level ground and on
+// slopes up to 1.2 either way (The Endless Rot's Dawn arena has 1.15), the walker's card reaches 58 in front, 189 up, 33 behind and 31 below, the
+// ghoul's 41, 93, 36 and 36; each still box has 6 or more to spare, and each room 2 round its box. The ghoul's posed room is its MON_BOX with the
+// same room below. A picture's cost goes by its room and its box, and a walking one is repainted every frame, so the still rooms are kept small
+const MON_ROOM={walkerP:{posed:{ox:180,oy:260,tw:290,th:300,box:[-180,-260,110,40]},still:{ox:66,oy:198,tw:110,th:238,box:[-64,-196,42,38]}},
+  ghoulP:{posed:{ox:97,oy:142,tw:142,th:186,box:[-95,-140,43,42]},still:{ox:50,oy:102,tw:95,th:146,box:[-48,-100,43,42]}}};
+Object.assign(MON_BOX,{crawlerP:[-60,-60,52,20],bat2P:[-52,-60,52,40],hatmawP:[-70,-110,60,14],ghoulP:[-95,-140,40,20],walkerP:[-150,-226,70,30]});   // version 24: room for the feet on a slope, and the walker's box (the kit grades a posable monster as its own kind, MON_BASE, so its shading stays where it was)
 Object.assign(MONSTER,{
   // version 9 (play.js 1.0.1): the mouth-hat's signal eyes follow its hop, as bundle.js's hatmaw moves its own eyes; the crawler's and the
   // flyer's own eyes never move, so their signal eyes always sat on them (the kit's earlier gate on P.t is gone)
@@ -5577,46 +5655,61 @@ Object.assign(MONSTER,{
       moEyes(c,o,[[-13,-41,0.35],[-5,-43,0.15]],3.4,1.4,h);
       if(P.dim>0){c.fillStyle=rgba("#060508",0.6*P.dim);for(const e of [[-13,-41,0.35],[-5,-43,0.15]]){c.beginPath();c.ellipse(e[0],e[1],3.9,1.9,e[2],0,Math.PI*2);c.fill();}} /* version 15 */
       c.restore();}c.restore();};},
-  // the ghoul, posable: its front arm (P.a: upper arm, forearm angles) can wind up and swipe; P.op opens the jaw; P.slash draws the sweep
-  ghoulP(x,t,m,rm){const P=m.P||{},tq=pz(t+m.ph,rm), /* the kit: Reduce motion as ghoul2 */s1=P.s1!=null?P.s1:Math.sin(tq*3),bob=P.bob!=null?P.bob:Math.abs(s1)*2,op=P.op!=null?P.op:3+Math.max(0,Math.sin(tq*1.7))*3,lean=P.lean||0;
-    x.save();x.translate(P.dx||0,-bob);
-    for(const q of [[s1,5],[-s1,11]])moLimb(x,q[1],-48,[[21,-0.45+q[0]*0.25,6.5,4.2],[19,0.65-q[0]*0.2,4.2,3],[11,-0.25,3,1.4]]);
-    x.save();x.translate(8,-48);x.rotate(lean);x.translate(-8,48);
-    x.beginPath();x.moveTo(15,-50);x.quadraticCurveTo(18,-72,-2,-86);x.quadraticCurveTo(-12,-91,-20,-84);x.quadraticCurveTo(-6,-76,2,-47);x.closePath();cardFill(x);
-    for(let i=0;i<5;i++){const u=i/4,bx=15+(-6-15)*u,by=-58+(-86+58)*u-Math.sin(u*Math.PI)*5;x.beginPath();x.moveTo(bx-2.4,by+1.6);x.lineTo(bx+3+u*2,by-6);x.lineTo(bx+2.4,by+1.4);x.closePath();cardFill(x);}
-    x.beginPath();x.moveTo(-15,-87);x.lineTo(-30,-89);x.lineTo(-40,-84);x.lineTo(-39,-80);x.lineTo(-18,-79);x.closePath();cardFill(x);
-    x.beginPath();x.moveTo(-18,-78);x.lineTo(-37,-79+op);x.lineTo(-35,-75+op);x.lineTo(-17,-73);x.closePath();cardFill(x);
-    const claws=(h,ang)=>{x.lineWidth=1.4;for(let k=0;k<3;k++){const a=ang+(k-1)*0.32;x.beginPath();x.moveTo(h[0],h[1]);x.lineTo(h[0]+Math.sin(a)*6.5,h[1]+Math.cos(a)*6.5);x.lineTo(h[0]+Math.sin(a+0.25)*8,h[1]+Math.cos(a+0.25)*8);x.stroke();}};
-    {const q=-s1,h=moLimb(x,-8,-82,[[25,-0.4+q*0.22,4.6,3.4],[27,-0.08-q*0.25,3.4,2.2]]);claws(h,-0.3);} // the back arm hangs
-    const a=P.a||[-0.4+s1*0.22,-0.08-s1*0.25],hand=moLimb(x,-14,-82,[[25,a[0],4.6,3.4],[27,a[1],3.4,2.2]]);claws(hand,a[1]-0.2);
-    x.restore();x.restore();
-    return(c,o)=>{c.save();c.translate(P.dx||0,-bob);c.translate(8,-48);c.rotate(lean);c.translate(-8,48);const h=P.hot||0;
-      moMouth(c,[[-18,-78.6],[-38,-79.4],[-36,-77.6+op],[-18,-73.6]],-22,-77,12);
-      moTeeth(c,[[-35,-79.2],[-33.6,-76.4],[-32.2,-79.1],[-30,-78.9],[-28.8,-76],[-27.4,-78.8],[-25,-78.7],[-24,-76.2],[-23,-78.6],[-34,-76.4+op],[-32.8,-78.8+op*0.6],[-31.6,-76.2+op],[-28.6,-75.8+op*0.8],[-27.6,-78.2+op*0.4],[-26.6,-75.6+op*0.8]]);
-      moSeam(c,[[10,-62],[7,-66],[9,-70]],1);moSeam(c,[[2,-74],[-1,-78]],1);moHot(c,hand[0],hand[1],8+h*10,h);
-      if(P.slash)moSlash(c,P.slash.map(an=>{const e=[-14+Math.sin(an[0])*25,-82+Math.cos(an[0])*25];return[e[0]+Math.sin(an[1])*30,e[1]+Math.cos(an[1])*30];}),4.2,P.slashA==null?1:P.slashA);
-      moEyes(c,o,[[-33,-85,0.3],[-27,-86,0.3]],2.2,1.2,h);c.restore();};},
-  // the walker, posable: both branch arms (P.arms: [left, right], each three angles), a crouch on its stilts (P.crouch) and a hollow chest that burns hotter
-  walkerP(x,t,m,rm){const P=m.P||{},tq=pz(t*0.6+m.ph,rm), /* the kit: Reduce motion as walker */s1=P.s1!=null?P.s1:Math.sin(tq*2.4),cr=P.crouch||0,low=cr*46;
-    x.save();x.scale(1.15,1);x.translate(P.dx||0,0);
-    for(const q of [[s1,-3],[-s1,5]])moLimb(x,q[1],-112+low,[[44,-0.2+q[0]*0.18-cr*0.95,8,6],[46,0.32-q[0]*0.16+cr*1.25,6,4],[20,-0.12,4,2]]);
-    x.translate(0,low);
-    x.beginPath();x.moveTo(-8,-108);x.quadraticCurveTo(-12,-140,-6,-168);x.lineTo(8,-168);x.quadraticCurveTo(14,-140,10,-108);x.closePath();cardFill(x);
-    x.save();x.globalCompositeOperation="destination-out";x.beginPath();x.ellipse(1,-140,5.5,13,0.05,0,Math.PI*2);cardFill(x);x.restore();
-    x.beginPath();x.moveTo(-5,-168);x.quadraticCurveTo(-4,-178,1,-182);x.quadraticCurveTo(7,-178,7,-168);x.closePath();cardFill(x);
-    for(const q of [[-1,-180,-2.6],[3,-181,-0.4],[5,-179,0.9]])moLimb(x,q[0],q[1],[[10,q[2]+Math.PI,2.2,1.2],[7,q[2]+Math.PI+(q[2]<0?-0.7:0.7),1.2,0.5]]);
-    const hands=[];[[-s1,-6,-1],[s1,8,1]].forEach((q,i)=>{const sh=[q[1],-164],an=P.arms?P.arms[i]:[q[2]*0.5+q[0]*0.2,q[2]*0.12-q[0]*0.2,q[2]*-0.3],
-      e=moLimb(x,sh[0],sh[1],[[30,an[0],4.4,3.2]]),h=moLimb(x,e[0],e[1],[[34,an[1],3.2,2],[14,an[2],2,1]]);hands.push(h);
-      moLimb(x,h[0],h[1],[[8,an[2]+0.8,1.2,0.5]]);moLimb(x,h[0],h[1],[[9,an[2]-0.4,1.2,0.5]]);moLimb(x,(sh[0]+e[0])/2,(sh[1]+e[1])/2+4,[[10,an[0]+1.1,1.6,0.6]]);});
+  /* kit 0.34.0: the walker and the ghoul as play.js 1.11.0 draws them (design system 24); the kit steps their puppet clocks with pz (Reduce motion) and
+     drops the chest's blur with Effects off, as before. A walk is not changed by Reduce motion (MonsterWalks: it is play, and follows the monster's own movement) */
+  /* the walker, posable: both branch arms (P.arms: [left, right], each three angles) and a hollow chest that burns hotter. Version 24: legs that reach the ground and step with the lines walked (m.walk), a crouch (P.crouch) and
+     a stoop (P.stoop, 0 to 1) that keep its feet planted, and the sweep's trail given in its own frame (P.trail) */
+  walkerP(x, t, m, rm) {
+    const P = m.P || {}, g = MO_GAIT.walker, tq = pz(t * 0.6 + m.ph, rm) /* the kit: Reduce motion as walker */, cr = P.crouch || 0, st = P.stoop || 0,
+      s1 = P.s1 != null ? P.s1 : m.walk != null ? Math.sin(m.walk / (m.L || g.L) * Math.PI * 2) * 0.8 : Math.sin(tq * 2.4),
+      L = moLegs(g, m, 1.15, Math.max(cr * 46, st * MO_WK_SINK)), low = L.low, th = st * MO_WK_BEND;
+    const body = (c) => { c.translate(0, low); c.translate(MO_WK_PIV[0], MO_WK_PIV[1]); c.rotate(-th); c.translate(-MO_WK_PIV[0], -MO_WK_PIV[1]); };
+    x.save(); x.scale(1.15, 1); x.translate(P.dx || 0, 0);
+    for (const q of L.legs) moLimb(x, q[0], -g.hip + low, [[g.thigh, q[1][0], 8, 6], [g.shin, q[1][1], 6, 4], [g.foot, q[1][2], 4, 2]]);
+    body(x);
+    x.beginPath(); x.moveTo(-8, -108); x.quadraticCurveTo(-12, -140, -6, -168); x.lineTo(8, -168); x.quadraticCurveTo(14, -140, 10, -108); x.closePath(); cardFill(x);
+    x.save(); x.globalCompositeOperation = "destination-out"; x.beginPath(); x.ellipse(1, -140, 5.5, 13, 0.05, 0, Math.PI * 2); cardFill(x); x.restore();
+    x.beginPath(); x.moveTo(-5, -168); x.quadraticCurveTo(-4, -178, 1, -182); x.quadraticCurveTo(7, -178, 7, -168); x.closePath(); cardFill(x);
+    for (const q of [[-1, -180, -2.6], [3, -181, -0.4], [5, -179, 0.9]]) moLimb(x, q[0], q[1], [[10, q[2] + Math.PI, 2.2, 1.2], [7, q[2] + Math.PI + (q[2] < 0 ? -0.7 : 0.7), 1.2, 0.5]]);
+    const hands = []; [[-s1, -6, -1], [s1, 8, 1]].forEach((q, i) => { const sh = [q[1], -164], an = P.arms ? P.arms[i] : [q[2] * 0.5 + q[0] * 0.2, q[2] * 0.12 - q[0] * 0.2, q[2] * -0.3],
+      e = moLimb(x, sh[0], sh[1], [[30, an[0], 4.4, 3.2]]), h = moLimb(x, e[0], e[1], [[34, an[1], 3.2, 2], [14, an[2], 2, 1]]); hands.push(h);
+      moLimb(x, h[0], h[1], [[8, an[2] + 0.8, 1.2, 0.5]]); moLimb(x, h[0], h[1], [[9, an[2] - 0.4, 1.2, 0.5]]); moLimb(x, (sh[0] + e[0]) / 2, (sh[1] + e[1]) / 2 + 4, [[10, an[0] + 1.1, 1.6, 0.6]]); });
     x.restore();
-    return(c,o)=>{c.save();c.scale(1.15,1);c.translate(P.dx||0,low);const h=P.hot||0;
-      c.save();const g=c.createRadialGradient(1,-138,0,1,-140,14+h*4);g.addColorStop(0,"#ffd9a0");g.addColorStop(0.5,MO.ember);g.addColorStop(1,"#5a0c08");
-      c.fillStyle=g;c.shadowColor=MO.glow;c.shadowBlur=FX?8+h*14:0;c.beginPath();c.ellipse(1,-140,5.5,13,0.05,0,Math.PI*2);c.fill();c.restore();moHot(c,1,-140,18+h*22,h*0.9);
-      c.fillStyle=INK;for(let i=0;i<4;i++){const y=-150+i*6;c.beginPath();c.moveTo(-6,y);c.quadraticCurveTo(1,y-2.2,8,y);c.lineTo(8,y+1.6);c.quadraticCurveTo(1,y-0.6,-6,y+1.6);c.closePath();c.fill();}
-      moMouth(c,[[-3,-171.5],[4,-171.5],[3,-170],[-2,-170]],0.5,-171,4);moSeam(c,[[-4,-120],[-2,-126],[-4,-131]],1.1);
-      if(P.slash)moSlash(c,P.slash,5,P.slashA==null?1:P.slashA);
-      for(const hd of hands)moHot(c,hd[0],hd[1],7+h*8,h*0.8);
-      moEyes(c,o,[[-2,-175.5,0.2],[3,-175.5,-0.2]],1.6,1,h);c.restore();};}
+    return (c, o) => { c.save(); c.scale(1.15, 1); c.translate(P.dx || 0, 0); const h = P.hot || 0;
+      if (P.trail) moSlash(c, P.trail, 5, P.slashA == null ? 1 : P.slashA);
+      body(c);
+      if (P.slash) moSlash(c, P.slash, 5, P.slashA == null ? 1 : P.slashA);   // the low sweep's trail, as before
+      c.save(); const gr = c.createRadialGradient(1, -138, 0, 1, -140, 14 + h * 4); gr.addColorStop(0, "#ffd9a0"); gr.addColorStop(0.5, MO.ember); gr.addColorStop(1, "#5a0c08");
+      c.fillStyle = gr; c.shadowColor = MO.glow; c.shadowBlur = FX ? 8 + h * 14 : 0;   /* the kit: Effects off */ c.beginPath(); c.ellipse(1, -140, 5.5, 13, 0.05, 0, Math.PI * 2); c.fill(); c.restore(); moHot(c, 1, -140, 18 + h * 22, h * 0.9);
+      c.fillStyle = INK; for (let i = 0; i < 4; i++) { const y = -150 + i * 6; c.beginPath(); c.moveTo(-6, y); c.quadraticCurveTo(1, y - 2.2, 8, y); c.lineTo(8, y + 1.6); c.quadraticCurveTo(1, y - 0.6, -6, y + 1.6); c.closePath(); c.fill(); }
+      moMouth(c, [[-3, -171.5], [4, -171.5], [3, -170], [-2, -170]], 0.5, -171, 4); moSeam(c, [[-4, -120], [-2, -126], [-4, -131]], 1.1);
+      for (const hd of hands) moHot(c, hd[0], hd[1], 7 + h * 8, h * 0.8);
+      moEyes(c, o, [[-2, -175.5, 0.2], [3, -175.5, -0.2]], 1.6, 1, h); c.restore(); };
+  },
+  /* the ghoul, posable: its front arm (P.a: upper arm, forearm angles) can wind up and swipe; P.op opens the jaw; P.slash draws the sweep. Version 24: legs that reach the ground and step with the lines walked (m.walk), a lope */
+  ghoulP(x, t, m, rm) {
+    const P = m.P || {}, g = MO_GAIT.ghoul, tq = pz(t + m.ph, rm) /* the kit: Reduce motion as ghoul2 */,
+      s1 = P.s1 != null ? P.s1 : m.walk != null ? Math.sin(m.walk / (m.L || g.L) * Math.PI * 2) : Math.sin(tq * 3),
+      op = P.op != null ? P.op : 3 + Math.max(0, Math.sin(tq * 1.7)) * 3, lean = P.lean || 0, L = moLegs(g, m, 1, 0), low = L.low;
+    x.save(); x.translate(P.dx || 0, 0);
+    for (const q of L.legs) moLimb(x, q[0], -g.hip + low, [[g.thigh, q[1][0], 6.5, 4.2], [g.shin, q[1][1], 4.2, 3], [g.foot, q[1][2], 3, 1.4]]);
+    x.translate(0, low);
+    x.save(); x.translate(8, -48); x.rotate(lean); x.translate(-8, 48);
+    x.beginPath(); x.moveTo(15, -50); x.quadraticCurveTo(18, -72, -2, -86); x.quadraticCurveTo(-12, -91, -20, -84); x.quadraticCurveTo(-6, -76, 2, -47); x.closePath(); cardFill(x);
+    for (let i = 0; i < 5; i++) { const u = i / 4, bx = 15 + (-6 - 15) * u, by = -58 + (-86 + 58) * u - Math.sin(u * Math.PI) * 5; x.beginPath(); x.moveTo(bx - 2.4, by + 1.6); x.lineTo(bx + 3 + u * 2, by - 6); x.lineTo(bx + 2.4, by + 1.4); x.closePath(); cardFill(x); }
+    x.beginPath(); x.moveTo(-15, -87); x.lineTo(-30, -89); x.lineTo(-40, -84); x.lineTo(-39, -80); x.lineTo(-18, -79); x.closePath(); cardFill(x);
+    x.beginPath(); x.moveTo(-18, -78); x.lineTo(-37, -79 + op); x.lineTo(-35, -75 + op); x.lineTo(-17, -73); x.closePath(); cardFill(x);
+    const claws = (h, ang) => { x.lineWidth = 1.4; for (let k = 0; k < 3; k++) { const a = ang + (k - 1) * 0.32; x.beginPath(); x.moveTo(h[0], h[1]); x.lineTo(h[0] + Math.sin(a) * 6.5, h[1] + Math.cos(a) * 6.5); x.lineTo(h[0] + Math.sin(a + 0.25) * 8, h[1] + Math.cos(a + 0.25) * 8); x.stroke(); } };
+    { const q = -s1, h = moLimb(x, -8, -82, [[25, -0.4 + q * 0.22, 4.6, 3.4], [27, -0.08 - q * 0.25, 3.4, 2.2]]); claws(h, -0.3); }
+    const a = P.a || [-0.4 + s1 * 0.22, -0.08 - s1 * 0.25], hand = moLimb(x, -14, -82, [[25, a[0], 4.6, 3.4], [27, a[1], 3.4, 2.2]]); claws(hand, a[1] - 0.2);
+    x.restore(); x.restore();
+    return (c, o) => { c.save(); c.translate(P.dx || 0, low); c.translate(8, -48); c.rotate(lean); c.translate(-8, 48); const h = P.hot || 0;
+      moMouth(c, [[-18, -78.6], [-38, -79.4], [-36, -77.6 + op], [-18, -73.6]], -22, -77, 12);
+      moTeeth(c, [[-35, -79.2], [-33.6, -76.4], [-32.2, -79.1], [-30, -78.9], [-28.8, -76], [-27.4, -78.8], [-25, -78.7], [-24, -76.2], [-23, -78.6], [-34, -76.4 + op], [-32.8, -78.8 + op * 0.6], [-31.6, -76.2 + op], [-28.6, -75.8 + op * 0.8], [-27.6, -78.2 + op * 0.4], [-26.6, -75.6 + op * 0.8]]);
+      moSeam(c, [[10, -62], [7, -66], [9, -70]], 1); moSeam(c, [[2, -74], [-1, -78]], 1); moHot(c, hand[0], hand[1], 8 + h * 10, h);
+      if (P.slash) moSlash(c, P.slash.map((an) => { const e = [-14 + Math.sin(an[0]) * 25, -82 + Math.cos(an[0]) * 25]; return [e[0] + Math.sin(an[1]) * 30, e[1] + Math.cos(an[1]) * 30]; }), 4.2, P.slashA == null ? 1 : P.slashA);
+      moEyes(c, o, [[-33, -85, 0.3], [-27, -86, 0.3]], 2.2, 1.2, h); c.restore(); };
+  }
 });
 // the walker's hand for given arm angles, in its own (unscaled) frame, for the sweep's trail
 function moWalkerHand(arm,an,crouch){const sh=[arm?8:-6,-164+(crouch||0)*46],e=[sh[0]+Math.sin(an[0])*30,sh[1]+Math.cos(an[0])*30],w=[e[0]+Math.sin(an[1])*34,e[1]+Math.cos(an[1])*34];return[w[0]+Math.sin(an[2])*14,w[1]+Math.cos(an[2])*14];}
@@ -5651,12 +5744,36 @@ function moHop(u){ // the mouth-hat hopping towards you: its own hop frozen, squ
 const MO_WK=(()=>{const rest=(i)=>i?[0.5,0.12,-0.3]:[-0.5,-0.12,0.3],up=(i)=>i?[2.75,2.7,2.45]:[2.4,2.55,2.35],hi=(i)=>i?[-1.15+6.2832,-1.45+6.2832,-1.5+6.2832]:[-1.25+6.2832,-1.55+6.2832,-1.6+6.2832],
   rest2=(i)=>rest(i).map(a=>a+6.2832),back=(i)=>i?[1.1,1.3,1.6]:[0.9,1.2,1.5],lo=(i)=>i?[-1.0,-1.25,-1.45]:[-1.1,-1.35,-1.5];
   return{rest,up,hi,rest2,back,lo,mix:(A,B,v)=>[0,1].map(i=>A(i).map((a,k)=>lerpN(a,B(i)[k],v)))};})();
-function moSweepHigh(u){const W=MO_WK,mix=W.mix; // the walker: arms up (0.5 s), sweeps high in four steps (0.3 s), recovers (0.5 s): roll under it
-  if(u<0.5){const v=ease(u/0.5);return{P:{arms:mix(W.rest,W.up,v),hot:v,s1:0},dx:0,dy:0,phase:"signal"};}
-  if(u<0.8){const w=(u-0.5)/0.3,stp=Math.floor(w*4)/4,v=ease(stp),arms=mix(W.up,W.hi,v),trail=[];for(let k=0;k<=8;k++){const q=ease(Math.min(stp,k/8));trail.push(moWalkerHand(0,mix(W.up,W.hi,q)[0],0));}
-    return{P:{arms,hot:1,s1:0,slash:trail.slice(Math.max(0,Math.round(stp*8)-5),Math.round(stp*8)+1)},dx:0,dy:0,phase:"attack"};}
-  if(u<1.3){const v=ease(clamp01((u-0.8)/0.35));return{P:{arms:mix(W.hi,W.rest2,v),hot:0.3*(1-v),s1:0,slashA:1-v,slash:[0.6,0.8,1].map(k=>moWalkerHand(0,mix(W.up,W.hi,k)[0],0))},dx:0,dy:0,phase:"recover"};}
-  return{P:{},dx:0,dy:0,phase:"done"};}
+/* kit 0.34.0 (design system 24, MonsterAttacks): the walker's high sweep stoops, so it reaches the wanderer's head and shoulders standing: roll under it.
+   MO_STOOP is play.js's, word for word. Its pose needs how far the walker's hips have already sunk to reach the ground (its legs: its walk and the
+   ground under its feet), which only world.monster knows, so moSweepHigh also returns pose(m), the pose for that monster; P is the pose on level
+   ground, standing. */
+/* ---- version 24: the walker's stooping high sweep, on the same clock as today's: the tell 0.5 s (arms up, unchanged), the sweep 0.3 s in four puppet steps,
+   the recovery 0.5 s. s is the time since the tell began. Returns the pose P and the near hand's place, in lines in front of the
+   walker's place and above the ground under it. */
+const MO_STOOP = (() => {
+  const rest = (i) => i ? [0.5, 0.12, -0.3] : [-0.5, -0.12, 0.3], up = (i) => i ? [2.75, 2.7, 2.45] : [2.4, 2.55, 2.35], T2 = Math.PI * 2,
+    dn = (i) => i ? [-1.45 + T2, -1.3 + T2, -1.15 + T2] : [-1.55 + T2, -1.37 + T2, -1.2 + T2], rest2 = (i) => rest(i).map((a) => a + T2),
+    mix = (A, B, v) => [0, 1].map((i) => A(i).map((a, k) => lerpN(a, B(i)[k], v)));
+  const at = (s, lowStand) => {
+    const low = (st) => Math.max(lowStand, st * MO_WK_SINK), hand = (arms, st) => moWalkerHandAt(0, arms[0], st, low(st));
+    let P;
+    if (s < 0) P = { s1: 0 };
+    else if (s < 0.5) { const v = ease(s / 0.5); P = { arms: mix(rest, up, v), hot: v, s1: 0 }; }
+    else if (s < 0.8) { const stp = Math.min(1, Math.floor((s - 0.5) / 0.3 * 4) / 3), v = ease(stp), trail = [];   // four puppet steps; body and arms arrive together at the fourth, the blow
+      for (let k = 0; k <= 8; k++) { const w = ease(Math.min(stp, k / 8)); trail.push(hand(mix(up, dn, w), w)); }
+      P = { arms: mix(up, dn, v), stoop: v, hot: 1, s1: 0, trail: trail.slice(Math.max(0, Math.round(stp * 8) - 5), Math.round(stp * 8) + 1) }; }
+    else if (s < 1.3) { const u = (s - 0.8) / 0.5, w = ease(clamp01((u - 0.16) / 0.84));   // the blow's pose is held to 0.88 s, then it straightens and lowers its arms
+      P = { arms: mix(dn, rest2, w), stoop: 1 - w, hot: 0.3 * (1 - w), s1: 0, slashA: 1 - clamp01(u / 0.4), trail: [0.6, 0.8, 1].map((k) => hand(mix(up, dn, k), k)) }; }
+    else P = { s1: 0 };
+    const st = P.stoop || 0, h = P.arms ? moWalkerHandAt(0, P.arms[0], st, low(st)) : null;
+    return { P, hand: h ? [-h[0] * 1.15, -h[1]] : null };
+  };
+  return { at };
+})();
+function moSweepHigh(u){ // the walker: arms up (0.5 s), stoops into its sweep in four steps (0.3 s; the blow from 0.725 to 0.88 s), straightens (to 1.3 s): roll under it
+  if(u>=1.3)return{P:{},dx:0,dy:0,phase:"done"};
+  return{P:MO_STOOP.at(u,MO_GAIT.walker.drop).P,pose:m=>MO_STOOP.at(u,moLegs(MO_GAIT.walker,m,1.15,0).low).P,dx:0,dy:0,phase:u<0.5?"signal":u<0.8?"attack":"recover"};}
 function moSweepLow(u){const W=MO_WK,mix=W.mix; // the walker: crouches, arms back (0.5 s), sweeps low in four steps (0.3 s), recovers (0.45 s): jump it
   if(u<0.5){const v=ease(u/0.5);return{P:{arms:mix(W.rest,W.back,v),crouch:0.75*v,hot:v,s1:0},dx:0,dy:0,phase:"signal"};}
   if(u<0.8){const w=(u-0.5)/0.3,stp=Math.floor(w*4)/4,v=ease(stp),arms=mix(W.back,W.lo,v),trail=[];for(let k=0;k<=8;k++){const q=ease(Math.min(stp,k/8));trail.push(moWalkerHand(0,mix(W.back,W.lo,q)[0],0.75));}
@@ -6189,7 +6306,8 @@ function makeTools(env){
       const a=clamp(o.a==null?1:o.a,0,1);if(a<=0)return;
       const c=f.ctx;c.save();c.translate(-f.camX,0);bsWarn(c,x,f.gy,o.w==null?70:o.w,a,f.t,o.crack==null?1:o.crack);c.restore();
     },
-    monster(o){ // o: kind, x, y, ph (its pace, so neighbours differ), id (a monster's own name), defeat (0 to 1, over 1.6 s), seed, facing (kit 0.8.1)
+    monster(o){ // o: kind, x, y, ph (its pace, so neighbours differ), id (a monster's own name), defeat (0 to 1, over 1.6 s), seed, facing (kit 0.8.1),
+      // walk (kit 0.34.0: the lines a walker or a ghoul has walked, for its legs)
       // rise: seconds since it began to rise out of the ground (0.35 s from 26 below, with dust: the skull's crawlers); kit 0.32.0: with
       // riseLen (seconds, the design's 0.6) and riseDepth (its own height if left out: 104 for a ghoul, 37 for a crawler), The Endless
       // Rot's deeper rise through a warning (version 23)
@@ -6204,11 +6322,17 @@ function makeTools(env){
       const at=o.attack?moAttack(o.kind,o.attack):null,hit=o.hit!=null&&o.hit>=0&&o.hit<0.13;
       let dx=(at?at.dx:0)*flip,dy=at?at.dy:0;if(hit){dx+=8*flip;if(o.kind==="bat2")dy-=6;}
       const x=o.x+dx,X=x-f.camX,Y=(o.y==null?f.gy(x)+(STAND[o.kind]||0):o.y)+dy,m={kind:MON_P[o.kind],X,Y,ph:o.ph||0,id:o.id,P:at?at.P:{}};
+      // kit 0.34.0 (design system 24, MonsterWalks): walk, the lines a walker or a ghoul has walked (the game counts them: walking the way it faces adds,
+      // backing away takes away), so its legs step with the ground it covers; the kit adds an attack's own step forward (the ghoul's lurch of 30). With no
+      // walk its legs stand. On the ground (no y given) each foot meets the ground under it: m.gnd, how far the ground d lines from its place lies below
+      // the ground at its place, mirrored with a monster facing right
+      if(MO_GAIT_P[m.kind]){if(o.walk!=null)m.walk=o.walk-(at?at.dx:0);if(o.y==null)m.gnd=d=>f.gy(x+(fc===1?-d:d))-f.gy(x);}
+      if(at&&at.pose)m.P=at.pose(m);   // the walker's stooping sweep: its pose from how far its hips have already sunk to reach the ground
       // kit 0.17.4 (after the Amazon Fire HD 8's parts check, 8 November 2026): at Fastest an attacking monster's pose is taken at
       // its time stepped to 12 a second, the puppet's own rate, and painted once for every monster of its kind (scene.monster's store);
       // where it is, its movement, stays smooth. At Best and Faster it is repainted every frame (kit 0.18.0, design system 14: Fastest only).
       if(at&&!hit&&o.rise==null&&env.quick&&env.quick()){const aq=moAttack(o.kind,Object.assign({},o.attack,{t:Math.floor((o.attack.t||0)*MV_RATE)/MV_RATE}));
-        m.P=aq.P;m.pk=poseKey(aq.P);}
+        m.P=aq.pose?aq.pose(m):aq.P;m.pk=poseKey(m.P);}
       const out=at?{phase:at.phase,dx,dy}:{phase:null,dx,dy};
       const c=f.ctx,Xs=Math.round(X*s)/s;   // mirrored about a whole device pixel, so its painted picture stays sharp
       if(fc===1){c.save();c.translate(Xs,0);c.scale(-1,1);c.translate(-Xs,0);}
@@ -6280,6 +6404,7 @@ function makeTools(env){
     // for the test page's readout
     get stats(){return{tileBytes:KIT.bytes,poses:KIT.poses,builds:KIT.builds,thru:KIT.thruN};},
     _thruCloud(on){KIT.thru=on!==false;},   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
+    get _legs(){return{legs:moLegs,gait:MO_GAIT,stoop:MO_STOOP,hand:moWalkerHandAt,room:MON_ROOM,box:MON_BOX,scene};},   // test only (kit 0.34.0): the walker's and the ghoul's legs, the stoop and the painter, for measuring where their feet and the stooped arm are and how far each reaches
   };
 }
   return { makeTools: makeTools };
@@ -9472,10 +9597,13 @@ const MON = {
   // so the claw reaches about 114 from where it stood, against the sword's 84; it swipes from 105, beyond the sword's reach
   ghoul2:  { dmg: 0.15, hp: 4, wisps: 2, box: [-41, 18, -92, 0], ground: true, speed: 90, range: 105, keep: 135, cd: 1.0, atk: 'swipe', answer: true,
     up: true, through: true, zone: { swipe: [0.58, 0.8, -86, -35, -130, -56] } },
-  // the walker stalks and sweeps its branch arms: arms up, a high sweep 112 to 200 above the ground (it passes over him standing, but
-  // not jumping or up on a piece); a crouch, a low sweep at his knees (jump it)
+  // the walker stalks and sweeps its branch arms. Design system 24 (kit 0.34.0; Barney, 15 November 2026: "too many walkers over headshots are
+  // missing", then "Stooping swing"): arms up, then it stoops into a high sweep that comes down on his head and shoulders: roll under it (it
+  // catches him standing, jumping or up on a piece; it was 112 to 200 above the ground and passed over him standing). A crouch, arms back: a
+  // low sweep at his knees (jump it). The high sweep's blow is held from 0.725 to 0.88 s; its arm comes no lower than 51 above the ground
+  // (he is 38 high rolling), and its zone is counted from 56, from the ground under him (atkZone)
   walker:  { dmg: 0.25, hp: 5, wisps: 5, box: [-28, 31, -193, 0], ground: true, speed: 32, range: 100, keep: 150, cd: 1.2, atk: 'sweep',
-    up: true, through: true, zone: { high: [0.74, 0.92, -106, -25, -200, -112], low: [0.74, 0.92, -104, -45, -42, -12] } },   // the arms reach out from 0.74 s
+    up: true, through: true, zone: { high: [0.725, 0.88, -106, -25, -200, -56], low: [0.74, 0.92, -104, -45, -42, -12] } },   // the low sweep's arms reach out from 0.74 s
 };
 const WALKER_ABOVE = 4;    // a walker whose feet are this much higher than the ground under him sweeps low (CM211's 20; CM214, Barney:
                            // "still seems to be doing some high attacks when I am slightly lower on the slope")
@@ -11800,14 +11928,17 @@ function atkMove(a) {
   return { dx: 0, dy: 0, ph: 'done' };
 }
 // where a ghoul's claw or a walker's arm sweeps, while it sweeps (the kit's drawing), in the path's lines; null at other times
-// Its heights count from the higher of the ground under the monster and under the sweep, so on a slope a roll still gets under a
-// claw and a standing wanderer under a high sweep, as on the flat. The walker's low sweep (at his knees: jump it) counts from the ground
-// under the sweep, so it still reaches him standing below the walker on a slope (Barney, 8 November 2026: a third of them missed there)
+// A ghoul's claw counts its heights from the higher of the ground under the monster and under the sweep, so on a slope a roll still
+// gets under it, as on the flat. The walker's low sweep (at his knees: jump it) counts from the ground under the sweep, so it still
+// reaches him standing below the walker on a slope (Barney, 8 November 2026: a third of them missed there). Design system 24: the
+// walker's stooping high sweep counts from the ground under him (under the sweep's nearer end when he is beyond it), so wherever the
+// walker stands on a slope it catches him standing and a roll gets under it (measured on the sketch: counted from the walker's own
+// feet, a walker 24 or more below him caught 31% of rolls)
 function atkZone(m, g) {
   const z = m.atk && MON[m.kind].zone && MON[m.kind].zone[m.atk.name];
   if (!z || m.atk.t < z[0] || m.atk.t > z[1]) return null;
   const x0 = m.f === 1 ? m.px - z[3] : m.px + z[2], x1 = m.f === 1 ? m.px - z[2] : m.px + z[3];
-  const gs = g.L.ground((x0 + x1) / 2), base = m.atk.name === 'low' ? gs : Math.min(m.py, gs);
+  const gs = g.L.ground((x0 + x1) / 2), base = m.atk.name === 'low' ? gs : m.atk.name === 'high' ? g.L.ground(Math.max(x0, Math.min(x1, g.x))) : Math.min(m.py, gs);
   return [x0, x1, base + z[4], base + z[5]];
 }
 // a ground monster's stretch: between the pits, steep banks and pieces either side of x, its feet kept clear of their edges
@@ -11854,6 +11985,7 @@ function makeMonster(g, kind, x0, n, near) {
 function resetMonster(g, m) {          // at its place, whole, waiting to be seen
   Object.assign(m, { st: 'live', bx: m.sx, by: m.sy, f: -1, hp: MON[m.kind].hp * hard(g, 'hits'), atk: null, cd: 0.6, hitT: null, awake: false, walkT: 0,
     moving: false, wdx: 0, ody: 0, beatenAt: null, rush: 0 });
+  if (WALKS[m.kind]) { if (m.walk == null) m.walk = m.ph * 200; m.wbx = m.bx; }   // each starts at its own point of its stride, so neighbours differ
   place(m, g, m.bx, 0);
 }
 // after a life lost: the living go back to their places, and about 40% of those beaten since that checkpoint come back
@@ -11879,8 +12011,12 @@ function monstersUpdate(g, lb, dt) {
       if (Math.abs(m.bx - g.x) > lb.W * 1.3) continue;   // left far behind, it waits
     }
     monsterUpdate(m, g, lb, dt, busy, camX);
+    // design system 24 (kit 0.34.0): the lines a walker or a ghoul has walked, for its legs (world.monster's walk): walking the way it faces
+    // adds, backing away takes away. Counted from where it stands (bx), so a ghoul's lurch is counted as its swipe ends (the kit adds it meanwhile)
+    if (WALKS[m.kind]) { m.walk += (m.bx - m.wbx) * m.f; m.wbx = m.bx; }
   }
 }
+const WALKS = { walker: true, ghoul2: true };   // the monsters whose legs step with the ground they cover
 function startAttack(m, name, extra) { m.atk = Object.assign({ name, t: 0 }, extra || {}); m.moving = false; }
 function monsterUpdate(m, g, lb, dt, busy, camX) {
   const K = MON[m.kind];
@@ -12076,6 +12212,7 @@ function drawMonsters(g, lb, w, camX, flyers) {
     if (m.st === 'gone' || !MON[m.kind].ground !== flyers) continue;
     if (m.px < camX - 160 || m.px > camX + lb.W + 160) continue;
     const o = { kind: m.kind, id: m.id, ph: m.ph, seed: m.seed, facing: m.f, x: m.px - m.wdx };
+    if (m.walk != null) o.walk = m.walk;   // design system 24: its legs step with the lines it has walked
     if (!MON[m.kind].ground) o.y = m.by;
     if (m.st === 'defeat') { o.x = m.px; if (!MON[m.kind].ground) o.y = m.py; o.defeat = Math.min(1, m.t / 1.6); w.monster(o); continue; }
     if (m.atk) o.attack = m.atk.name === 'dive' ? { name: 'dive', t: m.atk.t, dir: -1, dx: m.atk.dx, dy: m.atk.dy } : { name: m.atk.name, t: m.atk.t };
