@@ -678,6 +678,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 .lb-bossbar-track>.fill{width:calc((100% - 4px) * var(--v,1));background:linear-gradient(180deg,var(--boss-top) 0%,var(--ember) 50%,var(--boss-low) 100%)}
 .lb-hud.is-phone .lb-bossbar{bottom:16px;width:300px}
 .lb-hud.is-phone .lb-bossbar-name{font-size:16px;margin-bottom:5px}
+/* kit 0.34.1: a number inside a name or a line set in IM Fell English (the wave's bar, "Wave 4 endured", "Fell in Wave 5"): Alegreya Sans bold
+   with lining figures, as every other number is, sized to stand as tall as the capitals beside it; no line of its own height, so the name's does not move */
+.lb-fig{font-family:var(--font-text);font-weight:700;font-size:1.14em;line-height:0;font-variant-numeric:lining-nums tabular-nums;letter-spacing:0}
 .lb-hud.is-phone .lb-bossbar-track{height:11px}
 
 /* the phone's touch controls: octagons, corners cut deep, drawn as outlines over see-through faces */
@@ -1173,7 +1176,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.34.0';
+  const VERSION = '0.34.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -6490,6 +6493,13 @@ const hexRGB=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
 const mixHex=(a,b,u)=>{const A=hexRGB(a),B=hexRGB(b);return "rgb("+A.map((v,i)=>Math.round(v+(B[i]-v)*u)).join(",")+")";};
 const ease=u=>u<=0?0:u>=1?1:u*u*(3-2*u);
 function setOnce(o,k,v,f){if(o["_"+k]!==v){o["_"+k]=v;f(v);}}
+/* kit 0.34.1 (Barney, 15 November 2026, of The Endless Rot's bar: "the number after the wave does not render quite on the same size and seems smaller
+   than the text. Although I did note wave 8 seemed better"): a name or a line in IM Fell English with a number in it. That face has old-style
+   figures only (its 0, 1 and 2 stand at about 57% of a capital's height, its 3, 4, 5, 7 and 9 hang below the line, and only its 6 and 8 are tall),
+   and the design system's rule is that numbers are Alegreya Sans bold, never IM Fell English. So each run of digits goes in a span (.lb-fig) set in
+   Alegreya Sans bold with lining figures, sized to stand as tall as the capitals beside it; the words stay as they were. A note for the next design system. */
+function figText(el,v){v=String(v==null?"":v);if(!/\d/.test(v)){el.textContent=v;return;}
+  el.textContent="";v.split(/(\d+)/).forEach((s,i)=>{if(!s)return;if(i%2){const f=document.createElement("span");f.className="lb-fig";f.textContent=s;el.appendChild(f);}else el.appendChild(document.createTextNode(s));});}
 // kit 0.20.0: an attribute written only when it changes (an SVG attribute set to the value it already has still makes the browser redo the
 // picture, every frame, on a slow device)
 function setAttr(e,k,v){if(e.getAttribute(k)!==v)e.setAttribute(k,v);}
@@ -6499,7 +6509,7 @@ function hqa(r,k){const m=r._hqa||(r._hqa=new Map());let e=m.get(k);if(e===undef
 function picFor(svg,kind){const g=!!kind&&typeof kind==="object";   /* kit 0.17.0: kind { pic, strong }: a Grace's picture (30-unit box) */
   setOnce(svg,"pic",g?"g:"+(kind.strong?"*":"")+kind.pic:(kind||""),()=>{svg.setAttribute("viewBox",g?"0 0 30 30":"0 0 24 24");svg.classList.toggle("is-grace",g);svg.classList.toggle("is-strong",g&&!!kind.strong);svg.innerHTML=g?String(kind.pic||""):kind?ICON[kind]:"";});}
 function setLine(ln,line){const on=!!line;if(ln.hidden===on)ln.hidden=!on;if(!on)return;
-  setOnce(ln,"t",line.text+"|"+(line.sub||""),()=>{ln.querySelector(".lb-line-text").textContent=line.text;ln.setAttribute("aria-label",line.text+(line.sub?". "+line.sub:""));
+  setOnce(ln,"t",line.text+"|"+(line.sub||""),()=>{figText(ln.querySelector(".lb-line-text"),line.text);ln.setAttribute("aria-label",line.text+(line.sub?". "+line.sub:""));
     const sb=ln.querySelector(".lb-line-sub");if(sb){sb.textContent=line.sub||"";sb.hidden=!line.sub;}ln.classList.toggle("is-gain",!!line.gain);});   /* kit 0.24.0: a life gained's two lines (version 18) */
   ln.classList.toggle("no-pic",!line.kind);if(line.kind)picFor(ln.querySelector(".pic"),line.kind);
   const u=line.u,long=ln.classList.contains("is-name"),T=long?2.6:2,a=u<0.22?u/0.22:u>T-0.4?Math.max(0,(T-u)/0.4):1,dy=-8*(1-ease(Math.min(1,u/0.25)));ln.style.opacity=String(a);ln.style.transform=`translate(-50%,${dy.toFixed(2)}px)`;}
@@ -6573,7 +6583,7 @@ function set(hud,st){const q=s=>hq(hud,s);
   const ha=st.hudA==null?1:st.hudA;[".lb-hud-left",".lb-hud-right",".lb-touch"].forEach(sl=>{const e=q(sl);if(e)setOnce(e,"ha",ha.toFixed(2),v=>e.style.opacity=v);});
   const ln=q(".lb-line:not(.is-name)");if(ln)setLine(ln,st.line);const nm=q(".lb-line.is-name");if(nm)setLine(nm,st.name&&st.name.u<2.6?{kind:null,text:st.name.name,sub:st.name.sub,gain:st.name.gain,u:st.name.u}:null);const cd=q(".lb-card");if(cd)setCard(cd,st.card);
   const bb=q(".lb-bossbar");if(bb){const on=!!(st.boss&&st.boss.a>0&&ha>0);if(bb.hidden===on)bb.hidden=!on;
-    if(on){setOnce(bb,"n",st.boss.name,v=>{bb.querySelector(".lb-bossbar-name").textContent=v;bb.setAttribute("aria-label",v);});bb.style.opacity=String(st.boss.a*ha);
+    if(on){setOnce(bb,"n",st.boss.name,v=>{figText(bb.querySelector(".lb-bossbar-name"),v);bb.setAttribute("aria-label",v);});bb.style.opacity=String(st.boss.a*ha);
       const tr=bb.querySelector(".lb-bossbar-track");tr.style.setProperty("--v",st.boss.hp.toFixed(3));tr.style.setProperty("--trace",Math.max(st.boss.hp,st.boss.trace).toFixed(3));setOnce(bb,"vn",Math.round(st.boss.hp*100),v=>bb.setAttribute("aria-valuenow",String(v)));}}}
 const CARDS={night:["Night","The Graveyard"],storm:["Blood Red Rain","The Old Town"],dawn:["Dawn","The Open Moor"],mist:["Mist","The Wind Bent Forest"]}; // from mv10.js: the places' names (Barney, 4 November 2026)
 // kit 0.26.0 (design system 21, play.js 1.9.0): the pull-down roll's zone, the one place it is kept, so the roll (the shell's stickMove)
@@ -6588,7 +6598,7 @@ function stickShow(hud,x,y,dx,dy,a,thumb){const s=hud.querySelector(".lb-stick")
   const rz=inRollZone(dx,dy);sv.querySelector(".dl").classList.toggle("is-lit",rz&&dx<0);sv.querySelector(".dr").classList.toggle("is-lit",rz&&dx>0);   // version 21
   const th=hud.querySelector(".lb-thumb");if(th){th.style.opacity=String(thumb||0);th.style.left=(x+dx)+"px";th.style.top=(y+dy)+"px";}}
 function ensureDefs(){if(!defsDone){document.body.insertAdjacentHTML("afterbegin",defs);defsDone=true;}}   /* kit 0.11.0: the potions' liquid, for pictures outside the HUD */
-return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRollZone};
+return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRollZone,figText};
   })();
 
   function createGame(cfg) {
@@ -8526,7 +8536,8 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       if (near.wave && !near.boss) {   // kit 0.31.0: "Fell in Wave 5 {bar} 3 left", always true, so always shown (version 23)
         const pc = Math.round(clamp(Math.ceil(clamp(+near.left || 0, 0, 1) * 100), 0, 100));
         const p = el('p', 'lb-near' + (phone ? ' is-two' : ''));
-        p.append(document.createTextNode('Fell in '), txt('span', 'lb-near-name', String(near.wave)));
+        const nm = el('span', 'lb-near-name'); HUD8.figText(nm, near.wave);   // kit 0.34.1: its number in Alegreya Sans bold
+        p.append(document.createTextNode('Fell in '), nm);
         if (phone) { const br = el('span', 'br'); br.setAttribute('aria-hidden', 'true'); p.append(br); }
         const bar = el('span', 'lb-near-bar', '<i></i>');
         bar.setAttribute('aria-hidden', 'true');
@@ -11878,12 +11889,19 @@ function hurt(g, lb, dmg, fromX, by) {
   if (g.armour > 0) lb.hud.armourGlint();   // step 5e-6a (version 13): one brass glint across the pips held, as each takes its share
   if (g.health <= 0.001) return startLost(g, lb, 'health', null);
   if (g.mode === 'air') return;        // in the air: the sparks and the second of safety, and on he goes
-  g.facing = fromX >= g.x ? 1 : -1;    // turned to it and knocked back a step (the kit's hurt move)
-  g.mode = 'hurt'; g.mt = 0; g.hurtX = g.x;
+  // turned to it and knocked back a step (the kit's hurt move). Barney, 15 November 2026: "some sort of mechanic when the crawler attacks
+  // from behind which auto turns the player around. As the crawler then jumps to the other side of the player this then leaves him
+  // facing away from the crawler. When trying to attack two crawlers at the same time you keep getting spun from side to side". A
+  // crawler's lunge and a flyer's dive carry them on past him (measured: 60 of 60 lunges that hit left him facing away from the
+  // crawler, 57 of them turning him), so those two no longer turn him: he keeps facing the way the player chose, and is knocked a
+  // step away from where the blow came from, as before (hurtF). Every other blow turns him to it as it did
+  const toward = fromX >= g.x ? 1 : -1, through = !!by && (by.atk === 'lunge' || by.atk === 'dive');
+  if (!through) g.facing = toward;
+  g.mode = 'hurt'; g.mt = 0; g.hurtX = g.x; g.hurtF = toward;
 }
 function hurtUpdate(g, lb, dt) {
   const R = lb.world.stepRate, steps = lb.world.move('hurt', 0).steps, m = lb.world.move('hurt', Math.min(g.mt * R, steps));
-  const r = stepTo(g, g.hurtX + g.facing * m.dx);
+  const r = stepTo(g, g.hurtX + (g.hurtF || g.facing) * m.dx);
   if (r.drop) return startDrop(g);
   if (g.mt * R >= steps) { g.mode = 'ground'; g.mt = 0; g.landT = 9; }
 }
