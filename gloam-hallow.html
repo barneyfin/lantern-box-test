@@ -1173,7 +1173,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.33.0';
+  const VERSION = '0.33.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -3445,8 +3445,11 @@ function leafShape(x,X,Y,k,ang,turn,col){x.save();x.translate(X,Y);x.rotate(ang)
 // leaves on the wind: depth 0 far (small, slow, tinted), 1 nearer; gusts come and go
 function drawLeaves(x,W,t,lx,rm,col,depth){const fw=rm||TRIAL.few,N=depth?(fw?4:9):(fw?7:16),   /* kit 0.20.2: the few trial */sp=depth?(rm?70:190):(rm?40:110),span=W+300,H=420;
   for(let i=0;i<N;i++){const r1=Math.sin((depth*53+i*17.1)*12.9898)*43758.5453,a=r1-Math.floor(r1),r2=Math.sin((depth*29+i*5.7)*78.233)*24658.37,b=r2-Math.floor(r2);
-    const gust=1+0.45*Math.sin(t*0.37+i*0.21)+0.25*Math.sin(t*1.1+depth),v=sp*(0.75+a*0.5)*gust;
-    const X=-150+(((t*v+a*span*3-lx)%span)+span)%span,Y=(depth?120:90)+b*H*(depth?0.7:0.75)+Math.sin(t*(1.3+a)+i)*(depth?18:10)+X*0.05*(b-0.4);
+    /* kit 0.33.1 (Barney, 14 November 2026: "the leaves that should be blowing gently in the wind in forrest level are flickering like crazy"):
+       how far the wind has carried a leaf, its speed (1 + 0.45 sin(0.37t) + 0.25 sin(1.1t), the gusts) added up over time; it was t times
+       the speed of the moment, so each frame's step grew with the time played (3 lines at 5 s, about 550 at 10 minutes, a flicker) */
+    const d=sp*(0.75+a*0.5)*(t-(0.45/0.37)*Math.cos(t*0.37+i*0.21)-(0.25/1.1)*Math.cos(t*1.1+depth));
+    const X=-150+(((d+a*span*3-lx)%span)+span)%span,Y=(depth?120:90)+b*H*(depth?0.7:0.75)+Math.sin(t*(1.3+a)+i)*(depth?18:10)+X*0.05*(b-0.4);
     const k=depth?(1.3+a*0.7):(0.7+a*0.4),ang=Math.sin(t*(2+a*2)+i)*0.9+t*(depth?2.2:1.2)*(b>0.5?1:-1),turn=t*(3+b*4)+i;
     leafShape(x,X,Y,k,ang,turn,col);}};
 // crows flying alone or in a few: the same crow, nearer and bigger (the moor's three near ones; the Mist's three far ones)
@@ -6742,8 +6745,11 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       alt: ['ShiftLeft', 'ShiftRight', 'KeyX', 'KeyK']
     };
     // version 8 (4c-6b): the named controls (the gameplay note's keys); in the full HUD on a touch device the stick and buttons press them too
-    const ACTIONS = { jump: ['Space'], attack: ['KeyJ'], cast: ['KeyK'], switch: ['KeyL'], roll: ['ShiftLeft', 'ShiftRight'], climb: ['ArrowUp', 'KeyW'],
+    const ACTIONS = { jump: ['Space'], attack: ['KeyJ'], cast: ['KeyK'], switch: ['KeyL'], roll: ['ShiftLeft', 'ShiftRight', 'Semicolon'], climb: ['ArrowUp', 'KeyW'],
       drinkHealth: ['KeyQ'], drinkMana: ['KeyE'] };   // kit 0.9.0: Q and E drink the kept potions (a tap on a socket presses them too)
+    // kit 0.33.1 (Barney, 14 November 2026: "on pc using shift to roll keeps on triggering windows sticky keys window to pop open"): the key
+    // beside L rolls too (Semicolon, wherever the layout prints it), so the right hand can keep J, K, L and it, and Shift is never needed; a
+    // page can't stop Windows opening Sticky Keys at the fifth Shift in a row
     const GAME_CODES = new Set([].concat.apply([], Object.keys(KEYMAP).map((k) => KEYMAP[k]).concat(Object.keys(ACTIONS).map((k) => ACTIONS[k]))));
     const keys = new Set();
     const justKeys = new Set();
@@ -8037,7 +8043,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
     /* version 8 (4c-6a): How to play (HowToPlay): the game's goal in two lines, then the controls; from the '?' tile in play (the game paused
        behind it, its button Resume) or the title (Back). Kit 0.10.0: P resumes, Backspace goes back (Esc still does, never shown). */
     const HOWTO_KEYS = [[['A', 'D', ' or ', 'left', 'right'], 'walk'], [['J'], 'attack'], [['W', ' or ', 'up'], 'climb a bank'], [['K'], 'cast'],
-      [['Space'], 'jump'], [['L'], 'switch spell'], [['Shift'], 'roll'], [['P'], 'pause']];
+      [['Space'], 'jump'], [['L'], 'switch spell'], [['Shift', ' or ', ';'], 'roll'], [['P'], 'pause']];   // kit 0.33.1: or ;
     const OCT34 = '<polygon class="oct" points="10.0,0.7 24.0,0.7 33.3,10.0 33.3,24.0 24.0,33.3 10.0,33.3 0.7,24.0 0.7,10.0"/>';
     // kit 0.9.0 (version 11): with potions, Q and E on a computer and the two sockets drawn small on a touch device
     const HOWTO_POT_KEYS = [[['Q'], 'drink a health potion'], [['E'], 'drink a mana potion']];
@@ -9402,7 +9408,8 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
    The CrazyGames SDK (part B, kit 0.27.0): the CrazyGames build's feedback context (portalNote).
    Barney's play of The Endless Rot (14 November 2026, CM211; no kit change): a walker higher than him on a slope sweeps low, everywhere.
    Then (CM212, with kit 0.33.0's touch fixes): a roll out of a sword swing turns him first to the way he is pressing.
-   Then (CM214): the walker sweeps low from 4 higher than him, where it was 20; in The Endless Rot its blow 35% (tuning 5). */
+   Then (CM214): the walker sweeps low from 4 higher than him, where it was 20; in The Endless Rot its blow 35% (tuning 5).
+   Then (CM215): in the playtest's copy The Endless Rot is open from the start. */
 
 const PLACES = ['night', 'storm', 'dawn', 'mist'];
 const TRACK = { night: 0, storm: 0, dawn: 1, mist: 1 };   // The Long Vigil, then Lantern in the Moor from Dawn's place card
@@ -9852,15 +9859,18 @@ const ROT_RUN = { id: 'rot', name: 'The Endless Rot', note: ROT_LINE, terms: "Ev
 const LOCK_SVG = '<svg viewBox="0 0 14 16" aria-hidden="true"><rect x="1.5" y="7" width="11" height="8" rx="1"/><path d="M4 7 V4.6 A3 3 0 0 1 10 4.6 V7"/></svg>';
 // the choice comes once something has been bought, as before, or once The Endless Rot is open even if nothing has; otherwise Start game
 // goes straight into The Bare Reckoning. It opens on the run last played if that was The Endless Rot, otherwise on The Echo Infusion; with
-// no Echo Infusion (the Ghost beaten, nothing bought) on The Endless Rot, as the design's preview shows (the handover's reading 7)
+// no Echo Infusion (the Ghost beaten, nothing bought) on The Endless Rot, as the design's preview shows (the handover's reading 7).
+// CM215 (Barney, 14 November 2026: "In playtest mode have the endless rot unlocked as default in this version of the game only"): in the
+// playtest's copy it is open from the start, without the saved flag (the flag still comes with the Ghost, and its news plaque with it); a
+// new player's choice still opens on The Bare Reckoning, as it opens on The Endless Rot only once the Ghost is beaten or it was last played
 function chooseRun(lb, start) {
   if (wantCheck(lb)) return start('bare');   // step 5f-1: the play check needs no choice
   if (lb.test && lb.test.rot) return start('rot');   // design system 23: Testing's straight way into The Endless Rot
-  const rec = lb.progress, bought = anyBought(rec), open = !!rec.rotOpen;
+  const rec = lb.progress, bought = anyBought(rec), open = !!rec.rotOpen || PLAYTEST;
   if (!bought && !open) return start('bare');
   const runs = bought ? RUNS.slice() : [RUNS[0]];
   if (open) runs.push(ROT_RUN); else runs.push(Object.assign({ locked: true, lockTerms: 'Locked · fell The Veiled Ghost' }, ROT_RUN));   // locked: shown as a goal
-  const pick = { id: open && (rec.lastRun === 'rot' || !bought) ? 'rot' : 'infusion' };
+  const pick = { id: open && (rec.lastRun === 'rot' || (!bought && !!rec.rotOpen)) ? 'rot' : 'infusion' };
   const at = runs.filter((r) => !r.locked).findIndex((r) => r.id === pick.id);
   lb.ui.open((ui) => modesPlaque(lb, ui, start, pick, runs), Math.max(0, at));
 }
