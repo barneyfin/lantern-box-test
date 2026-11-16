@@ -9798,10 +9798,17 @@ const HARD = { hits: 1.5, speed: 1.2, boss: 1.5, echo: 2 };
 // All starting figures, Barney's to tune. The Endless Rot has its own three (ROT_DIFF). Design system 25 (CM230): the setting is chosen
 // in the choice of run (modesPlaque), one remembered for each run (the record's diffs), Grim the first time; The Bare Reckoning is always
 // Grim. Only the play check has none (g.diff null), so its figures stay those every device has been timed on.
+// What is found (Barney, 16 November 2026; his figures; the journey only, The Endless Rot keeps its drops on all three): drop, the chance
+// an ordinary monster drops anything (as it was, 24.4%, DROP_ANY); walker, the chance a walker does (as it was, 43.3%); fewer, how many
+// fewer health potions lie in a place on average (as it was, about 6 or 7). Shallow has none of the three: it is the game as it was.
+// The speed's climb (Barney, the same day, after The Endless Rot's: "a Speed climb, of 3% between each place continuing from 1st to 2nd
+// run"): speed, that much faster with each place, the second loop's four carrying on from the first's (journeyClimb: Night 1, Blood Red
+// Rain 1.03, Dawn 1.06, Mist 1.09, then 1.12 to 1.21), on the monsters' moving, their attacks' wind-ups and the wait between attacks,
+// as the mode's is; it multiplies the second loop's own HARD.speed (his choice). Never a boss's. None for Shallow.
 const DIFF = {
   easy:   { blow: [1, 1, 1, 1], hits: [1, 1, 1, 1], loopBlow: 1, echo: 0.75 },
-  normal: { blow: [1, 1.1, 1.25, 1.4], hits: [1, 1, 1.25, 1.5], loopBlow: 1.3, echo: 1 },
-  hard:   { blow: [1.2, 1.35, 1.5, 1.7], hits: [1.25, 1.25, 1.5, 1.75], loopBlow: 1.3, echo: 1.5 },
+  normal: { blow: [1, 1.1, 1.25, 1.4], hits: [1, 1, 1.25, 1.5], loopBlow: 1.3, echo: 1, drop: 1 / 7, walker: 1 / 4, fewer: 2, speed: 0.03 },
+  hard:   { blow: [1.2, 1.35, 1.5, 1.7], hits: [1.25, 1.25, 1.5, 1.75], loopBlow: 1.3, echo: 1.5, drop: 1 / 10, walker: 1 / 5, fewer: 3, speed: 0.03 },
 };
 const DIFF_NAME = { easy: 'Shallow', normal: 'Grim', hard: 'Agony' };   // Barney's words (16 November 2026; design system 25, SettingTag)
 const DIFF_ORDER = ['easy', 'normal', 'hard'];                         // the picker's order
@@ -9814,9 +9821,11 @@ const scaled = (n, run, d) => { const k = echoScale(run, d); return k === 1 ? n 
 const shareText = (run, d) => { const k = echoScale(run, d); return k === 1 ? '' : '×' + k; };
 const tagOf = (run, d) => (run !== 'bare' && diffOk(d) ? DIFF_NAME[d] : '');
 const journeyBlow = (g) => { const D = DIFF[g.diff]; return D ? D.blow[g.p] * (g.loop === 2 ? D.loopBlow : 1) : 1; };
+const journeyClimb = (g) => { const D = g.run !== 'rot' && diffOk(g.diff) ? DIFF[g.diff] : null; return D && D.speed ? 1 + D.speed * (g.p + (g.loop === 2 ? PLACES.length : 0)) : 1; };
 const hard = (g, k) => {
   if (g.run === 'rot') return rotRamp(g, k);
   const h = g.loop === 2 ? HARD[k] : 1, D = DIFF[g.diff];
+  if (k === 'speed') return h * journeyClimb(g);   // the setting's climb on the monsters' moving (16 November 2026)
   return D && k === 'hits' ? h * D.hits[g.p] : h;   // a setting: the place's share of health on top
 };   // The Endless Rot: its own ramp, wave by wave (rotRamp)           // echo for each life still lit at the win (the win's words below)
 const RETURN_AT = 46;            // he forms again this far past the checkpoint that brought him back
@@ -9997,6 +10006,21 @@ const LOOT_SIZE = 1.4;           // loot drawn 1.4 times its old size, and reach
 const SPARE_ARMOUR = 2;          // echo for armour found with three pips full (the playtest pass, part A)
 const DROP = { health: 1 / 9, mana: 1 / 12, shield: 1 / 20, upgrade: 1 / 4, rotUpgrade: 1 / 30 };   // rotUpgrade: The Endless Rot's own rule (Barney, 14 November 2026), an ordinary monster's sword or spell upgrade   // potions halved from 1 in 6, then health back up to 1 in 9 (Barney, 5 November 2026)
 const PIECE_POTION = 0.35;       // the scenery potions made real: about one piece in three holds a health potion, and each big hill's crest
+// The settings' drops (Barney, 16 November 2026; DIFF's drop and walker): on Grim and Agony, on the journey, a defeat drops less often and
+// the kinds keep their shares. up: the chance of a scroll or sword upgrade, checked first; s: the share left of the ordinary roll (a
+// health potion, a mana potion, armour, in DROP's proportions). An ordinary monster: no upgrade, and anything at all at the setting's
+// drop. A walker: anything at all at the setting's walker, its mix as it was (DROP.upgrade of WALKER_ANY, about 58%, a scroll or an
+// upgrade; the rest the ordinary roll); a walker with nothing left to teach drops as an ordinary monster does. With no setting (the
+// play check), on Shallow and in The Endless Rot: as it was. Grave Robber's half as often again comes on top of both, as before.
+const DROP_ANY = DROP.health + DROP.mana + DROP.shield;            // an ordinary monster drops something: 24.4%
+const WALKER_ANY = DROP.upgrade + (1 - DROP.upgrade) * DROP_ANY;   // a walker: 43.3%
+function dropOdds(g, walker, useful) {
+  const D = g.run !== 'rot' && diffOk(g.diff) ? DIFF[g.diff] : null;
+  if (!D || !D.drop) return { up: walker ? DROP.upgrade : g.run === 'rot' ? DROP.rotUpgrade : 0, s: 1 };
+  if (!walker || !useful) return { up: 0, s: D.drop / DROP_ANY };
+  const up = D.walker * DROP.upgrade / WALKER_ANY;
+  return { up, s: (D.walker - up) / (1 - up) / DROP_ANY };
+}
 const LINES = { heal: ['Heal mastered', 'Heal: restores deeper'], fire: ['Fireball mastered', 'Fireball: glows brighter'],
   bolt: ['Lightning bolt mastered', 'Lightning bolt: strikes harder'], acid: ['Acid spray mastered', 'Acid spray: burns deeper'],   // step 5e-2 (Barney)
   reach: 'Sword: reaches beyond', rune: 'Sword: bites deeper' };
@@ -10109,8 +10133,9 @@ function rotNews(g, lb) {
 /* design system 25 (RunEnd; Barney's rules and words, 16 November 2026): the suggestion to a player who keeps losing. After STREAK runs
    in a row that end in game over, in the same run on the same setting, the run's end carries a line and its own button, and it only ever
    names something that would have helped: in The Echo Infusion the next setting down, where that is easier in the place this run ended
-   in (read from DIFF, the second loop's own figures with it; on the starting figures Night is the same on Shallow and Grim, so nothing
-   is offered there); in The Bare Reckoning The Echo Infusion once something is bought, otherwise the Echo Shrine if the first unlock
+   in (read from DIFF, the second loop's own figures with it; until what is found changed by the setting (16 November 2026) Night was the
+   same on Shallow and Grim and nothing was offered there; now Grim drops less everywhere, so Shallow is offered in Night too); in The
+   Bare Reckoning The Echo Infusion once something is bought, otherwise the Echo Shrine if the first unlock
    can be afforded, otherwise How to play. Never in The Endless Rot. A run quit or restarted neither counts nor resets; a run that
    reaches further than ever before (not the very first run, which has nothing to beat), a win or a purchase starts the count again, as
    does a third loss where nothing would help. It shows once: the count starts again as the kit draws it (shown); a run's end that asks
@@ -10118,7 +10143,12 @@ function rotNews(g, lb) {
 const STREAK = 3;
 const streakReset = (lb) => { const s = lb.progress && lb.progress.streak; if (s && s.n) { s.n = 0; lb.saveProgress(); } };
 const lowerDiff = (d) => DIFF_ORDER[DIFF_ORDER.indexOf(d) - 1] || null;
-const easierAt = (lo, d, p, loop) => { const blow = (D) => D.blow[p] * (loop === 2 ? D.loopBlow : 1); return blow(DIFF[lo]) < blow(DIFF[d]) || DIFF[lo].hits[p] < DIFF[d].hits[p]; };
+const easierAt = (lo, d, p, loop) => {
+  const A = DIFF[lo], B = DIFF[d], blow = (D) => D.blow[p] * (loop === 2 ? D.loopBlow : 1), at = p + (loop === 2 ? PLACES.length : 0);
+  return blow(A) < blow(B) || A.hits[p] < B.hits[p]
+    || (A.drop || DROP_ANY) > (B.drop || DROP_ANY) || (A.walker || WALKER_ANY) > (B.walker || WALKER_ANY) || (A.fewer || 0) < (B.fewer || 0)   // what is found (16 November 2026)
+    || (A.speed || 0) * at < (B.speed || 0) * at;                                                                                              // the speed's climb
+};
 function pickSuggestion(g, lb) {
   const rec = lb.progress;
   if (g.run === 'infusion') {
@@ -11099,7 +11129,7 @@ function rotRamp(g, k) {               // hard()'s figures in the mode, by the w
 }
 const monDmg = (g) => (g.run === 'rot' ? rotRamp(g, 'dmg') : journeyBlow(g));     // a monster's blow, the mode's ramp on it (the journey's as it was)
 const monBlow = (g, kind) => (g.run === 'rot' && kind === 'walker' ? rotFig(g, 'walker') : MON[kind].dmg) * monDmg(g);   // tuning 5: the mode's walker heavier
-const atkPace = (g) => (g.run === 'rot' ? rotRamp(g, 'speed') : 1);  // its attacks' clock and the wait between them
+const atkPace = (g) => (g.run === 'rot' ? rotRamp(g, 'speed') : journeyClimb(g));  // its attacks' clock and the wait between them (the journey's: the setting's climb, 16 November 2026)
 // step 4: from wave 13 the size restarts at 12 and climbs by 2 a wave, and the most on screen goes on rising as it did, one more every
 // third wave (2 + n / 3: 6, 6, 7, 7, 7, 8), to 8 and no more; the gap stays wave 12's (starting figures: the note says only "rises to 8")
 function waveSpec(n) {
@@ -12073,14 +12103,12 @@ function dropLoot(g, lb, m) {
   const more = g.graces.robber ? GRACE.robber : 1;   // step 5e-6b: Grave Robber, loot half as often again
   // The Endless Rot's own rule (Barney, 14 November 2026: "Sword and spell upgrades should drop from normal monsters as well", at 1 in
   // 30): in the mode every monster but a walker has its own chance of an upgrade, checked first as a walker's is; a walker keeps its 1 in 4
-  const up = m.kind === 'walker' ? DROP.upgrade : g.run === 'rot' ? DROP.rotUpgrade : 0;
-  if (up && lb.rand() < up * more) {
-    const can = [];
-    if (g.spells.heal < 3) can.push('heal'); if (g.spells[g.attack] < 3) can.push(g.attack);   // step 5e-2: the run's attack spell
-    if (g.sword.reach < 2) can.push('reach'); if (g.sword.bite < 2) can.push('rune');
-    if (can.length) kind = lb.pick(can);
-  }
-  if (!kind) { const r = lb.rand() / more; kind = r < DROP.health ? 'health' : r < DROP.health + DROP.mana ? 'mana' : r < DROP.health + DROP.mana + DROP.shield ? 'shield' : null; }
+  const can = [];
+  if (g.spells.heal < 3) can.push('heal'); if (g.spells[g.attack] < 3) can.push(g.attack);   // step 5e-2: the run's attack spell
+  if (g.sword.reach < 2) can.push('reach'); if (g.sword.bite < 2) can.push('rune');
+  const o = dropOdds(g, m.kind === 'walker', can.length > 0);   // the setting's odds (16 November 2026); as it was with none
+  if (o.up && lb.rand() < o.up * more && can.length) kind = lb.pick(can);
+  if (!kind) { const r = lb.rand() / (more * o.s); kind = r < DROP.health ? 'health' : r < DROP.health + DROP.mana ? 'mana' : r < DROP.health + DROP.mana + DROP.shield ? 'shield' : null; }
   if (!kind) return;
   let x = m.px;                        // where it fell, never into a pit: to its nearer edge
   const pit = g.L.pits.find((p) => x > p[0] - 14 && x < p[1] + 14);
@@ -12089,8 +12117,12 @@ function dropLoot(g, lb, m) {
 }
 function placeLoot(g, lb) {            // the scenery potions made real: on about one piece in three, and on each big hill's crest
   g.loot = []; g.shots = []; g.zaps = []; g.sprays = []; g.patches = []; g.gobs = []; g.splats = [];
+  // the setting's fewer (Barney, 16 November 2026): that many fewer on average in each place, taken off the pieces' chance by the
+  // number of pieces the place has before its arena (15 or 16); each big hill's crest keeps its own
+  const D = diffOk(g.diff) ? DIFF[g.diff] : null, on = g.pieces.filter((p) => !(p.x0 > g.L.arena)).length;
+  const chance = D && D.fewer && on ? Math.max(0, PIECE_POTION - D.fewer / on) : PIECE_POTION;
   g.pieces.forEach((p, k) => {
-    if (lb.rand() >= PIECE_POTION || p.x0 > g.L.arena) return;
+    if (lb.rand() >= chance || p.x0 > g.L.arena) return;
     const x = (p.x0 + p.x1) / 2; g.loot.push({ kind: 'health', x, y: p.y(x), seed: 100 + k });
   });
   g.L.sections.filter((s) => s.id === 'E').forEach((s, k) => {
@@ -12404,7 +12436,7 @@ function monsterUpdate(m, g, lb, dt, busy, camX) {
   if (m.riseW != null) { m.riseW += dt; if (m.riseW >= ROT_RISE.warn) { m.riseW = null; m.riseT = 0; } return; }   // step 3b: its warning, then its rise
   if (m.riseT != null && m.riseT < (m.riseLen || 0.35)) { m.riseT += dt; return; }   // a called crawler still rising out of the ground (step 3b: or a riser, 0.6 s)
   if (m.atk) {                         // signal, attack, recover: it moves as the attack moves it, facing the way it began
-    m.atk.t += dt * atkPace(g);        // The Endless Rot: its attacks quicker wave by wave (the journey's as they were)
+    m.atk.t += dt * atkPace(g);        // The Endless Rot: its attacks quicker wave by wave (the journey's: place by place on Grim and Agony)
     if (m.atk.name === 'spit' && !m.atk.left && m.atk.t >= SPIT.leave) { m.atk.left = true; spitLeave(g, lb, m); }   // step 5e-8: the gob leaves
     const mv = atkMove(m.atk);
     m.wdx = -mv.dx * m.f; m.ody = mv.dy;
@@ -12413,7 +12445,7 @@ function monsterUpdate(m, g, lb, dt, busy, camX) {
       m.bx = m.px; if (!K.ground) m.by = m.py;
       // step 5e-8: after a spit the mouth-hat holds its ground (SPIT.wait); on the second loop its waits are 1.2 times shorter
       const spat = m.atk.name === 'spit';
-      m.atk = null; m.wdx = 0; m.ody = 0; m.cd = K.spit ? (spat ? SPIT.wait : K.cd) / (g.run === 'rot' ? 1 : hard(g, 'speed')) : K.cd; m.held = spat;   // the mode's waits run quicker instead (atkPace)
+      m.atk = null; m.wdx = 0; m.ody = 0; m.cd = K.spit ? (spat ? SPIT.wait : K.cd) / (g.run === 'rot' ? 1 : g.loop === 2 ? HARD.speed : 1) : K.cd; m.held = spat;   // the mode's waits run quicker instead (atkPace)
       place(m, g, m.bx, 0);
     }
     return;
