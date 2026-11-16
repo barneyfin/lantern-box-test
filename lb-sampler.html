@@ -1163,6 +1163,55 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 .lb-scores.is-bests td:first-child{font-family:var(--font-display);font-size:19px;color:var(--text)}
 .lb-scores.is-bests tr.is-new td:first-child{color:var(--on-brass)}
 .lb-scores.is-bests td.none{font:400 16px var(--font-text);color:var(--text-3)}
+/* kit 0.35.0: design system version 25's section, as bundle.css has it (35 rules; a run's setting). Its last rule, .lb-fig, is the kit's own
+   from 0.34.1 (above), word for word, so it is not repeated */
+/* ---- version 25 (16 November 2026, Gloam Hallow's difficulty setting: Shallow, Grim, Agony; from Claude Code's brief
+   BRIEF-design-25.md and ten design rounds settled with Barney on 15 and 16 November 2026) ---- */
+/* the setting's tag: the setting's word in a thin brass outline; with its share, the word then the figure in bold (SettingTag) */
+.lb-tag{display:inline-block;flex:none;padding:1px 8px 2px;border:1px solid var(--brass-dim);font:500 13px/16px var(--font-text);letter-spacing:.06em;color:var(--text-2);white-space:nowrap}
+.lb-tag b{font-weight:700;color:var(--text)}
+.lb-plaque.is-phone .lb-tag{font-size:12px;line-height:15px}
+.lb-mode.is-selected .lb-tag,.lb-scores tr.is-new .lb-tag,.lb-mode.is-selected .lb-tag b,.lb-scores tr.is-new .lb-tag b{border-color:var(--on-brass);color:var(--on-brass)}
+/* the tag in a plaque's top right corner: the pause screen, the run's end, the win. The plaque's face is its box (has-mark); it takes no room */
+.lb-face.has-mark{position:relative}
+.lb-tag.is-mark{position:absolute;top:12px;right:14px}
+.lb-plaque.is-phone .lb-tag.is-mark{top:10px;right:12px}
+/* a figure beside a word in a segment or on a button: a setting's share of the echo (Segments, Modes, RunEnd) */
+.lb-seg-fig{margin-left:6px;font:700 13px/1 var(--font-text);color:var(--text-3)}
+.lb-segments button[aria-pressed="true"] .lb-seg-fig,.lb-btn.is-primary .lb-seg-fig{color:var(--on-brass)}
+/* Segments: three in a row, a thumb's height on a phone; and held, when there is nothing to choose */
+.lb-segments.is-three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.lb-plaque.is-phone .lb-segments.is-three button{height:var(--target)}
+.lb-segments button[aria-disabled="true"]{color:var(--text-dim);cursor:default}
+.lb-segments.is-held button{cursor:default}
+.lb-segments.is-held button[aria-pressed="true"]{background:transparent;color:var(--text-2);box-shadow:inset 0 0 0 1.5px var(--brass-dim)}
+.lb-segments.is-held .lb-seg-fig{display:none}
+/* the choice of run: the tag in an entry's name row, and the foot row with the chosen run's name, its picker and the buttons (Modes) */
+.lb-mode-head{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%}
+.lb-modes-foot{display:flex;align-items:center;gap:var(--space-3);margin-top:2px}
+.lb-modes-for{font:500 17px/20px var(--font-text);color:var(--text-2);white-space:nowrap}
+.lb-modes-foot .lb-segments{flex:none;width:360px}
+.lb-modes-go{display:flex;gap:var(--space-3);margin-left:auto}
+.lb-modes-go .lb-btn{padding:0 18px}
+.lb-modes-go .lb-btn.is-primary{padding:0 26px}
+.lb-plaque.is-phone .lb-modes-foot{margin-top:0}
+.lb-plaque.is-phone .lb-modes-for{font-size:16px}
+.lb-plaque.is-phone .lb-modes-foot .lb-segments{width:372px}
+/* in the two by two the chosen entry's day's-double line lines up with its note and terms (it kept the one-column indent) */
+.lb-modes.is-row .lb-mode.is-selected .daily{padding-left:0}
+/* the echo stolen line with more than one mark: it may wrap, the figure and "echo stolen" kept together (RunEnd, WinCard) */
+.lb-daily.is-wrap{flex-wrap:wrap;row-gap:4px}
+.lb-daily-sum{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+/* the run's end's suggestion: three buttons where two were (RunEnd) */
+.lb-btns.is-three>.lb-btn{padding:0 8px}
+/* the relight plaque: the tag beside the run's name (Relight) */
+.lb-relight-runrow{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+/* Personal bests: a run's name once, then a row for each setting played; the tag beside a run's name (HighScores) */
+.lb-scores .lb-tag{font-family:var(--font-text);min-width:66px;text-align:center}
+.lb-plaque.is-phone .lb-scores .lb-tag{min-width:60px}
+.lb-score-run{display:inline-flex;align-items:center;gap:9px}
+.lb-scores.is-bests tr.is-group td{padding-top:2px;text-align:left;font-weight:400;color:var(--text)}
+.lb-scores.is-bests tr.is-sub td:first-child{padding-left:18px}
 
 </style>
 <script>
@@ -1176,7 +1225,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.34.3';
+  const VERSION = '0.35.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -6756,26 +6805,73 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
        (lanternbox.bests.<game>, { id: { n, w, i, d } }), never the table's, so the arcade's website and a portal never take them for scores.
        A best is beaten by more than it; the first run of a kind above 0 is a best (Barney, 14 November 2026: reading 8); an equal one is
        not. It takes the stored initials, or "---" when none are stored (Barney, 14 November 2026); the run's end then asks for initials. */
+    /* kit 0.35.0 (design system version 25, HighScores): a run's setting. bests.settings: [{ id, name }] names the settings in the
+       picker's order (Shallow, Grim, Agony), and each: true on a run keeps a best for every setting (The Endless Rot, whose score no
+       share scales): Personal bests then shows the run's name once and a row for each setting that has been played, with the setting's
+       tag; a setting is left off until it has been played, and a run never played keeps "No run yet". Such a best is kept under
+       id@setting. A run without each keeps its one best and the setting it was made on (s), shown as the tag beside its name (The Echo
+       Infusion). lb.bests.offer(id, n, words, setting) and lb.bests.get(id, setting) take the setting's id, as a run's end's
+       o.best.setting does; a run with each and no setting given keeps nothing. */
     const bestsCfg = cfg.bests && Array.isArray(cfg.bests.runs) && cfg.bests.runs.length
-      ? { table: String(cfg.bests.table || 'High scores'), runs: cfg.bests.runs.map((r) => ({ id: String(r.id), name: String(r.name || r.id), yours: !!r.yours })) } : null;
+      ? (() => {
+        const settings = (Array.isArray(cfg.bests.settings) ? cfg.bests.settings : []).filter((s) => s && s.id != null).map((s) => ({ id: String(s.id), name: String(s.name || s.id) }));
+        return { table: String(cfg.bests.table || 'High scores'), settings: settings,
+          runs: cfg.bests.runs.map((r) => ({ id: String(r.id), name: String(r.name || r.id), yours: !!r.yours, each: !!r.each && settings.length > 0 })) };
+      })() : null;
     const bestKey = () => 'lanternbox.bests.' + gameId;
     const readBests = () => asObject(store.get(bestKey(), {}));
+    const bestRun = (id) => (bestsCfg ? bestsCfg.runs.find((r) => r.id === String(id)) || null : null);
+    const bestSetting = (s) => (bestsCfg && s != null && s !== '' ? bestsCfg.settings.find((x) => x.id === String(s)) || null : null);
+    // where a best is kept: under the run's id, or id@setting for a run that keeps one for each setting (null: nowhere)
+    const bestSlot = (id, setting) => { const r = bestRun(id), s = bestSetting(setting); return !r ? String(id) : !r.each ? r.id : s ? r.id + '@' + s.id : null; };
     const storedInitials = () => { const v = store.get('retrokit.initials', null); return typeof v === 'string' && /^[A-Z0-9.]{3}$/i.test(v) ? v.toUpperCase() : null; };
-    function bestOf(id) {
-      const r = readBests()[id];
-      return r && typeof r.n === 'number' ? { n: r.n, words: String(r.w || ''), initials: String(r.i || '---'), date: String(r.d || '') } : null;
+    function bestOf(slot) {              // slot: where it is kept (bestSlot)
+      const r = slot == null ? null : readBests()[slot];
+      return r && typeof r.n === 'number' ? { n: r.n, words: String(r.w || ''), initials: String(r.i || '---'), date: String(r.d || ''), setting: r.s ? String(r.s) : '' } : null;
     }
-    function offerBest(id, n, words) {   // keeps n as the run's best if it beats the one kept; true if it did
-      id = String(id);
-      if (!bestsCfg || !bestsCfg.runs.some((r) => r.id === id)) return false;
+    function offerBest(id, n, words, setting) {   // keeps n as the run's best if it beats the one kept; true if it did
+      const run = bestRun(id), slot = run ? bestSlot(id, setting) : null;
+      if (!run || slot == null) return false;
       n = Math.max(0, Math.floor(+n || 0));
-      const kept = bestOf(id);
+      const kept = bestOf(slot);
       if (!(n > 0 && (!kept || n > kept.n))) return false;
-      const all = readBests();
-      all[id] = { n: n, w: String(words || ''), i: storedInitials() || '---', d: new Date().toISOString().slice(0, 10) };
+      const all = readBests(), st = run.each ? null : bestSetting(setting);
+      all[slot] = { n: n, w: String(words || ''), i: storedInitials() || '---', d: new Date().toISOString().slice(0, 10) };
+      if (st) all[slot].s = st.id;       // kit 0.35.0: the setting a single best was made on
       store.set(bestKey(), all);
       return true;
     }
+    /* kit 0.35.0 (design system version 25, HighScores: "Scores from before this version are wiped once"; Barney, 16 November 2026):
+       scoresEra: n in the config, a whole number (1 if left out). The first time a device opens a copy whose number is above the one it
+       keeps (lanternbox.era.<game>), the table and Personal bests are removed and the number kept. Nothing else is touched: the saved
+       record, the stored initials and the settings stay. The number has a key of its own, which no earlier kit reads or writes, so an
+       older copy of the game on the same site neither undoes the wipe nor is upset by it (raising the save's version would make an
+       older copy start its record afresh). lb.scoresWiped says whether this opening of the page did it. */
+    const eraKey = 'lanternbox.era.' + gameId, eraWant = Math.max(1, Math.floor(+cfg.scoresEra) || 1);
+    let scoresWiped = false;
+    if (eraWant > (Math.floor(+store.get(eraKey, 1)) || 1)) { store.remove(scoreKey()); store.remove(bestKey()); store.set(eraKey, eraWant); scoresWiped = true; }
+    /* kit 0.35.0 (design system version 25, SettingTag): the run's setting as a small tag, the setting's word in a thin brass outline.
+       lb.runTag(name) gives the run in play its tag (The Bare Reckoning gives none); it is forgotten as each run starts, so a game
+       sets it in start(). The kit then draws it in the top right corner of the pause plaque, the run's end and the win, and with the
+       setting's share on their echo stolen lines. It is no control: it never takes focus. */
+    let runTag = '';
+    function tagEl(name, fig, mark) {
+      const t = txt('span', 'lb-tag' + (mark ? ' is-mark' : ''), String(name));
+      if (fig != null && fig !== '') { t.append(' '); t.append(txt('b', '', String(fig))); }
+      return t;
+    }
+    const markFace = (face) => { if (runTag) { face.classList.add('has-mark'); face.prepend(tagEl(runTag, null, true)); } };
+    // the echo stolen line with the setting's share (RunEnd, WinCard): the tag with its share, the day's \u00d72, the day's words, then the
+    // figure and "echo stolen" kept together if the line wraps
+    function stolenLine(share, daily, words, n, cls) {
+      const p = el('p', 'lb-daily is-wrap' + (cls ? ' ' + cls : ''));
+      p.append(tagEl(runTag, share));
+      if (daily) p.append(txt('span', 'lb-daily-mark', '\u00d72'));
+      if (words) p.append(document.createTextNode(words + ' '));
+      p.append(el('span', 'lb-daily-sum', '<span class="lb-num">' + Math.max(0, Math.round(+n || 0)) + '</span> echo stolen'));
+      return p;
+    }
+    const shareOf = (v) => (runTag && v != null && String(v) !== '' ? String(v) : '');   // a share shows only beside its setting's tag
 
     /* ----- DOM ----- */
     document.documentElement.lang = document.documentElement.lang || 'en';
@@ -7486,7 +7582,12 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       const key = V.w + 'x' + V.h + (touch ? 't' : 'k');
       if (!teach.el || !teach.el.isConnected) { teach.el = el('div', 'lb-teach'); teach.el.style.cssText = 'position:absolute;inset:0;pointer-events:none'; hudEl.append(teach.el); teach.dirty = true; }
       const away = state.screen !== 'play' || !!h8.card || !!h8.boss;
-      { const hide = away || !teach.items.length; if (teach.el.hidden !== hide) teach.el.hidden = hide; }   // kit 0.20.0: written only when it changes
+      const hide = away || !teach.items.length;
+      if (teach.el.hidden !== hide) teach.el.hidden = hide;   // kit 0.20.0: written only when it changes
+      // kit 0.35.0 (design system version 25, Teaching: a hint is not drawn while it is hidden; Barney's first run in CrazyGames' phone
+      // app): hidden, its box has no size, so a touch device's labels placed from the right ("Jump", "Cast, once a spell is learnt")
+      // were drawn off the screen if the screen's size changed meanwhile, and stayed there. They are drawn as they next show.
+      if (hide) return;
       if (!teach.dirty && teach.shownFor === key) return;
       teach.dirty = false; teach.shownFor = key;
       const box = teach.el, list = teach.items;
@@ -7642,6 +7743,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
         menuItem('Quit to menu', toMenu)
       ];
       face.append(heading('lb-pa-t', 'Paused'));
+      markFace(face);                  // kit 0.35.0 (version 25, PauseOverlay): the run's setting, the one place to check it during a run
       if (pauseWhy) {
         const why = txt('p', 'lb-note lb-pause-why', 'The sound was interrupted. Resume to bring it back.');
         why.id = 'lb-pa-why';
@@ -8030,8 +8132,23 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       const t = el('table', 'lb-scores is-bests', '<thead><tr><th scope="col">Run</th><th scope="col">Name</th><th scope="col">Best</th></tr></thead>');
       const body = el('tbody');
       bestsCfg.runs.forEach((r) => {
-        const b = bestOf(r.id), tr = el('tr', b && r.id === hl ? 'is-new' : '');
-        tr.append(txt('td', '', r.name));
+        // kit 0.35.0 (version 25): a run that keeps a best for each setting: its name once, then a row for each setting played, in the
+        // picker's order, the setting's tag first; the row just beaten in the band
+        const subs = r.each ? bestsCfg.settings.map((s) => ({ s: s, slot: r.id + '@' + s.id, b: bestOf(r.id + '@' + s.id) })).filter((x) => x.b) : [];
+        if (subs.length) {
+          const g = el('tr', 'is-group'), c = txt('td', '', r.name);
+          c.colSpan = 3; g.append(c); body.append(g);
+          subs.forEach((x) => {
+            const sr = el('tr', 'is-sub' + (x.slot === hl ? ' is-new' : '')), c1 = el('td');
+            c1.append(tagEl(x.s.name));
+            sr.append(c1, txt('td', 'who', x.b.initials), txt('td', '', x.b.n + (x.b.words ? ' ' + x.b.words : '')));
+            body.append(sr);
+          });
+          return;
+        }
+        const b = r.each ? null : bestOf(r.id), tr = el('tr', b && r.id === hl ? 'is-new' : ''), made = b ? bestSetting(b.setting) : null;
+        if (made) { const c1 = el('td'), rn = txt('span', 'lb-score-run', r.name); rn.append(tagEl(made.name)); c1.append(rn); tr.append(c1); }   // the setting its one best was made on
+        else tr.append(txt('td', '', r.name));
         if (b) tr.append(txt('td', 'who', b.initials), txt('td', '', b.n + (b.words ? ' ' + b.words : '')));
         else { const none = txt('td', 'none', 'No run yet'); none.colSpan = 2; tr.append(none); }
         body.append(tr);
@@ -8225,7 +8342,8 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       ['<path d="M5 1 H29 L33 5 V29 L29 33 H5 L1 29 V5 Z" style="fill:var(--tile-face);stroke:var(--brass);stroke-width:1.3"/><g class="ic" transform="translate(5,5)"><circle class="solid" cx="16" cy="12" r="4.8"/><path class="solid" d="M13.8 8.2 L3.6 4.4 L11.2 10.6 Z M12.4 10.8 L0.8 12.4 L12.4 13.8 Z M13.8 15.8 L4.2 18.8 L11.2 13.6 Z"/></g>', '<b>Tap the spell</b>, top left, to switch']];
     function howToDialog(from) {
       const phone = V.phone, label = from === 'play' ? 'Resume' : 'Back';
-      const close = () => { if (from === 'play') resume(); else { sfx('back'); state.screen = 'title'; closeDialog(); } };
+      // kit 0.35.0 (version 25, HowToPlay): opened from the run's end (its suggestion), Back returns to the run's end
+      const close = () => { if (from === 'play') resume(); else if (from === 'over' && runEndInfo) { sfx('back'); state.screen = 'over'; showDialog(runEndDialog, 0); } else { sfx('back'); state.screen = 'title'; closeDialog(); } };
       const { panel, face } = plaque('lb-ht-t', 650, 720, phone ? 'display:grid;grid-template-columns:minmax(0,0.92fr) minmax(0,1fr);column-gap:24px;align-items:center;padding:18px 20px' : 'gap:12px;padding:22px 24px 20px');
       const goals = (howTo.goal || []).map((line, i) => { const g = txt('p', 'lb-howto-goal', line); if (phone) g.style.fontSize = '15px'; else if (i) g.style.marginTop = '-6px'; return g; });
       const btn = button(label, true);
@@ -8327,6 +8445,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       const ww = Object.assign({}, winWords, asObject(W.o.words));   // kit 0.17.0: this win's own words (the second loop's)
       const v13 = !!W.o.stolen;   // kit 0.17.0: with the echo stolen, version 13's closer spacing (WinCard)
       const { panel, face } = plaque('lb-wn-t', 470, 700, phone ? 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:22px;align-items:center;padding:' + (v13 ? '16px 20px' : '18px 20px') : (v13 ? 'gap:8px;padding:18px 22px 14px' : 'gap:9px;padding:20px 22px 16px'), phone ? '' : 'is-centred');
+      markFace(face);                  // kit 0.35.0 (version 25, WinCard): the run's setting in the corner, there from the first
       const at = (e, t) => { e.dataset.at = String(t); return e; };
       const h = at(heading('lb-wn-t', ww.heading), 0); h.classList.add('is-win');
       const lead = at(txt('p', 'lb-win-line is-lead', ww.lead), 0.7);
@@ -8342,7 +8461,8 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       const bon = at(el('p', 'lb-bonus', 'Lives left '), 2.1);
       bon.append(lanterns, plus);
       const stolen = [];   // kit 0.17.0 (version 13): the echo stolen, after the lanterns are counted (3.3 s), with the day's ×2
-      if (W.o.stolen) { const so = asObject(W.o.stolen); stolen.push(at(el('p', 'lb-daily lb-stolen', (so.daily ? '<span class="lb-daily-mark">\u00d72</span>' : '') + '<span class="lb-num">' + Math.round(+so.n || 0) + '</span> echo stolen'), 3.3)); }
+      // kit 0.35.0 (version 25): stolen.share, the setting's share as the game writes it ("\u00d71.5"): the tag with it leads the line
+      if (W.o.stolen) { const so = asObject(W.o.stolen), sh = shareOf(so.share); stolen.push(at(sh ? stolenLine(sh, !!so.daily, '', so.n, 'lb-stolen') : el('p', 'lb-daily lb-stolen', (so.daily ? '<span class="lb-daily-mark">\u00d72</span>' : '') + '<span class="lb-num">' + Math.round(+so.n || 0) + '</span> echo stolen'), 3.3)); }
       // what follows the count: the offer, or the end's buttons
       const items = [], tail = [], opts = {};
       let hint = null;
@@ -8534,12 +8654,14 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       const qualifies = scored && score > 0 && (table.length < 10 || score > table[table.length - 1].s);
       // kit 0.31.0 (design system version 23, RunEnd and HighScores): o.best { id, n, words } offers this run to Personal bests; a new best is
       // kept at once (with "---" while no initials are stored, and the initials asked for after Continue) and flagged as the table's is
-      const bo = bestsCfg && o.best ? asObject(o.best) : null, bestId = bo && bo.id != null ? String(bo.id) : null;
-      const bestPrev = bestId ? bestOf(bestId) : null, bestNew = bestId ? offerBest(bestId, bo.n, bo.words) : false;
+      // kit 0.35.0 (version 25): o.best.setting, the run's setting; a run that keeps a best for each setting keeps this one under its own
+      const bo = bestsCfg && o.best ? asObject(o.best) : null, bestRunId = bo && bo.id != null && bestRun(bo.id) ? String(bo.id) : null;
+      const bestId = bestRunId ? bestSlot(bestRunId, bo.setting) : null;
+      const bestPrev = bestId ? bestOf(bestId) : null, bestNew = bestId ? offerBest(bestRunId, bo.n, bo.words, bo.setting) : false;
       if (newBest || bestNew) setTimeout(() => sfx('newBest'), 650);
       sfx('gameOver');   // kit 0.16.0 (version 13): one low, muted toll as the plaque appears
       runEndInfo = { o: o, newBest: newBest, qualifies: qualifies, t0: performance.now(), chimed: false, timer: 0,
-        bestId: bestId, bestPrev: bestPrev, bestNew: bestNew, bestAsk: bestNew && !storedInitials() };
+        bestId: bestId, bestRun: bestRunId, bestPrev: bestPrev, bestNew: bestNew, bestAsk: bestNew && !storedInitials() };
       showDialog(runEndDialog);
     }
     function runEndDialog() {
@@ -8550,12 +8672,15 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       // echo the run stole, on its own line ("22 echo stolen"); and, for a run in Personal bests whose config says yours, "Your best: ..."
       // when it fell short. With any of them the plaque is drawn tighter, as version 23 draws it
       const cnt = o.count ? asObject(o.count) : null, shownN = cnt ? Math.max(0, Math.round(+cnt.n || 0)) : state.score, unit = cnt && cnt.unit ? String(cnt.unit) : 'echo';
-      const near = asObject(o.near), runCfg = R.bestId && bestsCfg ? bestsCfg.runs.find((r) => r.id === R.bestId) : null;
+      const near = asObject(o.near), runCfg = R.bestId ? bestRun(R.bestRun) : null;
       const yours = runCfg && runCfg.yours && !R.bestNew && R.bestPrev ? R.bestPrev : null, stolen = o.stolen != null ? Math.max(0, Math.round(+o.stolen || 0)) : null;
       const v23 = !!(cnt || near.wave || R.bestNew || yours || stolen != null);
+      const sg = !first && !(R.qualifies || R.bestAsk) && o.suggest && asObject(o.suggest).button ? asObject(o.suggest) : null;
+      // (with a suggestion the day's doubled run keeps the usual spacing, as version 25 draws its tallest run's end: 512 tall on 540)
       const faceCss = phone ? 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:22px;align-items:center;padding:' + (v23 ? '16px 20px' : '18px 20px')
-        : R.qualifies ? 'gap:10px;padding:20px 20px 16px' : o.daily ? 'gap:6px;padding:14px 20px 12px' : v23 ? 'gap:7px;padding:16px 20px 12px' : 'gap:8px;padding:18px 20px 14px';
+        : R.qualifies ? 'gap:10px;padding:20px 20px 16px' : o.daily && !sg ? 'gap:6px;padding:14px 20px 12px' : v23 ? 'gap:7px;padding:16px 20px 12px' : 'gap:8px;padding:18px 20px 14px';
       const { panel, face } = plaque('lb-re-t', 470, 660, faceCss);
+      markFace(face);                  // kit 0.35.0 (version 25, RunEnd): the run's setting in the corner
       const parts = [heading('lb-re-t', 'Game over')];
       if (o.line !== '') parts.push(txt('p', 'lb-win-line', o.line || RUN_LINE));
       parts.push(el('div', '', RULE).firstChild);
@@ -8590,13 +8715,20 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
         p.append(txt('span', 'lb-ready', 'Furthest yet'), txt('span', 'lb-near-name', String(near.furthest)));
         parts.push(p);
       }
-      if (o.daily) parts.push(el('p', 'lb-daily', '<span class="lb-daily-mark">\u00d72</span>First Echo Infusion today: <span class="lb-num">' + Math.round(+o.daily || 0) + '</span> echo stolen'));
+      /* kit 0.35.0 (version 25, RunEnd): the echo stolen line with the setting's share. o.share is the share as the game writes it
+         ("\u00d70.75"; none on a setting that changes nothing, and none without lb.runTag): the big number stays what was collected and
+         the line under it says what was kept, with a mark for each thing that changed it, the setting's tag with its share and then the
+         day's \u00d72. On the journey the figure is o.daily when the day's double applied, else o.kept; The Endless Rot's "22 echo stolen"
+         (o.stolen) becomes the same line. With no share everything is as it was. */
+      const share = shareOf(o.share);
+      if (share && stolen == null && (o.daily || o.kept != null)) parts.push(stolenLine(share, !!o.daily, o.daily ? 'First Echo Infusion today:' : '', o.daily || o.kept));
+      else if (o.daily) parts.push(el('p', 'lb-daily', '<span class="lb-daily-mark">\u00d72</span>First Echo Infusion today: <span class="lb-num">' + Math.round(+o.daily || 0) + '</span> echo stolen'));
       // the next unlock: its picture, its name and what is still to go; the bar from 0 to its price, banked echo darker, this run's bright
       let paint = null, shrineBtn = null;
       const right = [];
       // kit 0.31.0 (version 23, RunEnd): "Your best: 61 felled · wave 7" with the near miss; "22 echo stolen" above the next unlock
       if (yours) { const yl = el('p', 'lb-best-line', 'Your best: <span class="lb-num">' + yours.n + '</span>'); if (yours.words) yl.append(document.createTextNode(' ' + yours.words)); parts.push(yl); }
-      if (stolen != null) right.push(el('p', 'lb-best-line', '<span class="lb-num">' + stolen + '</span> echo stolen'));
+      if (stolen != null) right.push(share ? stolenLine(share, false, '', stolen) : el('p', 'lb-best-line', '<span class="lb-num">' + stolen + '</span> echo stolen'));
       if (o.next) {
         const n = asObject(o.next), price = Math.max(1, Math.round(+n.price || 1)), was = clamp(Math.round(+n.was || 0), 0, price), gain = clamp(Math.round(+n.now || 0), 0, price - was);
         const box = el('div', 'lb-next', unlockPic(n.kind));
@@ -8631,7 +8763,17 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
           if (ready && was < price && !R.chimed && u < 1.5) { R.chimed = true; sfx('confirm'); }   // once, as the bar fills
         };
       }
+      /* kit 0.35.0 (version 25, RunEnd): the suggestion to a player who keeps losing. o.suggest { line, button, fig, enter, does, run,
+         take(lb), shown(lb) }: the line (as the first run's own), and the main button becomes the suggestion: button its words, fig a
+         figure after them (a setting's share), enter the hint's words after Enter ("play on Shallow"). does: 'play' starts a run at
+         once, after take(lb) (where the game notes the setting to play on) and as run if given (another run's id), otherwise the run
+         just played; 'shrine' opens the Echo Shrine (then Play again and Menu alone, as the first run's nudge); 'howto' opens How to
+         play, whose Back returns here. Play again moves down beside Echo Shrine and Menu. The very first run's own line comes first, and
+         a run's end that asks for initials (Continue) shows no suggestion: shown(lb) is called once, when one is drawn, so the game
+         knows whether it was seen. When, and which, is the game's. */
       if (first) right.push(txt('p', 'lb-first', FIRST_LINE));
+      else if (sg && sg.line) right.push(txt('p', 'lb-first', String(sg.line)));
+      if (sg && !R.suggested) { R.suggested = true; if (typeof sg.shown === 'function') { try { sg.shown(api); } catch (e) { reportError(e); } } }
       // the buttons
       const items = [];
       const btns = el('div', 'lb-btns');
@@ -8646,6 +8788,27 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
         items.push({ el: primary, activate: () => { sfx('confirm'); openInitials(R.bestAsk ? { best: R.bestId, table: R.qualifies, n: shownN, unit: unit } : null); } });
         hint = kbd('Enter') + ' continue to your initials';
         opts = {};
+      } else if (sg) {                  // kit 0.35.0 (version 25): the suggestion's button, Play again beside the others
+        const does = sg.does === 'shrine' && shrine ? 'shrine' : sg.does === 'howto' && howTo ? 'howto' : 'play';
+        primary = button(String(sg.button), true, true);
+        if (sg.fig != null && sg.fig !== '') primary.append(txt('span', 'lb-seg-fig', String(sg.fig)));
+        const again = button('Play again'), menu = button('Menu');
+        const toShrine = () => goShrine(fromShrine, shrine.bank);
+        if (does === 'shrine') items.push({ el: primary, shrine: true, activate: toShrine });
+        else if (does === 'howto') items.push({ el: primary, activate: () => openHowTo('over') });
+        else items.push({ el: primary, activate: () => {
+          if (typeof sg.take === 'function') { try { sg.take(api); } catch (e) { reportError(e); } }
+          if (sg.run != null) state.run = String(sg.run);
+          startOver();
+        } });
+        btns.append(again);
+        items.push({ el: again, activate: startOver });
+        if (shrine && does !== 'shrine') { shrineBtn = button('Echo Shrine'); btns.append(shrineBtn); items.push({ el: shrineBtn, shrine: true, activate: toShrine }); }
+        btns.append(menu);
+        items.push({ el: menu, activate: toMenu });
+        if (btns.children.length === 3) btns.classList.add('is-three');
+        hint = kbd('Enter') + ' ' + String(sg.enter || sg.button) + ' \u00b7 ' + kbd('Backspace') + ' menu';
+        opts = { back: toMenu };
       } else if (first) {
         primary = button('Spend your echo', true);
         items.push({ el: primary, shrine: true, activate: () => goShrine(fromShrine, shrine.bank) });
@@ -8737,6 +8900,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       close() { closeDialog(); if (!state.inGame) state.screen = 'title'; },
       select(i) { if (nav) nav.select(i); },
       plaque: plaque, heading: heading, button: button, kbd: kbd, el: el, txt: txt,
+      tag: (name, fig) => tagEl(name, fig),   // kit 0.35.0 (version 25, SettingTag): a setting's tag, with its share if given
       rule: () => el('div', '', RULE).firstChild,
       hint: (html) => el('p', 'lb-hint', html),
       spell: (kind, dim) => '<span class="lb-spell' + (dim ? ' is-dim' : '') + '" aria-hidden="true"><span><svg class="pic" viewBox="0 0 24 24">' + (HUD8.ICON[kind] || '') + '</svg></span></span>',
@@ -8985,7 +9149,8 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       try { w = resumeCfg.waiting(api); } catch (e) { reportError(e); }
       return w && typeof w === 'object' && w.where
         ? { where: String(w.where), run: w.run ? String(w.run) : '', lives: Math.max(0, w.lives | 0), echo: Math.max(0, w.echo | 0), again: !!w.again,
-          score: w.score ? String(w.score) : '', button: w.button ? String(w.button) : '' } : null;   // kit 0.31.0 (version 23, Relight): "54 felled", "Return to the wave"
+          score: w.score ? String(w.score) : '', button: w.button ? String(w.button) : '',   // kit 0.31.0 (version 23, Relight): "54 felled", "Return to the wave"
+          tag: w.tag ? String(w.tag) : '' } : null;   // kit 0.35.0 (version 25, Relight): the saved run's setting
     }
     function syncTitle() {
       if (state.inGame || !resumeCfg) return;
@@ -8996,7 +9161,8 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       const { panel, face } = plaque('lb-rl-t', 520, 460, 'gap:12px;padding:22px 22px 18px', 'is-centred');
       panel.setAttribute('role', 'alertdialog');
       const facts = el('div', 'lb-relight-facts');
-      if (w.run) facts.append(txt('span', 'lb-relight-run', w.run));
+      if (w.run && w.tag) { const rr = el('span', 'lb-relight-runrow'); rr.append(txt('span', 'lb-relight-run', w.run), tagEl(w.tag)); facts.append(rr); }   // kit 0.35.0: the tag beside the run's name
+      else if (w.run) facts.append(txt('span', 'lb-relight-run', w.run));
       facts.append(txt('span', '', w.where + (w.again ? ' \u00b7 Again, harder' : '')),
         txt('span', '', (w.lives === 1 ? '1 life left' : w.lives + ' lives left') + ' \u00b7 ' + (w.score || w.echo + ' echo')));
       const back = button(w.button || 'Return to the lantern', true, true);
@@ -9064,6 +9230,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       state.ending = false;
       state.over = false;   // kit 0.10.0: true once the run's end, game over or the win shows
       runEndInfo = null; winInfo = null; heldList = null;
+      runTag = '';                     // kit 0.35.0: the game's start() gives the run its tag again (lb.runTag)
       state.shakeAmt = 0;
       state.shakeT = 0;
       resetH8();
@@ -9408,7 +9575,16 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
          world.boss({ attack: { name: 'close', t, at } }) strides her from where she stands to CLOSE_IN.to from at, bobbing as she steps.
        Kit 0.24.0 (design system version 18): lb.hud.lives(n, { slots, gain }) (the row shows 3 to 5 lanterns, the most held this run; gain
          lights the new one with its moment, 1.4 s), lb.hud.gain(text, sub) (the two-line plaque, 2.6 s, in turn with the lines); the win's
-         Lives left shows the run's row. */
+         Lives left shows the run's row.
+       Kit 0.35.0 (design system version 25, a run's setting; Gloam Hallow's Shallow, Grim, Agony): lb.runTag(name) gives the run its
+         setting's tag (see runTag), drawn in the corner of the pause plaque, the run's end and the win; lb.ui.tag(name, fig) makes one
+         for a game's own plaque. lb.runEnd's info takes share and kept (the echo stolen line with the setting's share) and suggest
+         (the suggestion to a player who keeps losing; see runEndDialog); lb.win's stolen takes share; resume's waiting() may give tag,
+         the saved run's setting, beside the run's name on the relight plaque. bests: { settings: [{ id, name }], runs: [{ ..., each }] }
+         keeps a best for each setting (see bestsCfg); lb.bests.offer and get take the setting. scoresEra: n wipes the table and
+         Personal bests once (see scoresEra; lb.scoresWiped). The stylesheet has version 25's parts for a game's own plaques: Segments
+         three in a row (is-three), a figure beside a word (lb-seg-fig) and held (is-held); the choice of run's name row and foot row
+         (lb-mode-head, lb-modes-foot, lb-modes-for, lb-modes-go). */
     const api = {
       H: H, version: VERSION, touch: touch, input: input, hud: hud, sfx: sfx, world: world, color: colour,
       portal: PORTAL, portalContext: cgContext,   // kit 0.27.0: the portal this copy was built for ('' or 'crazygames'), and the feedback context
@@ -9433,7 +9609,9 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       // kit 0.31.0 (design system version 23, HighScores): Personal bests, with bests in the config. get(id) gives { n, words, initials, date }
       // or null; offer(id, n, words) keeps n as that run's best if it beats the one kept (true if it did), with the stored initials or "---",
       // as a saved run that ended because the page was closed again still counts (Barney, 14 November 2026). A run's end keeps its own (o.best)
-      bests: { get: (id) => bestOf(String(id)), offer: (id, n, words) => offerBest(id, n, words), get runs() { return bestsCfg ? bestsCfg.runs.map((r) => r.id) : []; } },
+      bests: { get: (id, setting) => bestOf(bestSlot(id, setting)), offer: (id, n, words, setting) => offerBest(id, n, words, setting), get runs() { return bestsCfg ? bestsCfg.runs.map((r) => r.id) : []; } },
+      runTag: (name) => { runTag = name == null || name === false ? '' : String(name); },   // kit 0.35.0 (version 25, SettingTag)
+      get scoresWiped() { return scoresWiped; },   // kit 0.35.0: this opening of the page wiped the scores and bests (scoresEra)
       get test() { return testCfg ? Object.assign({}, testValues) : null; },   // kit 0.8.1: Testing's values, or null when the game has none
       sounds: Object.keys(SND8.FX), ambient: ambient,   // version 8 (4c-7)
       music: (i) => { if (music && music.tracks[i]) music.want = i; },
@@ -9486,6 +9664,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       setScores: (table) => { if (Array.isArray(table)) store.set(scoreKey(), table); else store.remove(scoreKey()); },   // kit 0.10.0: the test page's sample tables
       setBests: (o) => { if (o && typeof o === 'object') store.set(bestKey(), o); else store.remove(bestKey()); },   // kit 0.31.0: sample Personal bests ({ id: { n, w, i } })
       setInitials: (v) => { if (v) store.set('retrokit.initials', String(v)); else store.remove('retrokit.initials'); },   // kit 0.31.0: stored initials, or none
+      setTag: (v) => { runTag = v ? String(v) : ''; },   // kit 0.35.0: the run's setting's tag, for the test page's samples
       get runEnd() { return runEndInfo; }
     };
     return api;
@@ -10040,8 +10219,26 @@ function runEndScreen(D, k) {
   const [score, o] = RUN_ENDS[k];
   if (k === 'top') seedScores([['ASH', 210], ['FEN', 150], ['IVY', 90]]); else seedScores();
   D.setWisps(score);
+  if (o.scored === false) D.setTag('Grim');   // kit 0.35.0 (version 25): an Echo Infusion run shows its setting's tag
   D.showRunEnd(JSON.parse(JSON.stringify(o)));
 }
+// kit 0.35.0 (design system version 25, RunEnd): the echo stolen line with the setting's share, and the suggestion's four cases, as its
+// preview draws them. The words and figures are the game's; these are the preview's
+const NEXT_ACID = { kind: 'acid', name: 'Acid spray', towards: 'the acid spray', price: 300, was: 96, now: 118 };
+const SKULL = { boss: 'The Tentacled Skull', left: 0.12 };
+const SUGGEST = {
+  shallow: { line: 'Fallen again. The path is kinder on Shallow.', button: 'Play on Shallow', fig: '×0.75', enter: 'play on Shallow', does: 'play' },
+  grim: { line: 'Fallen again. The path is kinder on Grim.', button: 'Play on Grim', enter: 'play on Grim', does: 'play' },
+  infusion: { line: 'Fallen again. Take up what you have bought.', button: 'The Echo Infusion', enter: 'The Echo Infusion', does: 'play', run: 'infusion' },
+  shrine: { line: 'Fallen again. Your echo can buy an edge.', button: 'Spend your echo', enter: 'spend your echo', does: 'shrine' },
+  howto: { line: 'Fallen again. Learn how the dark is fought.', button: 'How to play', enter: 'how to play', does: 'howto' },
+};
+function end25(D, tag, o, score) {
+  seedScores([['ASH', 2100], ['FEN', 1500], ['IVY', 900], ['OWL', 650], ['RYE', 600], ['ELM', 550], ['YEW', 500], ['OAK', 450], ['BOG', 400], ['FOX', 350]]);   // a full table, so no run here makes it
+  D.setBests(null); D.setInitials('BAR'); D.setTag(tag); D.setWisps(score == null ? 118 : score);
+  D.showRunEnd(Object.assign({ near: SKULL, next: NEXT_ACID, shrine: { bank: 96 }, scored: !tag }, o));
+}
+const suggest = (k) => Object.assign({ take: () => console.log('suggestion taken: ' + k), shown: () => console.log('suggestion shown: ' + k) }, SUGGEST[k]);
 function winOffer(lb, stolen) {   // kit 0.15.0: the win's offer of the second loop, as Gloam Hallow makes it (kit 0.17.0: the echo stolen)
   stolen = stolen || { n: 632, daily: true };   // the ×2: an Echo Infusion run, never on the high scores
   return { offer: true, shrine: { bank: 96 }, again: () => lb.placeCard('night', null, null, { again: true }), finish: () => {}, stolen, scored: !stolen.daily };
@@ -10061,49 +10258,100 @@ function gracePick(lb, ids) {   // the pick under Blood Red Rain's card, as the 
     { pick: { heading: 'Bind a twisted Grace', options: ids.map((id) => SAMPLE_GRACES[id]), take: (id) => { gracePick.took = id; } } });
 }
 // kit 0.31.0 (design system version 23, RunEnd, HighScores, NewRun): The Endless Rot's run's end and Personal bests, as their previews draw them
-const SAMPLE_BESTS = { rot: { n: 61, w: 'felled · wave 7', i: 'BAR', d: '2026-11-14' }, infusion: { n: 342, w: 'echo', i: 'BAR', d: '2026-11-14' } };
+// kit 0.35.0 (version 25): The Endless Rot's best is kept for each setting (rot@normal: Grim), The Echo Infusion's with the setting it was made on
+const SAMPLE_BESTS = { 'rot@normal': { n: 61, w: 'felled · wave 7', i: 'BAR', d: '2026-11-14' }, infusion: { n: 342, w: 'echo', i: 'BAR', d: '2026-11-14', s: 'normal' } };
 const ROT_LINE = 'No path forward. No mercy given. Stand in the filth and drown in the tide until your steel breaks.';
 const ROT_NEXT = { kind: 'acid', name: 'Acid spray', towards: 'the acid spray', price: 300, was: 214, now: 22 };
-const ROT_END = (n, wave) => ({ scored: false, count: { n, unit: 'felled' }, near: { wave: 'Wave ' + wave, left: 0.3, count: 3 }, stolen: 22,
-  best: { id: 'rot', n, words: 'felled · wave ' + wave }, next: ROT_NEXT, shrine: { bank: 214 } });
-function rotEnd(D, bests, initials) { D.setBests(bests); D.setInitials(initials); D.setWisps(22); D.showRunEnd(ROT_END(43, 5)); }
+const ROT_END = (n, wave, setting) => ({ scored: false, count: { n, unit: 'felled' }, near: { wave: 'Wave ' + wave, left: 0.3, count: 3 }, stolen: 22,
+  best: { id: 'rot', n, words: 'felled · wave ' + wave, setting: setting || 'normal' }, next: ROT_NEXT, shrine: { bank: 214 } });
+function rotEnd(D, bests, initials) { D.setBests(bests); D.setInitials(initials); D.setTag('Grim'); D.setWisps(22); D.showRunEnd(ROT_END(43, 5)); }
 function newsThen(lb, what) {   // the news plaque, then the run's end or the win; the run really ends, as Gloam Hallow's would
   const D = lb._debug, news = { heading: 'The Endless Rot', line: ROT_LINE, note: 'Choose it after Start game.' };
   D.setBests(SAMPLE_BESTS); D.setInitials('BAR');
   if (what === 'win') { seedScores(); D.setWisps(296); lb.win(Object.assign(winOffer(lb), { news })); }
   else { D.setWisps(118); lb.runEnd(Object.assign({}, RUN_ENDS.boss[1], { news, near: { boss: 'The Veiled Ghost', left: 0.2 } }), 0); }
 }
-// the choice of run with four entries, two by two (Modes, version 23), only to try the kit's up and down on a menu's items: the choice
-// itself is the game's plaque
-function fourRuns(lb) {
+/* kit 0.35.0 (design system version 25, Modes): the choice of run with the difficulty picker in its foot row, to try the kit's styles and
+   keys (the plaque itself is the game's): n runs with Hysteria, four two by two or three side by side; the picker under them for
+   whichever run is chosen, held on Grim for The Bare Reckoning; each run's setting as a tag on its entry; on a phone Start and Back in
+   the foot row, Start at the outer edge. The arrows choose among the runs; down from the lowest run steps to the picker, where left
+   and right change the setting at once and up returns; Enter starts and Backspace goes back from anywhere. */
+const SETTINGS = [['easy', 'Shallow', '×0.75'], ['normal', 'Grim', ''], ['hard', 'Agony', '×1.5']];
+const LOCK_SVG = '<svg viewBox="0 0 14 16" aria-hidden="true"><rect x="1.5" y="7" width="11" height="8" rx="1"/><path d="M4 7 V4.6 A3 3 0 0 1 10 4.6 V7"/></svg>';   // a locked run's padlock, as Gloam Hallow's
+const BARE_LINE = 'Stripped of all favour, face the dark with naked steel alone. Grim, your terror is etched into history.';
+function runsPicker(lb, n, at, daily) {
+  const set = { infusion: 'normal', rot: n === 4 ? 'hard' : 'normal' }, pick = { id: 'bare' };   // each run's setting; The Bare Reckoning has none
+  const RUNS = [['bare', 'The Bare Reckoning', BARE_LINE, 'On the high scores · your spell and belt, one potion of each'],
+    ['infusion', 'The Echo Infusion', 'Gorged on stolen power. Unleash your full arsenal, but expect no immortalisation.', "Everything you've bought · your best run is kept"],
+    ['rot', 'The Endless Rot', ROT_LINE, "Everything you've bought · your best run is kept"]].filter((r) => n === 4 || r[0] !== 'infusion');
   lb.ui.open((ui) => {
-    const phone = ui.phone, { panel, face } = ui.plaque('ls-md', 780, 804, phone ? 'gap:10px;padding:12px 14px 14px' : 'gap:10px;padding:16px 20px 12px');
-    const list = ui.el('div', 'lb-modes is-row is-four');
-    list.setAttribute('role', 'radiogroup');
-    const RUNS4 = [['The Bare Reckoning', 'Stripped of all favour, face the dark with naked steel alone. Your agony is etched into history.', 'On the high scores · your spell and belt, one potion of each'],
-      ['The Echo Infusion', 'Gorged on stolen power. Unleash your full arsenal, but expect no immortalisation.', "Everything you've bought · your best run is kept"],
-      ['The Endless Rot', ROT_LINE, "Everything you've bought · your best run is kept"]];
-    const items = [], cells = [];
-    RUNS4.forEach(([name, note, terms]) => {
-      const b = ui.el('button', 'lb-mode', '<span class="name"></span><span class="note"></span><span class="terms"></span>');
+    const phone = ui.phone, four = n === 4, word = (id) => SETTINGS.find((s) => s[0] === id)[1];
+    const { panel, face } = ui.plaque('ls-md', 780, 804, phone ? 'gap:10px;padding:12px 14px 14px' : 'gap:10px;padding:16px 20px 12px');
+    const list = ui.el('div', 'lb-modes is-row' + (four ? ' is-four' : ''));
+    list.setAttribute('role', 'radiogroup'); list.setAttribute('aria-labelledby', 'ls-md');
+    const items = [], cells = [], tags = {}, leave = () => { lb.sfx('back'); ui.close(); }, start = () => { lb.sfx('confirm'); console.log('start ' + pick.id + (pick.id in set ? ' on ' + set[pick.id] : '')); ui.close(); };
+    // the foot row: the chosen run's name, its picker, the buttons
+    const foot = ui.el('div', 'lb-modes-foot'), forEl = ui.txt('span', 'lb-modes-for', ''), seg = ui.el('div', 'lb-segments is-three'), go = ui.el('div', 'lb-modes-go');
+    forEl.id = 'ls-md-for'; seg.setAttribute('role', 'group'); seg.setAttribute('aria-labelledby', 'ls-md-for');
+    const segBtns = SETTINGS.map(([id, w, fig]) => {
+      const b = ui.txt('button', '', w);
+      b.type = 'button';
+      if (fig) b.append(ui.txt('span', 'lb-seg-fig', fig));
+      b.addEventListener('click', () => { if (pick.id in set) { choose(id); ui.select(SEG); } else b.blur(); });   // held: a tap does nothing
+      seg.append(b);
+      return b;
+    });
+    const showSeg = () => {
+      const held = !(pick.id in set), now = held ? 'normal' : set[pick.id];
+      forEl.textContent = RUNS.find((r) => r[0] === pick.id)[1];
+      seg.classList.toggle('is-held', held);
+      segBtns.forEach((b, i) => {
+        const on = SETTINGS[i][0] === now;
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        if (held && !on) b.setAttribute('aria-disabled', 'true'); else b.removeAttribute('aria-disabled');
+        if (held) b.tabIndex = -1; else b.removeAttribute('tabindex');
+      });
+      Object.keys(tags).forEach((id) => { tags[id].textContent = word(set[id]); });
+      cells.forEach((b, i) => b.classList.toggle('is-selected', RUNS[i][0] === pick.id));   // the chosen run keeps its brass band while the picker has the focus
+    };
+    const choose = (id) => { if (!(pick.id in set) || set[pick.id] === id) return; set[pick.id] = id; lb.sfx('select'); showSeg(); };
+    const step = (d) => { const i = SETTINGS.findIndex((s) => s[0] === set[pick.id]), j = Math.max(0, Math.min(SETTINGS.length - 1, i + d)); if (j !== i) { choose(SETTINGS[j][0]); ui.select(SEG); } };   // the focus ring goes with the setting
+    RUNS.forEach(([id, name, note, terms]) => {
+      const b = ui.el('button', 'lb-mode', (id in set ? '<span class="lb-mode-head"><span class="name"></span></span>' : '<span class="name"></span>') + '<span class="note"></span><span class="terms"></span>');
       b.type = 'button'; b.setAttribute('role', 'radio');
       b.querySelector('.name').textContent = name; b.querySelector('.note').textContent = note; b.querySelector('.terms').textContent = terms;
+      if (id in set) { tags[id] = ui.tag(word(set[id])); b.querySelector('.lb-mode-head').append(tags[id]); }
+      if (daily && id === 'infusion') b.append(ui.el('span', 'daily', '<span class="lb-daily-mark">×2</span>echo for the first run today'));
       list.append(b); cells.push(b);
     });
-    const hy = ui.el('button', 'lb-mode is-locked', '<span class="name">Hysteria</span><span class="lock-note">No breath wasted. No blood spared. Time will not wait for your terror.</span><span class="terms">Coming soon · 500 echo at the Echo Shrine</span>');
-    hy.type = 'button'; hy.setAttribute('aria-disabled', 'true'); list.append(hy);
-    const go = ui.button('Start', true, true), back = ui.button('Back'), leave = () => { lb.sfx('back'); ui.close(); };
-    const move = { 0: { right: 1, down: 2 }, 1: { left: 0, down: 3 }, 2: { up: 0, down: 3 } };   // the grid: 0 1 / 2 (Hysteria locked); Start (3) and Back below
+    const hy = ui.el('button', 'lb-mode is-locked', '<span class="name">' + LOCK_SVG + 'Hysteria</span><span class="lock-note">No breath wasted. No blood spared. Time will not wait for your terror.</span><span class="terms">Coming soon · 500 echo at the Echo Shrine</span>');
+    hy.type = 'button'; hy.setAttribute('role', 'radio'); hy.setAttribute('aria-checked', 'false'); hy.setAttribute('aria-disabled', 'true'); list.append(hy);
+    const SEG = cells.length;            // the picker's place among the items, after the runs
+    // the grid: four are 0 1 over 2 and Hysteria (locked); three are 0 1 and Hysteria in a row. Down from the lowest run is the picker
+    const move = four ? { 0: { right: 1, down: 2 }, 1: { left: 0, down: SEG }, 2: { up: 0, down: SEG } } : { 0: { right: 1, down: SEG }, 1: { left: 0, down: SEG } };
     cells.forEach((b, i) => {
-      const to = (k) => () => ui.select(move[i][k] != null ? move[i][k] : i);
-      items.push({ el: b, menu: true, left: to('left'), right: to('right'), up: to('up'), down: to('down'), activate: () => { lb.sfx('confirm'); ui.close(); } });
+      const id = RUNS[i][0], to = (k) => () => { const j = move[i][k]; if (j == null || (j === SEG && !(id in set))) return; ui.select(j); };   // held: down does nothing
+      b.addEventListener('click', () => ui.select(i));   // a click or a tap chooses; Start (or Enter) starts
+      // not a menu item of the kit's: the kit would take the band off the chosen run as the selection steps down to the picker
+      items.push({ el: b, noClick: true, left: to('left'), right: to('right'), up: to('up'), down: to('down'), activate: start,
+        focus: () => { pick.id = id; cells.forEach((x) => x.setAttribute('aria-checked', x === b ? 'true' : 'false')); showSeg(); return b; } });
     });
-    items.push({ el: go, up: () => ui.select(2), activate: () => { lb.sfx('confirm'); ui.close(); } }, { el: back, up: () => ui.select(2), activate: leave });
-    const btns = ui.el('div', 'lb-btns'); btns.append(go, back);
-    face.append(ui.heading('ls-md', 'Choose a run'), ui.rule(), list, btns);
-    if (!ui.touch) { const h = ui.hint(ui.kbd('left') + ' ' + ui.kbd('right') + ' ' + ui.kbd('up') + ' ' + ui.kbd('down') + ' choose · ' + ui.kbd('Enter') + ' start · ' + ui.kbd('Backspace') + ' back'); h.style.textAlign = 'center'; face.append(h); }
+    const stay = () => {};
+    items.push({ el: seg, noClick: true, focus: () => segBtns[SETTINGS.findIndex((s) => s[0] === set[pick.id])], left: () => step(-1), right: () => step(1),
+      up: () => ui.select(RUNS.findIndex((r) => r[0] === pick.id)), down: stay, activate: start });
+    const goBtn = ui.button('Start', true, true), backBtn = ui.button('Back');   // pressed by a click or a tap; Enter and Backspace do the same from anywhere
+    goBtn.addEventListener('click', start); backBtn.addEventListener('click', leave);
+    if (phone) go.append(backBtn, goBtn); else go.append(goBtn, backBtn);
+    foot.append(forEl, seg, go);
+    if (phone) { const head = ui.el('div', 'lb-header'); head.append(ui.heading('ls-md', 'Choose a run')); face.append(head, list, foot); }
+    else {
+      face.append(ui.heading('ls-md', 'Choose a run'), ui.rule(), list, foot);
+      if (!ui.touch) { const h = ui.hint(ui.kbd('left') + ' ' + ui.kbd('right') + ' ' + ui.kbd('up') + ' ' + ui.kbd('down') + ' choose · ' + ui.kbd('Enter') + ' start · ' + ui.kbd('Backspace') + ' back'); h.style.textAlign = 'center'; face.append(h); }
+    }
+    pick.id = RUNS[Math.min(at, RUNS.length - 1)][0];
+    showSeg();
     return { panel, items, opts: { back: leave } };
-  }, 1);
+  }, at);
 }
 function screensPanel(g, lb) {
   const D = lb._debug;
@@ -10121,11 +10369,11 @@ function screensPanel(g, lb) {
     ['How to play: title', () => { D.quit(); D.openHowTo('title'); }],
     // kit 0.15.0 (design system version 12, WinCard): as its preview draws it (296, two lanterns lit), the offer of the second loop; after
     // the second loop, no offer (a new best); Go round again carries the run on with its plaque line, Finish goes on as game over does
-    ['The win: as drawn', () => { seedScores(); D.setWisps(296); lb.hud.lives(g.lives = 2); lb.win(winOffer(lb)); }],
+    ['The win: as drawn', () => { seedScores(); D.setTag('Grim'); D.setWisps(296); lb.hud.lives(g.lives = 2); lb.win(winOffer(lb)); }],
     ['The win: 1 life', () => { seedScores(); D.setWisps(400); lb.hud.lives(g.lives = 1); lb.win(winOffer(lb, { n: 410 })); }],
     ['The win: no ×2', () => { seedScores([['ASH', 900], ['FEN', 800], ['IVY', 700], ['OWL', 650], ['RYE', 600], ['ELM', 550], ['YEW', 500], ['OAK', 450], ['BOG', 400], ['FOX', 350]]); D.setWisps(296); lb.hud.lives(g.lives = 2); lb.win(winOffer(lb, { n: 316 })); }],   // the phone preview's
     // kit 0.17.0 (version 13): the second loop's win in its own words, the echo stolen, no offer
-    ['The win: second loop', () => { seedScores(); D.setWisps(1382); lb.hud.lives(g.lives = 3); lb.win({ shrine: { bank: 96 }, scored: false, stolen: { n: 1412 },
+    ['The win: second loop', () => { seedScores(); D.setTag('Grim'); D.setWisps(1382); lb.hud.lives(g.lives = 3); lb.win({ shrine: { bank: 96 }, scored: false, stolen: { n: 1412 },
       words: { heading: 'A monstrous glory.', lead: 'The greater horrors have bled dry.', line: 'Gloam Hallow now fears your tread.' } }); }],
     ['Pause: Graces bound', () => { lb.held(graceList(['grave', 'keen', 'iron'])); D.pause(); }],   // kit 0.17.0 (PauseOverlay)
     ['Pause: one spent', () => { lb.held(graceList(['grave', 'keen', 'iron'], true)); D.pause(); }],
@@ -10149,21 +10397,40 @@ function screensPanel(g, lb) {
     ['Relight: second loop', () => { SAMPLE_RUN = SAMPLE_RUNS[2]; D.quit(); D.openRelight(); }],
     ['Title: a run ended', () => { SAMPLE_RUN = null; D.quit(); lb.titleLine('Your last run ended. Its 118 echo was kept.'); }],
     // kit 0.31.0 (design system version 23)
-    ["Run's end: Rot, new best", () => rotEnd(D, { rot: { n: 38, w: 'felled · wave 4', i: 'BAR' }, infusion: SAMPLE_BESTS.infusion }, 'BAR')],
+    ["Run's end: Rot, new best", () => rotEnd(D, { 'rot@normal': { n: 38, w: 'felled · wave 4', i: 'BAR' }, infusion: SAMPLE_BESTS.infusion }, 'BAR')],
     ["Run's end: Rot, short", () => rotEnd(D, SAMPLE_BESTS, 'BAR')],
     ["Run's end: Rot, first", () => rotEnd(D, null, 'BAR')],
     ["Run's end: Rot, no initials", () => rotEnd(D, { infusion: SAMPLE_BESTS.infusion }, null)],
-    ["Run's end: Infusion best", () => { D.setBests({ infusion: { n: 300, w: 'echo', i: 'BAR' } }); D.setInitials('BAR'); D.setWisps(342);
-      D.showRunEnd({ scored: false, near: { boss: 'The Moor Mother', left: 0.41 }, best: { id: 'infusion', n: 342, words: 'echo' },
+    ["Run's end: Infusion best", () => { D.setBests({ infusion: { n: 300, w: 'echo', i: 'BAR', s: 'normal' } }); D.setInitials('BAR'); D.setTag('Grim'); D.setWisps(342);
+      D.showRunEnd({ scored: false, near: { boss: 'The Moor Mother', left: 0.41 }, best: { id: 'infusion', n: 342, words: 'echo', setting: 'normal' },
         next: { kind: 'acid', name: 'Acid spray', towards: 'the acid spray', price: 300, was: 0, now: 342 }, shrine: { bank: 0 } }); }],
     ["News, then the run's end", () => newsThen(lb, 'end')],
     ['News, then the win', () => newsThen(lb, 'win')],
     ['High scores: two tabs', () => { seedScores(); D.setBests(SAMPLE_BESTS); D.quit(); D.openScores(-1, false); }],
-    ['Personal bests: beaten', () => { D.setBests(SAMPLE_BESTS); D.quit(); D.openScores(-1, false, 'rot'); }],
+    ['Personal bests: beaten', () => { D.setBests(SAMPLE_BESTS); D.quit(); D.openScores(-1, false, 'rot@normal'); }],
     ['Personal bests: no run', () => { D.setBests({ infusion: SAMPLE_BESTS.infusion }); D.quit(); D.openScores(-1, false, '-'); }],
     ['Relight: Endless Rot', () => { SAMPLE_RUN = SAMPLE_RUNS[3]; D.quit(); D.openRelight(); }],
     ['Relight: Rot, again', () => { SAMPLE_RUN = SAMPLE_RUNS[4]; D.quit(); D.openRelight(); }],
-    ['Choice of run: four', () => { D.quit(); fourRuns(lb); }],   // from the title, as a game opens it after Start game
+    // kit 0.35.0 (design system version 25): a run's setting. The choice of run from the title, as a game opens it after Start game
+    ['Choice of run: four', () => { D.quit(); runsPicker(lb, 4, 1, true); }],
+    ['Choice of run: Bare chosen', () => { D.quit(); runsPicker(lb, 4, 0, false); }],
+    ['Choice of run: three', () => { D.quit(); runsPicker(lb, 3, 1, false); }],
+    ['Pause: Agony', () => { D.setTag('Agony'); lb.held(graceList(['grave', 'keen', 'iron'])); D.pause(); }],
+    ["Run's end: Shallow, ×2", () => end25(D, 'Shallow', { share: '×0.75', daily: 178, next: { kind: 'bolt', name: 'Lightning bolt', towards: 'the lightning bolt', price: 75, was: 30, now: 178 }, shrine: { bank: 30 } })],
+    ["Run's end: Agony", () => end25(D, 'Agony', { share: '×1.5', kept: 177 })],
+    ["Run's end: Rot on Agony", () => { D.setBests({ 'rot@hard': { n: 61, w: 'felled · wave 7', i: 'BAR' } }); D.setInitials('BAR'); D.setTag('Agony'); D.setWisps(33);
+      D.showRunEnd(Object.assign(ROT_END(43, 5, 'hard'), { stolen: 33, share: '×1.5', next: { kind: 'acid', name: 'Acid spray', towards: 'the acid spray', price: 300, was: 203, now: 33 } })); }],
+    ['Suggestion: Shallow', () => end25(D, 'Grim', { suggest: suggest('shallow') })],
+    ['Suggestion: Grim, ×2', () => end25(D, 'Agony', { share: '×1.5', daily: 354, suggest: suggest('grim') })],   // the tallest the run's end gets
+    ['Suggestion: Echo Infusion', () => end25(D, '', { suggest: suggest('infusion') })],
+    ['Suggestion: Echo Shrine', () => end25(D, '', { suggest: suggest('shrine'), next: { kind: 'health', name: 'A second health potion', towards: 'a second health potion', price: 25, was: 0, now: 118 }, shrine: { bank: 0 } })],
+    ['Suggestion: How to play', () => end25(D, '', { suggest: suggest('howto'), next: { kind: 'health', name: 'A second health potion', towards: 'a second health potion', price: 25, was: 4, now: 9 }, shrine: { bank: 4 } }, 9)],
+    ['The win: Agony, ×2', () => { seedScores(); D.setTag('Agony'); D.setWisps(296); lb.hud.lives(g.lives = 2); lb.win({ shrine: { bank: 96 }, scored: false, stolen: { n: 948, daily: true, share: '×1.5' } }); }],
+    ['The win: Grim, ×2', () => { seedScores(); D.setTag('Grim'); D.setWisps(296); lb.hud.lives(g.lives = 2); lb.win({ shrine: { bank: 96 }, scored: false, stolen: { n: 632, daily: true } }); }],
+    ['Relight: Agony', () => { SAMPLE_RUN = SAMPLE_RUNS[5]; D.quit(); D.openRelight(); }],
+    ['Relight: Rot on Shallow', () => { SAMPLE_RUN = SAMPLE_RUNS[6]; D.quit(); D.openRelight(); }],
+    ['Personal bests: Shallow beaten', () => { D.setBests({ 'rot@easy': { n: 74, w: 'felled · wave 8', i: 'BAR' }, 'rot@normal': SAMPLE_BESTS['rot@normal'], infusion: Object.assign({}, SAMPLE_BESTS.infusion, { s: 'hard' }) }); D.quit(); D.openScores(-1, false, 'rot@easy'); }],
+    ['Personal bests: all three', () => { D.setBests({ 'rot@easy': { n: 74, w: 'felled · wave 8', i: 'BAR' }, 'rot@normal': SAMPLE_BESTS['rot@normal'], 'rot@hard': { n: 52, w: 'felled · wave 6', i: 'BAR' }, infusion: Object.assign({}, SAMPLE_BESTS.infusion, { s: 'hard' }) }); D.quit(); D.openScores(-1, false, '-'); }],
   ];
   openPanel((face, close) => {
     const h = document.createElement('h2');
@@ -10178,7 +10445,7 @@ function screensPanel(g, lb) {
       b.type = 'button';
       b.className = 'lb-item';
       b.textContent = label;
-      b.addEventListener('click', () => { close(); fn(); });
+      b.addEventListener('click', () => { close(); D.setTag(''); fn(); });   // kit 0.35.0: no setting's tag unless the sample gives one
       grid.append(b);
     });
     const cancel = button('Close', true, close);
@@ -10341,10 +10608,13 @@ function buildPieces(g, lb) {
 
 // kit 0.21.0 (design system version 17): sample runs for Continue on the title and the relight plaque (Screens)
 const SAMPLE_RUNS = [{ where: 'Dawn · the halfway lantern', run: 'The Bare Reckoning', lives: 2, echo: 118 },
-  { where: 'Blood Red Rain · the halfway lantern', run: 'The Echo Infusion', lives: 3, echo: 0 },
-  { where: 'Mist · Boss', run: 'The Echo Infusion', lives: 1, echo: 1204, again: true },
-  { where: 'Dawn · Wave 7', run: 'The Endless Rot', lives: 3, echo: 39, score: '54 felled', button: 'Return to the wave' },   // kit 0.31.0 (version 23, Relight)
-  { where: 'Night · Wave 13', run: 'The Endless Rot', lives: 2, echo: 120, again: true, score: '131 felled', button: 'Return to the wave' }];
+  { where: 'Blood Red Rain · the halfway lantern', run: 'The Echo Infusion', tag: 'Grim', lives: 3, echo: 0 },
+  { where: 'Mist · Boss', run: 'The Echo Infusion', tag: 'Grim', lives: 1, echo: 1204, again: true },
+  { where: 'Dawn · Wave 7', run: 'The Endless Rot', tag: 'Grim', lives: 3, echo: 39, score: '54 felled', button: 'Return to the wave' },   // kit 0.31.0 (version 23, Relight)
+  { where: 'Night · Wave 13', run: 'The Endless Rot', tag: 'Grim', lives: 2, echo: 120, again: true, score: '131 felled', button: 'Return to the wave' },
+  // kit 0.35.0 (version 25, Relight): the saved run's setting beside its name, as the preview draws it
+  { where: 'Mist · Boss', run: 'The Echo Infusion', tag: 'Agony', lives: 1, echo: 1204, again: true },
+  { where: 'Dawn · Wave 7', run: 'The Endless Rot', tag: 'Shallow', lives: 3, echo: 39, score: '54 felled', button: 'Return to the wave' }];
 let SAMPLE_RUN = null;
 
 LanternBox.game({
@@ -10352,7 +10622,9 @@ LanternBox.game({
   resume: { waiting: () => SAMPLE_RUN, back: (lb, start) => { SAMPLE_RUN = null; start(); }, abandon: () => { SAMPLE_RUN = null; } },   // kit 0.21.0
   title: ['Test', 'Page'],
   // kit 0.31.0 (design system version 23, HighScores): Personal bests beside the table, as Gloam Hallow's will be
-  bests: { table: 'The Bare Reckoning', runs: [{ id: 'rot', name: 'The Endless Rot', yours: true }, { id: 'infusion', name: 'The Echo Infusion' }] },
+  // kit 0.35.0 (version 25): the settings in the picker's order; The Endless Rot keeps a best for each, The Echo Infusion the setting of its one
+  bests: { table: 'The Bare Reckoning', settings: [{ id: 'easy', name: 'Shallow' }, { id: 'normal', name: 'Grim' }, { id: 'hard', name: 'Agony' }],
+    runs: [{ id: 'rot', name: 'The Endless Rot', yours: true, each: true }, { id: 'infusion', name: 'The Echo Infusion' }] },
   hud: 'full',   // version 8's HUD (4c-6a)
   potions: true,   // kit 0.9.0: the potion sockets
   howTo: { goal: ['Cut your path through four blighted lands, felling the terror bound to each. Sever the roots of The Gaping Tree to break the night.',
