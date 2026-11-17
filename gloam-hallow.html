@@ -10203,8 +10203,8 @@ const DIFF = {
 // through the second loop. Each boss on each setting stands at a step of the climb (CLIMB_AT); each step gives how far he is thrown (dist,
 // lines: the same on every screen, unless the arena's end stops him), how long he may stand within its reach before the knock-back comes
 // (close, seconds), the marks on its bar where it mends (shares of the bar, each once a fight), and each mend (amt, a share of the bar, back
-// in steps of d seconds after a first 0.9 s in which nothing comes back). Left alone a boss mends no more than about half its bar in a fight
-// (marks times amt: 0.48 at most; Barney's ceiling). The Veiled Ghost has them on Agony only in the first loop (so not in The Bare
+// in steps of d seconds after a first 0.9 s in which nothing comes back). The marks and each mend's share are now set boss by boss
+// (MEND_SET, below; the climb's own are kept only for the play check), and the old ceiling of about half the bar is gone. The Veiled Ghost has them on Agony only in the first loop (so not in The Bare
 // Reckoning's, which is Grim), and on every setting in the second loop (Barney: "x1agreed"); the other three on every setting, so Shallow
 // changes for the first time (his "2a ... yes"). The second loop is two steps on, as far as the top; the Ghost's there is the lowest step on
 // Shallow and Grim and two on from its first loop's on Agony (Claude's reading, with the figures). A throw is held under each boss's room
@@ -10223,12 +10223,30 @@ const CLIMB_AT = { night: { hard: 0 }, storm: { easy: 0, normal: 1, hard: 2 }, d
 const CLIMB_AT2 = { night: { easy: 0, normal: 0, hard: 2 } };   // the second loop's own step, where it is not the first loop's two on
 const THROW_MAX = { night: 550, storm: 550, dawn: 500, mist: 600 };   // each boss's room behind him on a computer (910 lines), less a little
 const CLIMB_CHECK = 2;
+// The bosses' mends, greater (Barney, 17 November 2026: "the boss heals need to be greater", then his figures, boss by boss in the story's
+// order, for each setting and loop, as how many mends times each mend's share of the bar: "shallow first loop 0 10% 1 x 15% 2x 17% second
+// loop 1x 10 2 x 15 2x 17 3x 20 Grim 0 1 x 15 2 2 x 20 2 x 25 2nd loop 1x 15 2x 25 3 x 30 3 x 35 Agony 1 x 20 2 x 30 2x 35 3 x 35 2nd loop
+// 2x 25 3 x35 3x 40 3 x50"; Claude's readings: Shallow's Skull "10%" as one of 10%, as before, and Grim's "2 2 x 20" as two of 20%). Each
+// [mends, share] for the first loop, then the second; the marks for that many as before (MEND_MARKS). The number of marks is the climb's
+// in every cell; only the shares grow. No ceiling now: a mend fills at most to the full bar, and each mark mends once a fight ("a mark
+// should only trigger a heal the first time it is reached": it is spent as the bar first passes it and never mends again, however far a
+// mend takes the bar back above it; a lost life starts the fight again, the boss whole and every mark with it, as before). The mend's
+// steps and their length stay the climb's. The play check keeps the climb's own (CLIMB_CHECK), so it is timed as it was.
+const MEND_SET = {
+  night: { easy: [[0, 0], [1, 0.10]], normal: [[0, 0], [1, 0.15]], hard: [[1, 0.20], [2, 0.25]] },
+  storm: { easy: [[1, 0.10], [2, 0.15]], normal: [[1, 0.15], [2, 0.25]], hard: [[2, 0.30], [3, 0.35]] },
+  dawn: { easy: [[1, 0.15], [2, 0.17]], normal: [[2, 0.20], [3, 0.30]], hard: [[2, 0.35], [3, 0.40]] },
+  mist: { easy: [[2, 0.17], [3, 0.20]], normal: [[2, 0.25], [3, 0.35]], hard: [[3, 0.35], [3, 0.50]] },
+};
+const MEND_MARKS = { 0: [], 1: [0.5], 2: [2 / 3, 1 / 3], 3: [0.75, 0.5, 0.25] };
 function climbFor(g, place) {          // this boss's step of the climb in this run, or null where it has neither move
   if (g.run === 'rot') return null;
   if (g.check) return CLIMB[CLIMB_CHECK];
   const d = diffOk(g.diff) ? g.diff : 'normal', A = CLIMB_AT[place];
   const k = g.loop === 2 ? (CLIMB_AT2[place] && CLIMB_AT2[place][d] != null ? CLIMB_AT2[place][d] : A[d] != null ? A[d] + 2 : null) : A[d];
-  return k == null ? null : CLIMB[Math.min(CLIMB.length - 1, k)];
+  if (k == null) return null;
+  const C = CLIMB[Math.min(CLIMB.length - 1, k)], M = MEND_SET[place] && MEND_SET[place][d] && MEND_SET[place][d][g.loop === 2 ? 1 : 0];
+  return M ? Object.assign({}, C, { marks: MEND_MARKS[M[0]], amt: M[1] }) : C;
 }
 const MEND_LINE = 'Only magic stops its regeneration';   // Barney's words (17 November 2026), in sentence case as the other plaque lines (his choice)
 // the Gaping Tree's splinters, as the kit draws them (kit 0.36.0, world.SPLINTER): from its maw, and 23 lines further in the same time,
@@ -12040,6 +12058,7 @@ function lostUpdate(g, lb, dt) {
     }
     lb.hud.health(0); lb.hud.mana(0);
     monstersReturn(g, lb);
+    nightPotions(g, true);             // Night's own health potions laid again ahead of him (17 November 2026)
   }
 }
 // step 5e-6b (version 13): The Grave Refuses saves him, once a run. Step 5e-7 (design system 14, loopGrave): as he breaks (0.34 s), no
@@ -12663,19 +12682,22 @@ function placeLoot(g, lb) {            // the scenery potions made real: on abou
 // Night's own health potions (Barney, 17 November 2026: "add a landscape health potion at the entrace to the boss room on night and also at
 // the start of the night level - this should be on grim and on shallow just the entrance to the boss room"): on Grim, and so The Bare
 // Reckoning (always Grim), one at Night's start and one at its boss's door; on Shallow the door's only; Agony has neither (he named Grim
-// and Shallow only); the play check has no setting, so none. Each time Night is laid, in both loops (Claude's reading: he named the
-// setting, not the loop). Each is an ordinary health potion lying on the path, as the scenery's: kept if a socket is free, left lying if
-// not, and gone once he has walked on past it. Where (starting figures): the start's about 260 along, past the start's lantern (120), on
+// and Shallow only); the play check has no setting, so none. The first loop only (Barney, the same day: "second loop shouldnt have them
+// but both potions should be replenished on dying"). Each is an ordinary health potion lying on the path, as the scenery's: kept if a
+// socket is free, left lying if not, and gone once he has walked on past it. After a life lost (again), each that lies ahead of the
+// lantern he forms at and is no longer there (taken, or gone off the screen) is laid again; one still lying is not doubled, and one
+// behind him is not laid (it would go at once, as anything left behind). Where (starting figures): the start's about 260 along, past the start's lantern (120), on
 // the flat lead-in, so he walks onto it; the door's 100 past the boss door's lantern, on the arena's flat, well before the fight begins
 // (at the arena's end less 0.68 of the screen); each the nearest open ground (pathOpen) to that, ahead first.
 const NIGHT_POTIONS = { easy: ['door'], normal: ['start', 'door'] };
 const NIGHT_POTION_AT = { start: 260, door: 100 };
-function nightPotions(g) {
-  const at = g.p === 0 && g.diff ? NIGHT_POTIONS[g.diff] : null;
+function nightPotions(g, again) {
+  const at = g.p === 0 && g.loop === 1 && g.diff ? NIGHT_POTIONS[g.diff] : null;
   if (!at) return;
   const door = g.L.checkpoints.find((c) => c.name === 'boss door');
   at.forEach((k, i) => {
     const want = k === 'start' ? NIGHT_POTION_AT.start : door ? door.x + NIGHT_POTION_AT.door : g.L.arena + 160;
+    if (again && (want < g.x || g.loot.some((it) => it.night === k && it.pick == null && it.keep == null && !it.gone))) return;
     for (let d = 0; d <= 240; d += 8) for (const x of d ? [want + d, want - d] : [want]) {
       if (x > 40 && x < g.L.length - 60 && pathOpen(g, x)) { g.loot.push({ kind: 'health', x, y: g.L.ground(x), seed: 400 + i, night: k }); return; }
     }
