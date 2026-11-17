@@ -12656,8 +12656,30 @@ function placeLoot(g, lb) {            // the scenery potions made real: on abou
     for (let x = s.x0 + 40; x < s.x1 - 40; x += 8) if (!g.L.pit(x) && !g.pieces.some((p) => x > p.x0 - 20 && x < p.x1 + 20) && (best == null || g.L.ground(x) < g.L.ground(best))) best = x;
     if (best != null) g.loot.push({ kind: 'health', x: best, y: g.L.ground(best), seed: 200 + k });
   });
+  nightPotions(g);                    // Night's own health potions, by the setting (17 November 2026)
   if (g.p === 0 && g.loop === 1 && !g.took.scroll) pathScroll(g);   // step 5e-6b (part C: once a run, across a continue too)
   if (g.p === 0 && g.loop === 1 && !g.check && !g.took.sword) pathSword(g);   // the Night pass, part B (not in the play check, below)
+}
+// Night's own health potions (Barney, 17 November 2026: "add a landscape health potion at the entrace to the boss room on night and also at
+// the start of the night level - this should be on grim and on shallow just the entrance to the boss room"): on Grim, and so The Bare
+// Reckoning (always Grim), one at Night's start and one at its boss's door; on Shallow the door's only; Agony has neither (he named Grim
+// and Shallow only); the play check has no setting, so none. Each time Night is laid, in both loops (Claude's reading: he named the
+// setting, not the loop). Each is an ordinary health potion lying on the path, as the scenery's: kept if a socket is free, left lying if
+// not, and gone once he has walked on past it. Where (starting figures): the start's about 260 along, past the start's lantern (120), on
+// the flat lead-in, so he walks onto it; the door's 100 past the boss door's lantern, on the arena's flat, well before the fight begins
+// (at the arena's end less 0.68 of the screen); each the nearest open ground (pathOpen) to that, ahead first.
+const NIGHT_POTIONS = { easy: ['door'], normal: ['start', 'door'] };
+const NIGHT_POTION_AT = { start: 260, door: 100 };
+function nightPotions(g) {
+  const at = g.p === 0 && g.diff ? NIGHT_POTIONS[g.diff] : null;
+  if (!at) return;
+  const door = g.L.checkpoints.find((c) => c.name === 'boss door');
+  at.forEach((k, i) => {
+    const want = k === 'start' ? NIGHT_POTION_AT.start : door ? door.x + NIGHT_POTION_AT.door : g.L.arena + 160;
+    for (let d = 0; d <= 240; d += 8) for (const x of d ? [want + d, want - d] : [want]) {
+      if (x > 40 && x < g.L.length - 60 && pathOpen(g, x)) { g.loot.push({ kind: 'health', x, y: g.L.ground(x), seed: 400 + i, night: k }); return; }
+    }
+  });
 }
 // step 5e-6b (version 13, Loot; Barney, 7 November 2026): once a run, a scroll for the run's attack spell on open ground in Night's section B,
 // about 40% of the way through the place (its path to the boss's arena: 3,728 in Night, in B on the slope down after its crag): the nearest
