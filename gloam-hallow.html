@@ -1213,6 +1213,24 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 .lb-scores.is-bests tr.is-group td{padding-top:2px;text-align:left;font-weight:400;color:var(--text)}
 .lb-scores.is-bests tr.is-sub td:first-child{padding-left:18px}
 
+/* ---- kit 0.36.0: design system version 26's block, word for word ---- */
+/* version 26: the boss's bar while it mends. Marks where a mend waits (dark once spent), the part that has come back in the mana bar's
+   colours, and an outline of where the mend will reach. --at, --m0, --mw, --g0 and --gw are shares of the bar; --ma and --ga strengths */
+.lb-bossbar-track>.mend{left:calc(2px + (100% - 4px) * var(--m0,0));width:calc((100% - 4px) * var(--mw,0));opacity:var(--ma,0);background:linear-gradient(180deg,var(--mana-top),var(--mana-low))}
+.lb-bossbar-track>.goal{left:calc(2px + (100% - 4px) * var(--g0,0));width:calc((100% - 4px) * var(--gw,0));opacity:var(--ga,0);box-shadow:inset 0 0 0 1.5px var(--mana-top)}
+.lb-bossbar-track>.mark{left:calc(2px + (100% - 4px) * var(--at,0.5) - 1.5px);width:3px;top:0;bottom:0;background:var(--heading);box-shadow:0 0 0 1px rgba(12,7,9,0.9)}
+.lb-bossbar-track>.mark.is-spent{background:var(--brass-deep)}
+/* version 26: the spell's call while a boss mends: slow light, no change of size (Barney, 17 November 2026). With heal chosen, the other
+   spell's mark takes the colour. On a phone the cast button's outline does the same. Steady with Reduce motion */
+.lb-spell.is-called>span{box-shadow:inset 0 0 0 2px var(--mana-top);animation:lb-call 1.4s ease-in-out infinite}
+@keyframes lb-call{0%,100%{box-shadow:inset 0 0 0 2px rgba(95,220,202,0.45)}50%{box-shadow:inset 0 0 0 2px var(--mana-top),inset 0 0 9px rgba(95,220,202,0.55)}}
+.lb-spell.is-called.is-other .lb-spell-marks i:not(.is-on){background:var(--mana-top)}
+.lb-touch-btn.b-cast.is-called .oct polygon{stroke:var(--mana-top);stroke-width:2.5;animation:lb-call-stroke 1.4s ease-in-out infinite}
+@keyframes lb-call-stroke{0%,100%{stroke-opacity:.45}50%{stroke-opacity:1}}
+@media (prefers-reduced-motion:reduce){.lb-spell.is-called>span,.lb-touch-btn.b-cast.is-called .oct polygon{animation:none}}
+/* the kit's own Reduce motion setting (lb-reduce-motion on the root) stops the call's pulse too */
+.lb-reduce-motion .lb-spell.is-called>span,.lb-reduce-motion .lb-touch-btn.b-cast.is-called .oct polygon{animation:none}
+
 </style>
 <script>
 /* Lantern Box 0.20 — runtime
@@ -1225,7 +1243,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.35.0';
+  const VERSION = '0.36.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -1605,6 +1623,31 @@ const FX={
   bossArrives:()=>{tone({type:"sawtooth",f:55,dur:2.0,a:0.5,lp:420,vol:0.3,wet:0.45});tone({type:"sawtooth",f:58.3,dur:1.8,a:0.7,lp:380,vol:0.2,wet:0.5});tone({type:"sawtooth",f:82.4,dur:1.8,a:0.9,lp:520,vol:0.14,wet:0.5});
     noise({ft:"bandpass",from:250,to:900,q:1.2,dur:1.7,a:0.9,vol:0.3,wet:0.5});noise({from:400,to:90,dur:1.6,a:0.4,vol:0.25,wet:0.4});},
   bossDefeated:()=>{noise({from:1800,to:200,dur:0.5,vol:0.2,wet:0.4});bell({f:196,dur:4,vol:0.2,at:0.3});},
+  // kit 0.36.0 (design system 26, Sound; the handover's descriptions, made here, for Barney to tune by ear on the test link): the knock-back's
+  // tell, 0.7 s: a low drone swelling, with air drawn in (one for all four bosses to start)
+  kbTell:()=>{tone({type:"sawtooth",f:49,to:58,glide:0.7,dur:0.78,a:0.6,lp:360,vol:0.24,wet:0.4});tone({type:"sawtooth",f:73.4,to:87,glide:0.7,dur:0.74,a:0.62,lp:420,vol:0.12,wet:0.45});
+    noise({ft:"bandpass",from:2200,to:420,q:1.1,dur:0.72,a:0.62,vol:0.22,wet:0.3});},
+  // the burst: a deep thump and a rush of air outward
+  kbBurst:()=>{tone({f:72,to:34,dur:0.32,a:0.004,vol:0.34,wet:0.2});noise({from:600,to:90,dur:0.22,a:0.004,vol:0.32,wet:0.25});noise({ft:"bandpass",from:500,to:2600,q:0.9,dur:0.55,a:0.02,vol:0.26,wet:0.4,at:0.02});},
+  // thrown: his cloak's rush, falling in pitch through the flight
+  thrown:()=>{noise({ft:"bandpass",from:1900,to:420,q:1.3,dur:0.62,a:0.03,tear:18,vol:0.24,wet:0.15});noise({ft:"bandpass",from:900,to:260,q:1.6,dur:0.5,a:0.05,vol:0.14,wet:0.1,at:0.08});},
+  // landing on his feet: a scuff and a short slide
+  landFeet:()=>{noise({from:520,to:110,dur:0.1,a:0.003,vol:0.3,wet:0.08});tone({f:96,to:54,dur:0.1,vol:0.18,wet:0.05});noise({ft:"bandpass",from:1600,to:700,q:0.8,dur:0.3,a:0.01,tear:40,vol:0.15,wet:0.1,at:0.05});},
+  // landing in a tumble: a thud, the roll's own sound, a scrape
+  landTumble:()=>{tone({f:84,to:42,dur:0.16,a:0.003,vol:0.3,wet:0.08});noise({from:420,to:90,dur:0.14,a:0.003,vol:0.32,wet:0.08});
+    noise({ft:"bandpass",from:900,to:400,q:1,dur:0.12,a:0.02,vol:0.28,at:0.13});noise({ft:"bandpass",from:800,to:350,q:1,dur:0.14,a:0.02,vol:0.24,at:0.26});
+    noise({ft:"bandpass",from:2400,to:900,q:0.9,dur:0.36,a:0.01,tear:50,vol:0.12,wet:0.12,at:0.36});},
+  // the mend begins: a soft low chord swelling in, from the mana potion's brighter chord
+  mendBegin:()=>{[294,370,440].forEach((f,i)=>tone({f,dur:1.2,a:0.55,vol:0.06,wet:0.75,at:i*0.03}));tone({f:147,dur:1.3,a:0.6,vol:0.05,wet:0.6});},
+  // each step of the mend: a soft tone, each step a note higher than the last (v: the step, 1 up)
+  mendStep:v=>{const f=440*Math.pow(2,([0,2,4,7,9][Math.max(0,Math.min(4,(v||1)-1))])/12);tone({f,dur:0.55,a:0.06,vol:0.07,wet:0.7});tone({f:f*2,dur:0.4,a:0.06,vol:0.02,wet:0.8});},
+  // a blow glancing off: a dull ring (the sword's blow with no bite) under a short chime
+  glance:()=>{ring({f:520,vol:0.07,wet:0.35,partials:[[1,1,0.12],[1.47,0.6,0.09],[2.09,0.4,0.07]]});tone({f:120,to:80,dur:0.06,vol:0.1,wet:0.05});bell({f:1760,dur:0.35,vol:0.05,partials:[[1,1,1],[2.4,0.3,0.5]]});},
+  // the mend broken: the chord cracking and falling, like thin glass (the boss's usual hit follows, as the game plays it)
+  mendBreak:()=>{noise({ft:"highpass",from:4200,dur:0.05,vol:0.16,wet:0.3});for(let i=0;i<7;i++)tone({type:"triangle",f:2600+R()*2400,to:900,glide:0.3,dur:0.12,vol:0.035,at:0.01+i*0.035,wet:0.5});
+    [440,554,659].forEach((f,i)=>tone({f,to:f*0.6,glide:0.5,dur:0.6,a:0.005,vol:0.045,wet:0.6,at:0.02*i}));},
+  // the mend ending on its own: the chord settling down a note (not like the break)
+  mendEnd:()=>{[392,494,587].forEach((f,i)=>tone({f,to:f*0.891,glide:0.5,dur:1.0,a:0.04,vol:0.05,wet:0.75,at:i*0.02}));},
   placeCard:()=>bell({f:98,dur:3,vol:0.16,partials:[[1,1,1],[2.0,0.4,0.6],[2.9,0.25,0.45],[4.1,0.12,0.3]]}),
   win:()=>{bell({f:196,dur:4,vol:0.16});bell({f:247,dur:4,vol:0.12,at:0.7});bell({f:294,dur:4.5,vol:0.12,at:1.4});tone({f:392,dur:3,a:1.2,vol:0.05,wet:0.8,at:1.4});},
   select:()=>tone({type:"triangle",f:620,dur:0.05,lp:2000,vol:0.15,wet:0.15}),
@@ -1649,6 +1692,11 @@ const FX={
 // the ward as loud as the plaque line (play.js's 3.5, 4.8 and 1.84 came out 3.3, 3.1 and 1 dB louder here)
 // the big moments loudest, the main actions next, light touches and the menus quieter. GAIN is filled from that measure.
 const GAIN={gameOver: 1.0,spitGather: 1.9,spit: 2.45,splat: 2.24,graveRise: 2.99,bolt: 2.21,boltHit: 2.21,acid: 3.77,acidHiss: 1.3,ward: 1.64,echo: 2.96,swing: 5.24, hit: 3.07, jump: 8, land: 2.52, roll: 5.59, hurt: 0.78, crack: 1.97, defeat: 2.96, pickup: 1.96, heal: 1.56, fireball: 3.7, burst: 3.86, fizzle: 2.01, checkpoint: 2.13, line: 2.25, lifeLost: 2.89, bossArrives: 1.25, bossDefeated: 1.07, placeCard: 1.47, win: 1.36, select: 4.97, confirm: 1.87, back: 3.83, drinkHealth: 2.37, drinkMana: 2.36}; /* round 13: the drinks measured as the heal and the pick-up are (a light touch, -31) */ /* kit 0.10.1 (starting figures; Barney could hardly hear 0.10.0's echo under the tear): the tear back at the old defeat's level, and the echo, a defeat's and a boss's, at its own, measured K-weighted in 100 ms windows: its first note about 5 dB over the tear (-24 against -29), as the old rising note was; tune by ear */
+// kit 0.36.0 (design system 26): the ten new sounds' levels, each measured offline (K-weighted, its loudest 0.4 s) and set beside the sound it
+// is most like: the tell -32 (between the spit's gather and the heal), the burst as the armour's crack (-29.5), thrown as the jump (-33.4),
+// landing on his feet as the landing (-35.6), the tumble as the roll (-32.4), the mend beginning as the heal (-31.4), each step -34, a blow
+// glancing off -31 (as the hit, -30.5), the mend broken as the crack, ending on its own -33. Starting figures: Barney tunes them by ear
+Object.assign(GAIN,{kbTell:1.17,kbBurst:1.97,thrown:2.95,landFeet:2.82,landTumble:2.04,mendBegin:1.51,mendStep:2.99,glance:4.84,mendBreak:3.31,mendEnd:2.11});
 // ---- the places' background sound: wind, rain, thunder, bats, crows, creaking trees ----
 function loopNoise(ft,f,q,vol,lfoRate,lfoDepth){const s=ctx.createBufferSource();s.buffer=nb;s.loop=true;const fl=ctx.createBiquadFilter();fl.type=ft;fl.frequency.value=f;fl.Q.value=q;
   const g=ctx.createGain();g.gain.value=vol;s.connect(fl);fl.connect(g);g.connect(amb);s.start(0,R()*1.5);const nodes=[s];
@@ -5991,8 +6039,11 @@ const BS_PHASES={ // [the signal ends, the attack ends, the move ends], seconds
 // move of its own, with no signal and no hit of its own; the game chooses it.
 const CLOSE_IN={from:420,to:290,t:1.3};
 const BS_DESIGN={dawn:{sickle:-1,bolts:-1}};       // the facing a move was designed in (1, facing left as drawn, unless listed)
-const BS_SIG={night:{eyes:[[-8,-190],[5,-190]],hands:[[-70,-62],[72,-45]]},storm:{eyes:[[-25,-98],[23,-98]],mouth:[0,-60]},dawn:{eyes:[[-7,-175],[8,-176]]},mist:{eyes:[[-12,-84],[10,-82]],mouth:[0,-52]}};
-const BS_HIT={night:10,storm:10,dawn:10,mist:8};   // how far a hit jolts each boss back
+const BS_SIG={night:{eyes:[[-8,-190],[5,-190]],hands:[[-70,-62],[72,-45]]},storm:{eyes:[[-25,-98],[23,-98]],mouth:[0,-60]},dawn:{eyes:[[-7,-175],[8,-176]]},mist:{eyes:[[13,-84],[33,-83]],mouth:[23,-53]}}   // kit 0.36.0 (version 26): on its face as its picture draws it (were (-12,-84), (10,-82), (0,-52));
+const BS_HIT={night:10,storm:10,dawn:10,mist:8};
+// kit 0.36.0 (version 26): the Gaping Tree's splinters leave its maw (23, -53 from its foot; they left (0, -52)), and fly 23 lines further in
+// the same 0.7 s, so their far end is where it was (Barney's choice, 17 November 2026: 329 lines from its foot). world.SPLINTER, for the game
+const SPLINTER={from:[23,-53],v:470+23/0.7,until:1.2};   // how far a hit jolts each boss back
 function bsMove(lv,name,u,A){const bx=A.bx,wx=A.wx,G=A.G,t=A.t,fx=[],r={X:bx,st:{},hot:0,fx};let st=r.st,w;const W=(a,b)=>bsWin(u,a,b);
   if(lv==="night"){st.dy=-5*Math.sin(t*1.7);const H=[-70,-62];
     const glide=(x0,x1,uu,flip,tilt)=>{const tr2=[];for(let k=5;k>=0;k--){const v2=ease(Math.max(0,uu-k*0.07)),XX=lerpN(x0,x1,v2);tr2.push(bsPt(XX,G(bx)+4,{flip,tilt,dy:st.dy},H[0],H[1]));}fx.push(x=>moSlash(x,tr2,5,1));};
@@ -6068,7 +6119,7 @@ function bsMove(lv,name,u,A){const bx=A.bx,wx=A.wx,G=A.G,t=A.t,fx=[],r={X:bx,st:
       if((w=W(0.9,1.35))!=null){const v=ease(w);r.br={grow:1-v,ang:-3.20,hot:1-v};st.tilt=-0.025*(1-v);}}
     else if(name==="splinters"){ // its maw burns, then spits a fan of splinters (roll through to the trunk): the fight's 4.9 s to 6.1 s
       if((w=W(0,0.5))!=null){r.hot=ease(w);}
-      if((w=W(0.5,1.2))!=null){const o=bsPt(bx,G(bx)+4,{},0,-52);fx.push(x=>{for(let k=0;k<5;k++){const d=(u-0.5)*470,a=Math.PI+(k-2)*0.11,px=o[0]+Math.cos(a)*d,py=o[1]+Math.sin(a)*d;if(d<600)bsSplinter(x,px,py,a);}});r.hot=1-w;}}
+      if((w=W(0.5,1.2))!=null){const o=bsPt(bx,G(bx)+4,{},SPLINTER.from[0],SPLINTER.from[1]);fx.push(x=>{for(let k=0;k<5;k++){const d=(u-0.5)*SPLINTER.v,a=Math.PI+(k-2)*0.11,px=o[0]+Math.cos(a)*d,py=o[1]+Math.sin(a)*d;if(d<600)bsSplinter(x,px,py,a);}});r.hot=1-w;}}
   }
   if(!BS_PHASES[lv][name])throw new Error('Lantern Box: '+BOSS_NAME[lv]+' has no move called "'+name+'" (it has '+Object.keys(BS_PHASES[lv]).join(", ")+').');   // kit 0.23.0: any of its moves (close too)
   const ph=BS_PHASES[lv][name];r.phase=u<ph[0]?"signal":u<ph[1]?"attack":u<ph[2]?"recover":"done";
@@ -6137,6 +6188,268 @@ function bsSignals(x,lv,X,Y,st,r){const hot=r.hot,sg=BS_SIG[lv];
     if(sg.hands){for(const h of sg.hands){const w=bsPt(X,Y,st,h[0],h[1]);moHot(x,w[0],w[1],10+10*hot,hot);}}}
   if(r.sick){const w=bsPt(X,Y,st,...(r.sickPt||[98,-42]));moHot(x,w[0],w[1],16+16*r.sick,r.sick);}
   if(r.eyes2){for(const p of [[24,-150],[33,-147],[27,-141],[36,-139]]){const w=bsPt(X,Y,st,p[0],p[1]);moHot(x,w[0],w[1],6+8*r.eyes2,r.eyes2);}}}
+
+/* ---------- 4c-5c. boss26.js, mend26.js: a boss's knock-back and its mend (kit 0.36.0, design system version 26: play.js 1.13.0's new code,
+   word for word, but for its review fights KB_FIGHT, loopKB, MD_FIGHT, loopMD and mdBar, left out as BS_FIGHT is; the kit's own changes
+   for what the settings change, as BossAttacks' README has them, are marked "the kit"). The glue after it plays both moves as a game asks
+   (world.boss's attack "knock", o.mend and o.glance), throws the wanderer (world.throwTrack, world.wanderer's o.thrown) and lays mana's
+   colour over the kept picture without repainting it. ---------- */
+/* ======================================== boss26.js, mend26.js ======================================== */
+/* ============================== design system 26: a boss's knock-back and its mend ==============================
+   Barney, 16 and 17 November 2026, from Claude Code's brief BRIEF-design-26.md after he won both loops on Grim at the first try by
+   standing at each boss's feet and swinging. Three design rounds. Every figure is a starting figure; lengths are in lines.
+   - The knock-back (KB, KB_MOVE, kbWarn, kbDome, KB_FIGHT, loopKB): after he has stood within its reach for a time, the boss gathers
+     itself in its own way over a wide, steady ember glow on the ground (0.7 s), then bursts to the glow's edge. Inside the glow: a
+     light hurt, and thrown (PT.flung, W_THROWN), landing on his feet from a short throw (W_LAND) and in a tumble from 300 lines
+     (W_TUMBLE), safe until he has risen. The answer is to get out of the glow. No boss is repainted: each move is its kept picture
+     moved as a card puppet.
+   - The mend (MD, MD_POSE, mdProfile, mdAura, mdMotes, mdRing, mdTint, mdLids, mdGlance, mdShatter, MD_FIGHT, loopMD): the blow that
+     takes the boss's bar past a mark sets it off as its very next move. It goes still, bows, shuts its eyes and takes the mana bar's
+     colour. Nothing comes back in the first 0.9 s; then the bar returns in steps as a ring of light climbs through the boss, following
+     its outline. A sword blow glances off. Any attack spell's damage breaks it: the boss keeps what it had mended and reels for 0.9 s.
+     Never stopped, it mends no more than about half its bar in a fight.
+   - The HUD (in HUD.build, HUD.set and HUD.tick above): the boss's bar's marks, the part that has come back and the outline of where
+     the mend will reach (hudMend; boss.mend), and the spell's call (called).
+   The fights below are the review loops: the reference for each moment's timing, not game code. They stand each boss where the kit
+   does (KB.from), so the throws are true to the arena. They draw Best with every effect on; what Reduce motion, Effects off and
+   Picture Fastest change is described in BossAttacks' README, not drawn. */
+// ---------- the figures drawn
+const KB = {
+  tell: 0.7,            // the signal: the boss gathers itself and the ground glows out to the move's reach
+  burst: 0.35,          // the burst's light, from the moment it lands
+  hit: 0.08,            // from the end of the tell to the moment it lands
+  rec: 0.45,            // the boss settling afterwards (the opening)
+  reach: { night: 150, storm: 175, dawn: 160, mist: 150 },  // either side of the boss's middle: where he can stand to strike it, and about 45 more
+  stand: { night: 90, storm: 112, dawn: 96, mist: 84 },     // where he stands to swing (the Mist's as its review fight has him)
+  from: { night: 260, storm: 240, dawn: 300, mist: 200 },   // each boss's distance from the arena's far end, as the kit builds it
+  ends: { low: { dist: 170, air: 0.45, up: 44, skid: 14, hold: 3 },      // the bottom of the climb: The Tentacled Skull on Shallow
+          top: { dist: 600, air: 0.8, up: 105, skid: 46, hold: 5 } },    // the top: The Gaping Tree on Agony
+  tumbleFrom: 300,      // a throw this long or longer ends in a tumble; a shorter one on his feet (Barney, 17 November 2026)
+  hurt: 0.12,           // of his health: about half an ordinary boss attack (20 to 30%)
+  tumble: { low: { skid: 44, n: 4 }, top: { skid: 96, n: 7 } }   // the tumble: landing on his back and rolling over backwards (the roll's own ball, turned the other way)
+};
+const kbRgba = (h, a) => LP.rgba(h, Math.max(0, Math.min(1, a)));
+const kbOut = (u) => 1 - (1 - u) * (1 - u);
+
+// ---------- the wanderer thrown: one new picture, flung; he lands on his feet from a short throw and in a tumble from a long one
+const PT = {
+  flung: mvP({ hy: -24, hx: -1, lean: -0.42, nod: -0.3, ft: FT(5, -9, 11, -13.5, -0.55, -0.4), sH: [17, -30], sb: -0.95, fH: [15, -33], fl: [9.4, 8.6],
+    bil: 5, tip: -3, flare: 5, lift: 8, flut: 1, vx: -130, vy: -40, lan: 0.55 })
+};
+function wTrack26(x0, list) {
+  let t0 = 0, x = x0; const segs = [];
+  for (const s of list) { if (!(s.n > 0)) continue; segs.push({ t0, n: s.n, x0: x, s }); t0 += s.n / 12; x += (s.dx || 0); }
+  return { total: t0, segs,
+    at(t) { let sg = segs[segs.length - 1]; for (const q of segs) if (t < q.t0 + q.n / 12) { sg = q; break; }
+      const e = Math.min(sg.n - 0.001, Math.max(0, (t - sg.t0) * 12)), st = Math.floor(e), s = sg.s, r = s.root ? s.root(e, st) : [(s.dx || 0) * e / sg.n, 0];
+      return { P: s.P(st, Math.floor(t * 12)), x: sg.x0 + r[0], y: r[1], f: s.f || 1, arc: s.arc ? s.arc(st) : null, tag: s.tag, st, rot: s.rot ? s.rot(st) : 0 }; },
+    tag0(tag, nth) { let k = 0; for (const q of segs) if (q.s.tag === tag) { if (k === (nth || 0)) return q.t0; k++; } return null; },
+    tags(tag) { return segs.filter((q) => q.s.tag === tag).map((q) => q.t0); },
+    xAt(t) { return this.at(t).x; } };
+}
+// thrown: struck (the hurt's first pose), then flung back along an arc, turning backwards as he goes; where he is glides, the pose steps
+const W_THROWN = (f, dir, dist, air, up, back) => { const n = Math.max(4, Math.round(air * 12));
+  return { n, f, dx: dir * dist, tag: "thrown", P: (st) => st === 0 ? PU.hit : PT.flung,
+    root: (e) => { const u = clamp01(e / n); return [dir * dist * u * (1.3 - 0.3 * u), -up * 4 * u * (1 - u)]; },
+    rot: (st) => { const u = clamp01((st + 0.5) / n); return back ? -(0.25 + 1.2 * u) : -0.62 * Math.pow(Math.sin(Math.PI * u), 0.7); } }; };
+// the other landing: he comes down on his back and rolls over backwards in the roll's ball, then rises as from a roll
+const W_TUMBLE = (f, dir, skid, n) => ({ n: n + 3, f, dx: dir * skid, tag: "land",
+  P: (st) => st < n ? mvBallP(-1.2 - st * 1.95) : st < n + 1 ? PR.rise : st < n + 2 ? PR.recover : PS.ready,
+  root: (e) => [dir * skid * kbOut(clamp01(e / n)), 0] });
+// landing: on his feet in a deep crouch, sliding back, then up
+const W_LAND = (f, dir, skid, hold) => ({ n: hold + 3, f, dx: dir * skid, tag: "land",
+  P: (st) => st < hold ? PD.land : st < hold + 1 ? PR.rise : st < hold + 2 ? PD.recover : PS.ready,
+  root: (e) => [dir * skid * kbOut(clamp01(e / hold)), 0] });
+
+// ---------- the shared signal: a wide ember glow on the ground round the boss, out to the move's reach, then one burst to its edge
+// It is steady: it does not flicker in steps as the small warnings do, because it is bigger than a character (the rule from version 9).
+function kbWarn(x, X, G, R, a, t) { if (a <= 0) return; const fl = 1, gy = G(X) + 2;
+  x.save(); x.globalCompositeOperation = "screen"; x.translate(X, gy); x.scale(R / 30, 0.5);
+  const g = x.createRadialGradient(0, 0, 0, 0, 0, 30); g.addColorStop(0, kbRgba("#ffe2b0", 0.8 * a * fl)); g.addColorStop(0.3, kbRgba(MO.ember, 0.78 * a * fl));
+  g.addColorStop(0.86, kbRgba(MO.ember, 0.6 * a * fl)); g.addColorStop(1, kbRgba(MO.glow, 0)); x.fillStyle = g; x.fillRect(-30, -30, 60, 60); x.restore();
+  x.save(); x.globalCompositeOperation = "screen"; if (FX) { const g2 = x.createLinearGradient(0, gy, 0, gy - 38); g2.addColorStop(0, kbRgba(MO.ember, 0.42 * a * fl)); g2.addColorStop(1, kbRgba(MO.glow, 0));
+  x.fillStyle = g2; x.beginPath(); x.ellipse(X, gy, R * 0.94, 38, 0, Math.PI, 0); x.fill(); }   // the kit: Effects off and Fastest, the flat patch without the light rising from it
+  // its two ends, marked a little hotter, so the edge can be judged
+  for (const sd of [-1, 1]) { const ex = X + sd * R * 0.93, g3 = x.createRadialGradient(ex, gy, 0, ex, gy, 16); g3.addColorStop(0, kbRgba("#ffe2b0", 0.6 * a * fl)); g3.addColorStop(1, kbRgba(MO.glow, 0)); x.fillStyle = g3; x.fillRect(ex - 16, gy - 16, 32, 32); }
+  x.restore(); }
+function kbDome(x, X, gy, R, u, col, h, al, rm) { if (u < 0 || u > 1) return; const a = (1 - u) * (1 - u * 0.3) * (al == null ? 1 : al), k = rm ? 1 : Math.min(1, u * 2.4),   /* the kit: Reduce motion, at full size, fading */ rr = R * (0.5 + 0.5 * kbOut(k)), hh = h * (0.45 + 0.55 * kbOut(k));
+  x.save(); x.globalCompositeOperation = "screen"; const g = x.createLinearGradient(0, gy, 0, gy - hh); g.addColorStop(0, kbRgba(col, 0.72 * a)); g.addColorStop(0.55, kbRgba(col, 0.34 * a)); g.addColorStop(1, kbRgba(col, 0));
+  x.fillStyle = g; x.beginPath(); x.ellipse(X, gy, rr, hh, 0, Math.PI, 0); x.fill(); x.strokeStyle = kbRgba(col, 0.62 * a); x.lineWidth = 2.4; x.beginPath(); x.ellipse(X, gy, rr, hh, 0, Math.PI, 0); x.stroke(); x.restore(); }
+function kbStreak(x, x0, y0, x1, y1, w, col, a) { if (a <= 0) return; x.save(); x.lineCap = "round"; x.strokeStyle = kbRgba("#15160f", a * 0.85); x.lineWidth = w; x.beginPath(); x.moveTo(x0, y0); x.lineTo(x1, y1); x.stroke();
+  x.globalCompositeOperation = "screen"; x.strokeStyle = kbRgba(col, a * 0.7); x.lineWidth = w * 0.6; x.beginPath(); x.moveTo(x0, y0 - w); x.lineTo(x1, y1 - w); x.stroke(); x.restore(); }
+// a leaf on the wind: the Mist's own leaf shape (bundle.js's leafShape, which is not reachable from here), in ink
+function kbLeaf(x, X, Y, k, ang, a) { if (a <= 0) return; x.save(); x.globalAlpha = Math.min(1, a); x.translate(X, Y); x.rotate(ang); x.scale(k, k * Math.max(0.15, Math.abs(Math.cos(ang * 2.3)))); x.fillStyle = "#17180f";
+  x.beginPath(); x.moveTo(-6, 0); x.quadraticCurveTo(-1, -3.6, 6, 0); x.quadraticCurveTo(-1, 3.6, -6, 0); x.closePath(); x.fill(); x.fillRect(-8.5, -0.45, 3, 0.9); x.restore(); }
+
+// ---------- each boss's own move. tell(st,u,C), burst(st,u,C), rec(st,u,C): C = {bx, gy, G, t, fx, face}; they return how hot its eyes are
+const KB_MOVE = {
+  /* The Veiled Ghost: its shroud bursts. It sinks and draws its shroud in, pale motes drawn in to it; then the shroud snaps wide. */
+  night: { name: "The shroud bursts", eyes: [[-8, -190], [5, -190]], hands: [[-70, -62], [72, -45]], col: "#f0c9e0", h: 165,
+    base: (t) => ({ dy: -5 * Math.sin(t * 1.7) }),
+    tell(st, u, C) { const v = ease(u); st.sx = 1 - 0.2 * v; st.dy += 12 * v;
+      C.fx.push((x) => { for (let k = 0, n = Math.round(10 * KB_N); k < n; k++) { const ph = (C.t * 1.5 * KB_SP + k / n) % 1, an = Math.PI * (k + 0.5) / n,   /* the kit: KB_N, KB_SP */ r = 30 + 150 * (1 - ph); fxMote(x, C.bx + Math.cos(an) * r, C.gy - 70 - Math.sin(an) * r * 0.7, 1.8, Math.sin(ph * Math.PI) * 0.85 * v, "#f0c9e0"); } }); return v; },
+    burst(st, u, C) { const k = kbOut(clamp01(u / 0.25)), back = u > 0.25 ? ease((u - 0.25) / 0.75) : 0; st.sx = lerpN(lerpN(0.8, 1.22, k), 1, back); st.dy += lerpN(lerpN(12, -8, k), 0, back); return 1 - u; },
+    rec() { return 0; } },
+  /* The Tentacled Skull: the slam. It draws itself up tall, then drops; the street bursts round it. */
+  storm: { name: "The slam", eyes: [[-25, -98], [23, -98]], mouth: [0, -60], col: MO.ember, h: 150,
+    base: () => ({}),
+    tell(st, u, C) { const v = ease(u); st.sy = 1 + 0.17 * v; st.sx = 1 - 0.05 * v; return v; },
+    burst(st, u, C) { const k = ease(clamp01(u / 0.22)), back = u > 0.3 ? ease((u - 0.3) / 0.7) : 0; st.sy = lerpN(lerpN(1.17, 0.84, k), 1, back); st.sx = lerpN(lerpN(0.95, 1.1, k), 1, back);
+      const uu = u; C.fx.push((x) => { const r = mvRng(17); for (const sd of [-1, 1]) fxBurst(x, C.bx + sd * 86, C.gy - 6, 1.5, uu, MO.ember);
+        for (let k2 = 0; k2 < 12 * KB_N; k2++) { const px = C.bx + (r() - 0.5) * 1.7 * C.R, up = 50 + r() * 80; fxMote(x, px + (px - C.bx) * 0.25 * uu, C.gy - up * 4 * uu * (1 - uu * 0.62), 2.4, 1 - uu, "#2a1a1c"); } }); return 1 - u; },
+    rec() { return 0; } },
+  /* The Moor Mother: she rears and stamps. She rises tall on her legs and leans back, then drives down; the ground bursts round her. */
+  dawn: { name: "She rears and stamps", eyes: [[-7, -175], [8, -176]], col: "#bcd2ff", h: 160,
+    base: () => ({}),
+    tell(st, u, C) { const v = ease(u); st.tilt = 0.1 * v * C.face; st.sy = 1 + 0.09 * v; st.dy = -8 * v; return v; },
+    burst(st, u, C) { const k = ease(clamp01(u / 0.22)), back = u > 0.3 ? ease((u - 0.3) / 0.7) : 0; st.tilt = lerpN(lerpN(0.1, -0.05, k), 0, back) * C.face; st.sy = lerpN(lerpN(1.09, 0.9, k), 1, back); st.dy = lerpN(lerpN(-8, 0, k), 0, back);
+      const uu = u; C.fx.push((x) => { for (const sd of [-1, 1]) fxBurst(x, C.bx + sd * 74, C.gy - 4, 1.8, uu, "#bcd2ff"); }); return 1 - u; },
+    rec() { return 0; } },
+  /* The Gaping Tree: the roar. It leans back and draws the wind in to its maw; then it leans in and the wind bursts out both ways. */
+  mist: { name: "The roar", eyes: [[13, -84], [33, -83]], mouth: [23, -53], col: MO.ember, h: 170, domeA: 0.7,
+    base: () => ({}),
+    tell(st, u, C) { const v = ease(u); st.tilt = 0.075 * v * C.face; const mx = 23;   // the wind runs in to the maw, which is 23 lines right of the trunk's foot
+      C.fx.push((x) => { for (let k = 0; k < 14 * KB_N; k++) { const sd = k % 2 ? 1 : -1, ph = (C.t * 1.9 * KB_SP + k * 0.371) % 1, d = 40 + (C.R + 70) * (1 - ph), y = C.gy - 18 - ((k * 37) % 135), y2 = lerpN(y, C.gy - 53, 0.25);
+          kbStreak(x, C.bx + mx + sd * d, y, C.bx + mx + sd * (d - 34), y2, 2, "#e6ecd0", Math.sin(ph * Math.PI) * 0.6 * v);
+          if (k % 2 === 0) kbLeaf(x, C.bx + mx + sd * (d + 14), y - 5, 1.5, k * 1.3 + ph * 5, Math.sin(ph * Math.PI) * 0.95 * v); } }); return v; },
+    burst(st, u, C) { const k = ease(clamp01(u / 0.22)), back = u > 0.3 ? ease((u - 0.3) / 0.7) : 0; st.tilt = lerpN(lerpN(0.075, -0.07, k), 0, back) * C.face;
+      const uu = u; C.fx.push((x) => { for (let k2 = 0; k2 < 20 * KB_N; k2++) { const sd = k2 % 2 ? 1 : -1, d = 30 + (kbOut(uu) * 1.25 + ((k2 * 0.173) % 0.3)) * C.R, y = C.gy - 12 - ((k2 * 41) % 150), L = 46 * (1 - uu * 0.6);
+          kbStreak(x, C.bx + sd * d, y, C.bx + sd * (d - L), y, 2.4, "#e6ecd0", (1 - uu) * 0.7);
+          if (k2 % 2 === 0) kbLeaf(x, C.bx + sd * (d + 12), y + 7, 1.6, k2 * 0.9 + uu * 7, (1 - uu)); } }); return 1 - u; },
+    rec() { return 0; } }
+};
+
+const MD = {
+  gather: 0.9,          // the first step: the boss goes still and the light gathers; nothing is restored
+  wait: 0.3,            // from the blow that crosses a mark to the mend beginning (its very next move)
+  blow: 0.022,          // a sword blow's share of the bar, as drawn
+  spell: 0.05,          // the fireball's share of the bar, as drawn
+  stagger: 0.9,         // the opening after a spell breaks it
+  ends: { low: { steps: 3, d: 0.8, amt: 0.10, marks: [0.5], spent: [] },            // the bottom of the climb: one mend of a tenth
+          top: { steps: 4, d: 0.7, amt: 0.16, marks: [0.75, 0.5, 0.25], spent: [0.75] } },   // the top: three mends of about a sixth
+  H: { night: 247, storm: 206, dawn: 270, mist: 255 },    // the bosses' heights
+  W: { night: 78, storm: 150, dawn: 128, mist: 118 },     // and half-widths, for the light
+  // where each boss's ember eyes are in its kept picture (measured from the picture), for the lids: [x, y, half-width, half-height, no slit]
+  lid: { night: [[-8, -193, 5.5, 4.2], [5, -193, 5.5, 4.2]], storm: [[-24.3, -101, 16, 11.5], [23.8, -101, 16, 11.5]],
+    dawn: [[-7, -176, 4.6, 3.6], [8.5, -177, 4.6, 3.6], [25.8, -151.3, 3.2, 2.8, 1], [34.8, -148, 3.2, 2.8, 1], [28.8, -142, 3, 2.6, 1]],
+    mist: [[12.9, -84.4, 5.6, 4.4], [33.4, -82.7, 5.6, 4.4], [23.2, -53.1, 8.5, 7]] }
+};
+const MANA = "#5fdcca", MANA_LOW = "#2a9f8f", MANA_PALE = "#d6fff7";
+const mdR = (h, a) => LP.rgba(h, Math.max(0, Math.min(1, a)));
+
+// ---------- each boss mending: it goes still and bows, as a card puppet (no new picture); v 0..1 is how far into the pose it is
+const MD_POSE = {
+  night(st, v, t) { st.dy = lerpN(-5 * Math.sin(t * 1.7), 7, v); st.tilt = -0.07 * v; st.sx = 1 - 0.06 * v; },
+  storm(st, v, t, C) { st.dy = 15 * v; st.tilt = -0.035 * v; st.clipY = C.gy + 4; },
+  dawn(st, v) { st.sy = 1 - 0.055 * v; st.tilt = -0.05 * v; },
+  mist(st, v) { st.tilt = -0.012 * v; }
+};
+// where the boss's outline is at each height: its middle and half-width every 10 lines up from its feet, read once from its kept picture
+// and smoothed. The ring and the motes follow it, so on the windswept tree they lean with the tree (Barney, 17 November 2026: the ring
+// rose straight up from the tree's base and was out of place two thirds of the way up).
+const MD_PROF = {};
+function mdProfile(lv) { if (MD_PROF[lv]) return MD_PROF[lv]; const K = {}; mdKept(K, lv);   // the kit: its picture painted once at sharpness 1, as bsDrawKit paints the kept one (play.js: bsDraw)
+  const B = K.B, W = B.width, d = B.getContext("2d").getImageData(0, 0, W, B.height).data, n = Math.ceil(MD.H[lv] / 10) + 1, raw = [];
+  for (let k = 0; k < n; k++) { let x0 = 1e9, x1 = -1e9; for (let y = Math.max(0, 300 - k * 10 - 10); y < 300 - k * 10; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 150) { if (x < x0) x0 = x; if (x > x1) x1 = x; } raw.push(x1 >= x0 ? [(x0 + x1) / 2 - 230, (x1 - x0) / 2] : null); }
+  for (let k = 0; k < n; k++) if (!raw[k]) raw[k] = raw.slice(0, k).reverse().find(Boolean) || raw.slice(k).find(Boolean) || [0, 40];
+  const sm = (i, j) => { let a = 0, c = 0; for (let k = i - 2; k <= i + 2; k++) if (k >= 0 && k < n) { a += raw[k][j]; c++; } return a / c; }, rows = raw.map((r, i) => [sm(i, 0), sm(i, 1)]);
+  const mid = rows.reduce((a, r) => a + r[0], 0) / n;
+  return (MD_PROF[lv] = { rows, mid, at(h) { const f = Math.max(0, Math.min(n - 1, h / 10)), i = Math.floor(f), j = Math.min(n - 1, i + 1), u = f - i; return [lerpN(rows[i][0], rows[j][0], u), lerpN(rows[i][1], rows[j][1], u)]; } }); }
+// the mend's light. pre: behind the boss; post: over it
+function mdAura(x, X, gy, lv, a, t) { if (a <= 0) return; X += mdProfile(lv).mid; const H = MD.H[lv], cy = gy - H * 0.5, r = H * 0.78, br = 0.88 + 0.12 * Math.sin(t * 2.2);
+  x.save(); const g = x.createRadialGradient(X, cy, 0, X, cy, r); g.addColorStop(0, mdR(MANA, 0.5 * a * br)); g.addColorStop(0.55, mdR(MANA_LOW, 0.3 * a * br)); g.addColorStop(1, mdR(MANA_LOW, 0));
+  x.fillStyle = g; x.fillRect(X - r, cy - r, r * 2, r * 2); x.restore(); }
+function mdMotes(x, X, gy, lv, a, t, gather) { if (a <= 0) return; const H = MD.H[lv], Wb = MD.W[lv];
+  for (let k = 0; k < 14 * MD_N; k++) { const ph = (t * 0.55 + k * 0.2713) % 1, h = ((k * 53) % 97) / 97;
+    if (gather) { const sd = k % 2 ? 1 : -1, d = Wb * 0.3 + (Wb + 90) * (1 - ph); fxMote(x, X + sd * d, gy - 4 - 10 * Math.sin(ph * Math.PI), 2, Math.sin(ph * Math.PI) * 0.9 * a, MANA); }
+    else { const o = mdProfile(lv).at(ph * H * 0.92); fxMote(x, X + o[0] + (h - 0.5) * 1.8 * Math.max(30, o[1]), gy - 6 - ph * H * 0.92, 2.1, Math.sin(ph * Math.PI) * 0.9 * a, k % 3 ? MANA : MANA_PALE); } } }
+// one step of the mend: a ring of light rises through the boss, from its feet to over its head
+function mdRing(x, X, Y, st, lv, u, a) { if (u <= 0 || u >= 1 || a <= 0) return; const H = MD.H[lv], h = u * H * 1.04, o = mdProfile(lv).at(Math.min(h, H)), c = bsPt(X, Y, st, o[0], -h), y = c[1], cx = c[0],
+    rx = Math.max(34, Math.min(MD.W[lv] * 1.15, o[1] * 1.08 + 12)) * (h > H ? 1 - (h - H) / (H * 0.2) * 0.4 : 1), ry = Math.max(7, Math.min(13, rx * 0.12)), al = Math.sin(Math.PI * Math.min(1, u * 1.15)) * a;
+  x.save(); x.globalCompositeOperation = "screen"; const g = x.createLinearGradient(0, y + 26, 0, y - 26); g.addColorStop(0, mdR(MANA, 0)); g.addColorStop(0.5, mdR(MANA, 0.34 * al)); g.addColorStop(1, mdR(MANA, 0));
+  if (MD_SOFT) { x.fillStyle = g; x.beginPath(); x.ellipse(cx, y, rx * 1.05, 26, 0, 0, Math.PI * 2); x.fill(); }   // the kit: Effects off and Fastest, the ring's line without its soft band
+  x.strokeStyle = mdR(MANA_PALE, 0.85 * al); x.lineWidth = 2.6; x.beginPath(); x.ellipse(cx, y, rx, ry, 0, 0, Math.PI * 2); x.stroke(); x.restore(); }
+// the boss takes mana's colour: its kept picture's own shape filled with the colour and laid over it (the boss is not repainted). band: 0..1, where
+// this step's ring is, from its feet (0) to over its head (1); the fill is brighter there
+function mdTint(x, K, S, X, Y, st, lv, a, band) { if (a <= 0 || !K.B) return; const B = K.B, T = K.T && K.T.width === B.width && K.T.height === B.height ? K.T : (K.T = LP.mk(B.width, B.height)), tc = T.getContext("2d");
+  tc.setTransform(1, 0, 0, 1, 0, 0); tc.globalCompositeOperation = "source-over"; tc.clearRect(0, 0, T.width, T.height); tc.drawImage(B, 0, 0); tc.globalCompositeOperation = "source-in";
+  const H = MD.H[lv] * S, base = 300 * S, g = tc.createLinearGradient(0, base, 0, base - H * 1.05), lo = 0.5, hi = 1;
+  if (band != null && band > 0 && band < 1) { const b0 = Math.max(0, band - 0.16), b1 = Math.min(1, band + 0.16); g.addColorStop(0, mdR(MANA_LOW, lo)); g.addColorStop(b0, mdR(MANA_LOW, lo)); g.addColorStop(band, mdR(MANA_PALE, hi)); g.addColorStop(b1, mdR(MANA_LOW, lo)); g.addColorStop(1, mdR(MANA_LOW, lo)); }
+  else { g.addColorStop(0, mdR(MANA, 0.62)); g.addColorStop(1, mdR(MANA_LOW, lo)); }
+  tc.fillStyle = g; tc.fillRect(0, 0, T.width, T.height); tc.globalCompositeOperation = "source-over";
+  const X1 = X + (st.dx || 0), Y1 = Y + (st.dy || 0); x.save(); x.globalAlpha = Math.min(1, a) * (st.alpha == null ? 1 : st.alpha); if (st.clipY != null) { x.beginPath(); x.rect(X1 - 400, -2000, 800, 2000 + st.clipY); x.clip(); }
+  x.translate(X1, Y1); x.rotate(st.tilt || 0); x.scale((st.flip || 1) * (st.sx || 1), st.sy || 1); x.drawImage(T, -230, -300, 460, 330); x.restore(); }
+// its eyes close: an ink lid over each (drawn over the kept picture, so no new picture)
+function mdLids(x, X, Y, st, lv, a) { if (a <= 0) return; x.save(); x.globalAlpha = Math.min(1, a); x.fillStyle = "#0c0a10"; for (const e of MD.lid[lv]) { const w = bsPt(X, Y, st, e[0], e[1]); x.beginPath(); x.ellipse(w[0], w[1], e[2] * (st.sx || 1), e[3] * (st.sy || 1), st.tilt || 0, 0, Math.PI * 2); x.fill(); }
+  x.strokeStyle = mdR(MANA, 0.8); x.lineWidth = 1.4; x.lineCap = "round"; for (const e of MD.lid[lv]) { if (e[4]) continue; const w = bsPt(X, Y, st, e[0], e[1]); x.beginPath(); x.moveTo(w[0] - e[2] * 0.7, w[1] + 0.5); x.lineTo(w[0] + e[2] * 0.7, w[1] + 0.5); x.stroke(); } x.restore(); }
+// a sword blow glancing off: a short arc of the light where the blade meets it, and sparks thrown back
+function mdGlance(x, px, py, u) { if (u < 0 || u > 1) return; const a = 1 - u; x.save(); x.globalCompositeOperation = "screen"; x.lineCap = "round";
+  x.strokeStyle = mdR(MANA_PALE, 0.95 * a); x.lineWidth = 3; x.beginPath(); x.ellipse(px + 16, py, 20, 44, 0, Math.PI * 0.72, Math.PI * 1.28); x.stroke();
+  x.strokeStyle = mdR(MANA, 0.5 * a); x.lineWidth = 7; x.beginPath(); x.ellipse(px + 16, py, 20, 44, 0, Math.PI * 0.78, Math.PI * 1.22); x.stroke(); x.restore();
+  fxGlowAt(x, px, py, 22 + 10 * u, 0.7 * a, MANA); const r = mvRng(31); for (let k = 0; k < 6; k++) { const an = Math.PI * (0.72 + r() * 0.56), d = (8 + r() * 30) * kbOut(u); fxMote(x, px + Math.cos(an) * d, py - Math.sin(an) * d * 0.2 + (r() - 0.5) * 50 * u + 18 * u * u, 1.8, a, k % 2 ? MANA_PALE : MANA); } }
+// broken by a spell: the light bursts apart and falls
+function mdShatter(x, X, gy, lv, u) { if (u < 0 || u > 1) return; const H = MD.H[lv], Wb = MD.W[lv], r = mvRng(44), a = 1 - u;
+  for (let k = 0; k < 18; k++) { const an = r() * Math.PI * 2, d = (20 + r() * 70) * kbOut(u), bx2 = X + (r() - 0.5) * Wb * 1.3, by = gy - H * (0.2 + r() * 0.7); fxMote(x, bx2 + Math.cos(an) * d, by + Math.sin(an) * d * 0.6 + 70 * u * u, 2.4, a, k % 3 ? MANA : MANA_PALE); } }
+
+// ---------- the kit (0.36.0): play.js's helpers under its own names, and what the settings change, set by world.begin each frame
+const LP={mk:(w,h)=>mk(w,h),rgba:(h,a)=>rgba(h,a)};
+let KB_N=1,KB_SP=1,MD_N=1,MD_SOFT=true;   // the wind, motes and rubble: half as many at Fastest and with Reduce motion, half as fast with
+                                         // Reduce motion; the mend's motes half as many at Fastest; the ring's soft band only with Effects on
+let MD_OPT=null;                         // the frame's options, for the one picture mdProfile reads
+function mdKept(K,lv){K.B=mk(460,330);bossInto(K.B.getContext("2d"),1,lv,1.0,MD_OPT||{},0,0,BOSS_NOD,true,{},BOSS_LOOK);KIT.mdReads=(KIT.mdReads||0)+1;}
+// the knock-back's phases: the tell, the burst landing KB.hit after it (what it hurts is judged then, KB_AT), its light, the boss settling
+const KB_AT=KB.tell+KB.hit,KB_LEN=KB.tell+KB.hit+KB.burst+KB.rec;
+for(const lv of ["night","storm","dawn","mist"])BS_PHASES[lv].knock=[KB.tell,KB_AT+KB.burst,KB_LEN];
+// the knock-back as a game plays it, as KB_FIGHT's at() draws it. u: seconds since it began. A: bx, where the boss stands; G, the ground;
+// t, the time; rm, Reduce motion
+function kbMoveKit(lv,u,A){const M=KB_MOVE[lv],bx=A.bx,G=A.G,t=A.t,gy=G(bx)+2,RC=KB.reach[lv],st=M.base(t),fx=[],C={bx,gy,G,t,fx,face:1,R:RC},r={X:bx,st,hot:0,fx};let w;
+  if((w=bsWin(u,0,KB.tell))!=null){r.hot=M.tell(st,w,C);const a=ease(clamp01(w*2.4));fx.push(x=>kbWarn(x,bx,G,RC,a,t));}
+  else if((w=bsWin(u,KB.tell,KB_AT))!=null){r.hot=M.tell(st,1,C);fx.push(x=>kbWarn(x,bx,G,RC,1,t));}
+  else if((w=bsWin(u,KB_AT,KB_AT+KB.burst))!=null){const uu=w,rm=A.rm;r.hot=M.burst(st,w,C);fx.push(x=>{kbWarn(x,bx,G,RC,1-uu,t);if(FX)kbDome(x,bx,gy,RC,uu,M.col,M.h,M.domeA,rm);});}   // Effects off: no light, the boss's own move only
+  const ph=BS_PHASES[lv].knock;r.phase=u<ph[0]?"signal":u<ph[1]?"attack":u<ph[2]?"recover":"done";return r;}
+// the mend as a game plays it, as MD_FIGHT's at() draws it. m: { t, seconds since it began; steps and d, its steps and their length; end,
+// seconds since it ended on its own; broken, seconds since a spell broke it }. glance: [{ t, x, y }] in the boss's own frame. A: bx, G, t,
+// st (the boss's pose this frame, which the mend changes), rm. What it draws behind the boss (pre) and over it (post), how shut its eyes
+// are (lid), how strong its colour (light) and where the colour's band is (band)
+function mdKit(lv,m,glance,A){const bx=A.bx,G=A.G,t=A.t,st=A.st,gy=G(bx)+2,pre=[],post=[],C={bx,gy,G,t},len=MD.gather+m.steps*m.d,T=m.t||0;
+  const on=m.end==null&&m.broken==null&&T<len;let v=0,light=0,band=null,ringU=null,pulse=0;
+  if(on){v=ease(clamp01(T/0.5));light=ease(clamp01(T/0.7));}
+  else if(m.broken!=null){v=0;light=1-clamp01(m.broken/0.2);}
+  else{const e=m.end!=null?m.end:T-len;v=1-ease(clamp01(e/0.5));light=1-clamp01(e/0.45);}
+  if(v>0)MD_POSE[lv](st,v,t,C);
+  if(on){const tt=T-MD.gather;if(tt>0){const k=Math.floor(tt/m.d),us=(tt-k*m.d)/m.d,p=Math.sin(Math.PI*clamp01(us/0.6));st.sy=(st.sy||1)*(1+0.022*p);st.sx=(st.sx||1)*(1+0.014*p);
+      const ur=us/0.72;band=ur;ringU=ur;pulse=p;}}
+  if(light>0){const l2=light,gathering=on&&T<MD.gather,tb=A.rm?0:t;if(FX)pre.push(x=>mdAura(x,bx,gy,lv,l2,tb));post.push(x=>mdMotes(x,bx,gy,lv,l2,t,gathering));}   // the patch: none with Effects off; still with Reduce motion
+  for(const g of glance||[])if(g.t>=0&&g.t<0.3){const gx=g.x,gg=g.y,u=g.t/0.3;post.push(x=>mdGlance(x,gx,gg,u));}
+  if(m.broken!=null){const u=m.broken/MD.stagger;if(u<1){const k=u<0.18?ease(u/0.18):1-ease((u-0.18)/0.82);st.tilt=(st.tilt||0)+0.075*k;st.dx=(st.dx||0)+10*k;}
+    const us=m.broken/0.6;if(us<1)post.push(x=>mdShatter(x,bx,gy,lv,us));}
+  if(light>0)st.glow=1-0.75*light;
+  if(ringU!=null&&!A.rm){const ru=ringU,Yb=G(bx)+4;post.unshift(x=>mdRing(x,bx,Yb,st,lv,ru,1));}   // Reduce motion: no ring; the colour brightens once at each step
+  return{pre,post,lid:v,light:light*(A.rm?1+0.4*pulse:1),band:A.rm?null:band,on};}
+// the boss in mana's colour over its kept picture (the one drawn this frame, its flare's if it flares); at Fastest laid on once for each
+// kept picture, with no moving band
+const MDK={};
+function mdTintKit(x,S,lv,X,Y,st,a,band){const K=BSK[lv];if(!K||!K.B||a<=0)return;const fl=!!(st.flare&&K.BF),M=MDK[lv]||(MDK[lv]={}),key=(fl?"F|":"")+(fl?K.keyF:K.key)+"|"+S;M.B=fl?K.BF:K.B;
+  if(QUICK&&M.qk===key&&M.T){const T=M.T,X1=X+(st.dx||0),Y1=Y+(st.dy||0);x.save();x.globalAlpha=Math.min(1,a)*(st.alpha==null?1:st.alpha);if(st.clipY!=null){x.beginPath();x.rect(X1-400,-2000,800,2000+st.clipY);x.clip();}
+    x.translate(X1,Y1);x.rotate(st.tilt||0);x.scale((st.flip||1)*(st.sx||1),st.sy||1);x.drawImage(T,-230,-300,460,330);x.restore();return;}
+  mdTint(x,M,S,X,Y,st,lv,a,QUICK?null:band);M.qk=QUICK?key:null;KIT.tints=(KIT.tints||0)+1;}
+// the wanderer thrown, as KB_FIGHT throws him: the steps between the two ends drawn (KB.ends, KB.tumble) are in proportion to the throw.
+// o: x, where he is struck; dir, the way he is thrown; dist, the throw in lines; stop, the arena's end on that side (he stops 18 inside it
+// and lands as normal). He faces the boss throughout. A throw of KB.tumbleFrom or more ends in a tumble, a shorter one on his feet
+function kbThrow(o){const lo=KB.ends.low,hi=KB.ends.top,dist=Math.max(1,+o.dist||lo.dist),u=clamp01((dist-lo.dist)/(hi.dist-lo.dist)),dir=o.dir<0?-1:1,f=-dir;
+  const E={dist,air:lerpN(lo.air,hi.air,u),up:lerpN(lo.up,hi.up,u),skid:lerpN(lo.skid,hi.skid,u),hold:Math.round(lerpN(lo.hold,hi.hold,u))};
+  const TB={skid:lerpN(KB.tumble.low.skid,KB.tumble.top.skid,u),n:Math.round(lerpN(KB.tumble.low.n,KB.tumble.top.n,u))};
+  const tum=dist>=KB.tumbleFrom,x0=+o.x||0,room=o.stop==null?dist:Math.max(0,Math.abs(o.stop-x0)-18),all=Math.min(dist,room),cut=all<dist-1;
+  const skid=Math.min(tum?TB.skid:E.skid,all*0.2),fly=all-skid,air=Math.max(0.4,E.air*fly/(E.dist-E.skid)),up=E.up*Math.min(1,0.5+0.5*fly/(E.dist-E.skid));
+  const tr=wTrack26(x0,[W_THROWN(f,dir,fly,air,up,tum),tum?W_TUMBLE(f,dir,skid,TB.n):W_LAND(f,dir,skid,E.hold)]),land=tr.tag0("land");
+  return{total:tr.total,land,tumble:tum,all,cut,
+    at(t){const q=tr.at(Math.max(0,Math.min(tr.total-1e-6,t)));return{x:q.x,y:q.y,tag:q.tag,step:q.st,rot:q.rot,P:q.P,f:q.f,landU:q.tag==="land"?clamp01((t-land)*12/4):null,done:t>=tr.total};}};}
+// as mvDrawKit, turned about his middle as he flies (KB_FIGHT's loopKB turns him so): the painted figure drawn with the turn, its lantern's
+// pool of light with it
+function mvDrawKitRot(x,s,X,Y,P,tq,f,edge,k,o,rot){const F=mvFigure(s,P,tq,k,edge,o.rm,f),G=F.G,pv=26*k,eA=o.edgeA==null?1:o.edgeA;
+  x.save();x.translate(X,Y-pv);x.rotate(f*rot);x.translate(0,pv);
+  if(FX){const lx=f*G.hook[0]*k,ly=(G.hook[1]+12)*k,g=x.createRadialGradient(lx,ly,2,lx,ly,74*k/1.32);g.addColorStop(0,"rgba(255,201,106,0.42)");g.addColorStop(1,"rgba(255,201,106,0)");x.fillStyle=g;x.fillRect(lx-80*k,ly-80*k,160*k,160*k);}
+  const put=cv=>x.drawImage(cv,-F.ox/s,-F.oy/s,F.w/s,F.h/s);if(eA>0){x.globalAlpha=eA;put(F.E);x.globalAlpha=1;}put(F.I);x.restore();return G;}
 
 /* ============================== the tools: what a game calls, as lb.world ==============================
    The tools draw; games decide what happens. A frame is world.begin(ctx, { place, camX, rise }), then the things on the path
@@ -6220,7 +6533,8 @@ function makeTools(env){
       o=o||{};
       const L=o.level&&o.level._T?o.level:null,S=env.k(),level=L?L.place:(o.place||"night");
       FX=env.fx();QUICK=!!(env.quick&&env.quick());
-      const rm=env.rm(),t=o.t==null?env.t():o.t,sc=sceneFor(S),W=env.W(),camX=o.camX||0;
+      const rm=env.rm();KB_N=rm||QUICK?0.5:1;KB_SP=rm?0.5:1;MD_N=QUICK?0.5:1;MD_SOFT=FX;   // kit 0.36.0: what the settings change for the knock-back and the mend
+      const t=o.t==null?env.t():o.t,sc=sceneFor(S),W=env.W(),camX=o.camX||0;
       const opt={level,rm,walking:true,facing:1,hud:false,splash:"on",emberMouth:true,defeat:"cardwisp",dcol:EMBER.danger,dglow:EMBER.glow,win:GOLD_LIGHT,litP:LV[level].litP,sample:!!o.sample,lvl:L?L._T:null};
       const rise=o.rise!=null?o.rise:L?L.rise(camX+W*0.32):0;
       F={ctx,s:S,W,t,rm,level,camX,camY:rise,opt,gy:L?L.ground:gY,late:[]};
@@ -6237,6 +6551,16 @@ function makeTools(env){
     // version 8 (4c-3): the moves, as a game plays them. world.move(name, step) gives the pose's tag, the move's length in steps, done,
     // and where the review loops have him stand (dx, dy, picture lines from where the move began). Steps are puppet steps, 12 a second.
     moves:Object.keys(MOVES),
+    // kit 0.36.0 (design system 26, BossAttacks): the knock-back's figures as drawn: tell, at (when the burst lands and what it hurts is judged),
+    // len (the whole move), reach (either side of each boss's middle), hurt (the light hurt's share of his health), tumbleFrom, and the two
+    // ends drawn (low 170 lines, top 600). MEND: gather (the first step, nothing restored), wait (from the blow that crosses a mark to the mend),
+    // stagger (the opening after a spell breaks it), and the two ends drawn. SPLINTER: the Gaping Tree's splinters (from its foot; their speed)
+    KNOCK:{tell:KB.tell,at:KB_AT,len:KB_LEN,burst:KB.burst,reach:Object.assign({},KB.reach),hurt:KB.hurt,tumbleFrom:KB.tumbleFrom,ends:{low:KB.ends.low.dist,top:KB.ends.top.dist}},
+    MEND:{gather:MD.gather,wait:MD.wait,stagger:MD.stagger,ends:JSON.parse(JSON.stringify(MD.ends))},
+    SPLINTER:{from:SPLINTER.from.slice(),v:SPLINTER.v,until:SPLINTER.until},
+    // kit 0.36.0: the wanderer thrown by a knock-back (see kbThrow): o { x, dir, dist, stop }. Gives { total, land, tumble, all, cut, at(t) },
+    // at(t) to give world.wanderer as o.thrown, with x and y (lines above the ground, negative up), tag ("thrown", "land"), done
+    throwTrack(o){return kbThrow(o||{});},
     stepRate:MV_RATE,
     move(name,step){const m=mvMove(name,step||0);return{tag:m.tag,steps:m.steps,done:m.done,dx:m.dx,dy:m.dy};},
     // kit 0.11.0 (design system version 12): belt(name) chooses the belt the wanderer wears from here on: 'red' (or 'scarf', its token's
@@ -6251,11 +6575,13 @@ function makeTools(env){
       // Kit 0.18.0 (version 14): refuse: seconds since The Grave Refuses caught his break (1 s: his pieces out a short way for 0.4 s, then
       // back together edged in hot gold for 0.6 s), from: { x, y } where he broke (left out, where he forms: x and y); flare: seconds since
       // he formed again (his lantern flares, 0.5 s). The rise after it is the move 'rise' (kneel, buckle; then standing).
+      // Kit 0.36.0 (version 26, Moves): thrown: what world.throwTrack's at(t) gives, in place of move and step: struck, flung (turning as he
+      // flies), then landing on his feet or in a tumble; x and y from it (y: the ground under x, plus its y). He faces the boss throughout.
       const f=frame("wanderer");o=o||{};
       const name=o.move||(o.walking===false?"idle":"walk"),step=o.step==null?f.t*MV_RATE:o.step,mv=mvMove(name,step);
-      const lvl=o.sword?{r:o.sword.reach||0,s:o.sword.bite||0}:null,P=lvl?withLvl(mv.P,lvl):mv.P,
+      const TQ=o.thrown||null,lvl=o.sword?{r:o.sword.reach||0,s:o.sword.bite||0}:null,P0=TQ?TQ.P:mv.P,P=lvl?withLvl(P0,lvl):P0,
         tq=TRIAL.hero?(mv.done?mv.steps-1:((Math.floor(step)%mv.steps)+mv.steps)%mv.steps)/MV_RATE:Math.floor(f.t*MV_RATE)/MV_RATE;   // kit 0.20.4: the hero trial
-      const c=f.ctx,X=x-f.camX,Y=o.y==null?f.gy(x)+1:o.y,fc=o.facing||1,e=LV[f.level].edge;
+      const c=f.ctx,X=x-f.camX,Y=o.y==null?f.gy(x)+1:o.y,fc=TQ?TQ.f:o.facing||1,e=LV[f.level].edge;
       if(o.pit){const p0=o.pit[0],p1=o.pit[1];c.save();c.beginPath();c.rect(-200,-2000,f.W+400,2000+f.gy(p0)-1);c.rect(p0+3-f.camX,-2000,p1-p0-6,4000);c.clip("nonzero");}
       let G=null;
       if(o.refuse!=null){const fr=o.from||{},Xb=fr.x==null?X:fr.x-f.camX,Yb=fr.y==null?Y:fr.y;mvGather(c,MV_SH,Xb,Yb,X,Y,fc,o.refuse);}   // kit 0.18.0
@@ -6269,13 +6595,15 @@ function makeTools(env){
         if(fa<1){c.save();c.globalAlpha=fa;}
         const mo={edgeA:o.form!=null?0.4+0.6*fa:o.safe!=null?moPulse(o.safe):1,rm:f.rm,feet:o.form!=null?true:o.feet,aura:heal?{col:MV_LAMP,h:Math.min(1,hu/0.42)*1.05,a:healEnv(hu)*1.1,w:1.5+0.5*(hl-1)}:null};
         if(fa<1){MV_RM=!!f.rm;try{G=mvDraw(c,X,Y,P,tq,fc,e,K132,mo);}finally{MV_RM=false;}} // forming: each shape fades on its own, as play.js draws him
+        else if(TQ&&TQ.rot&&P.ball==null)G=mvDrawKitRot(c,f.s,X,Y,P,tq,fc,e,K132,mo,TQ.rot);   // kit 0.36.0: thrown, turning as he flies
         else G=mvDrawKit(c,f.s,X,Y,P,tq,fc,e,K132,mo);
         if(fa<1)c.restore();
-        fxHand(c,X,Y,fc,K132,P,G);
+        if(!(TQ&&TQ.rot))fxHand(c,X,Y,fc,K132,P,G);
+        if(TQ&&TQ.landU!=null&&TQ.landU<1)fxBurst(c,X+fc*8,f.gy(x)-3,1,TQ.landU,"#3a2f2a");   // kit 0.36.0: the dust where he lands (KB_FIGHT's)
         if(heal){healRings(c,X,Y,K132,hu,hl,true);healMotes(c,X,Y,K132,hu,hl,tq);}
         if(o.drink){const u=(o.drink.t||0)/0.9;if(u>=0&&u<1)potDrinkFx(c,mvPt(G,P,X,Y,fc,K132,4,-22),u,o.drink.kind==="mana"?"mana":"health",f.rm,FX);} // kit 0.9.0: a potion drunk (0.9 s)
         if(o.fizzle!=null){const G2=mvGeo(PF.thrust,0),hp=G2.T(G2.fHd[0],G2.fHd[1]);fxFizzle(c,X+fc*(hp[0]*K132+3),Y+hp[1]*K132,K132,o.fizzle/0.6);}
-        if(name==="sword"&&(mv.tag==="strike"||mv.tag==="follow")){const L=lvl||{r:0,s:0},a=mv.tag==="strike"?[tipAng(withLvl(PS.wind,L)),tipAng(P),0.85]:[tipAng(withLvl(PS.strike,L))-0.5,tipAng(P),0.4];
+        if(!TQ&&name==="sword"&&(mv.tag==="strike"||mv.tag==="follow")){const L=lvl||{r:0,s:0},a=mv.tag==="strike"?[tipAng(withLvl(PS.wind,L)),tipAng(P),0.85]:[tipAng(withLvl(PS.strike,L))-0.5,tipAng(P),0.4];
           fxSlash(c,X,Y,fc,K132,P,a[0],a[1],a[2],e,L);}
         if(o.hurt){const ch=mvPt(G,P,X,Y,fc,K132,12,-21),u=o.hurt.t||0;if(o.hurt.kind==="armour")fxShards(c,ch[0],ch[1],fc,K132,u/0.5,e);else fxEmber(c,ch[0],ch[1],fc,K132,u/0.45);}
       }
@@ -6284,7 +6612,7 @@ function makeTools(env){
       if(o.flare!=null&&o.flare>=0&&o.flare<=0.5&&G){const lp=mvPt(G,P,X,Y,fc,K132,13.4,3.5);fxGraveFlare(c,lp[0],lp[1],K132,o.flare/0.5,!FX);}   // kit 0.18.0
       const pt=(bx,by)=>{const p=mvPt(G,P,X,Y,fc,K132,bx,by);return{x:p[0]+f.camX,y:p[1]};};
       const hd=G?G.T(G.fHd[0],G.fHd[1]):[P.hx+4,P.hy-16];
-      return{tag:mv.tag,done:mv.done,chest:pt(4,-22),hit:pt(12,-21),lantern:pt(13.4,3.5),hand:{x:x+fc*hd[0]*K132,y:Y+hd[1]*K132}};
+      return{tag:TQ?TQ.tag:mv.tag,done:TQ?TQ.done:mv.done,chest:pt(4,-22),hit:pt(12,-21),lantern:pt(13.4,3.5),hand:{x:x+fc*hd[0]*K132,y:Y+hd[1]*K132}};
     },
     // version 8 (4c-4): the spells, the loot and the checkpoints. Times are seconds since the moment began; positions are x along the path
     // and y in picture lines, as the wanderer returns them.
@@ -6441,6 +6769,12 @@ function makeTools(env){
     CLOSE_IN:Object.assign({},CLOSE_IN),   // kit 0.23.0: The Moor Mother's close move's figures (version 18)
     BOSS_MOVES:Object.fromEntries(Object.keys(BS_PHASES).map(lv=>[lv,Object.fromEntries(Object.keys(BS_PHASES[lv]).map(n=>[n,BS_PHASES[lv][n][2]]))])), // each move's length, seconds
     boss(o){ // o: x, y, defeat (0 to 1, over 2.2 s). The boss is the place's own.
+      // kit 0.36.0 (design system 26, BossAttacks): attack { name: "knock", t } is each boss's knock-back (world.KNOCK has its figures: the
+      // glow out to its reach for the tell, then the burst at KNOCK.at, which hurts everything within its reach from the ground to above a
+      // jump). mend { t, steps, d, end, broken } draws the boss mending (seconds since it began; its steps and their length; seconds since
+      // it ended on its own, or since a spell broke it); glance [{ t, x, y }] blows glancing off it while it mends (seconds since, where
+      // the blade met it). It returns mending while the mend runs. The boss is never repainted for either: each is its kept picture moved
+      // as a card puppet, and mana's colour is its shape laid over it
       // version 8 (4c-5b): arrive (seconds since its arrival began); attack { name (in world.BOSS_ATTACKS), t (seconds), at (the wanderer's x as it
       // began), targets (where a slam, roots or crawlers come; the fights' own places round him if left out) }; facing (1 facing left as drawn, -1
       // turned round); hit (seconds since a blow: it jolts back and its rim flares once, 0.13 s). Returns its phase, where it is (x) and which way it
@@ -6450,7 +6784,8 @@ function makeTools(env){
         const name=o.arrive!=null?"arrive":o.attack?o.attack.name:null,u=o.arrive!=null?o.arrive:o.attack?(o.attack.t||0):0,fl=o.facing||1;
         const design=name?((BS_DESIGN[lv]&&BS_DESIGN[lv][name])||1):1,mir=fl!==design,X0=o.x,m=x=>mir?2*X0-x:x; // a turned boss: the move mirrored about it
         const at=o.attack&&o.attack.at!=null?o.attack.at:X0-300,tg=o.attack&&o.attack.targets?o.attack.targets.map(m):null;
-        _S0=s;const r=name?bsMove(lv,name,u,{bx:X0,wx:m(at),G:f.gy,t:f.t,targets:tg}):{X:X0,st:lv==="night"?{dy:-5*Math.sin(f.t*1.7)}:{},hot:0,fx:[],phase:null};
+        _S0=s;if((o.arrive!=null||o.mend)&&!MD_PROF[lv]){MD_OPT=f.opt;mdProfile(lv);}   // kit 0.36.0: the boss's outline read once, as it arrives
+        const r=name==="knock"?kbMoveKit(lv,u,{bx:X0,G:f.gy,t:f.t,rm:f.rm}):name?bsMove(lv,name,u,{bx:X0,wx:m(at),G:f.gy,t:f.t,targets:tg}):{X:X0,st:lv==="night"?{dy:-5*Math.sin(f.t*1.7)}:{},hot:0,fx:[],phase:null};
         // kit 0.20.2, the boss12 trial: a sweep's pose (the sickle, the branch) taken 12 times a second, so its picture is repainted that often;
         // where it is, its phase and its warnings stay smooth
         if((TRIAL.boss12||(QUICK&&lv==="mist"&&!f.opt.rm))&&name&&name!=="arrive"&&(r.br||r.st.sickle!=null)){const q=bsMove(lv,name,Math.floor(u*TREE16.branch)/TREE16.branch,{bx:X0,wx:m(at),G:f.gy,t:f.t,targets:tg});   // kit 0.20.12: the Gaping Tree's branch at Fastest (design system 16; the tree trial since 0.20.6)
@@ -6459,9 +6794,13 @@ function makeTools(env){
         if(o.hit!=null&&o.hit>=0&&o.hit<0.13){r.st.dx=(r.st.dx||0)+BS_HIT[lv]*(r.st.flip||1);r.st.flare=true;}
         const Y=o.y==null?(lv==="dawn"?f.gy(r.X)+4:f.gy(X0)+4):o.y; // as the fights place them: the moor mother on the ground where she is, the others where they stand
         const c=f.ctx,place=k=>{k.translate(-f.camX,0);if(mir){k.translate(X0,0);k.scale(-1,1);k.translate(-X0,0);}};
-        c.save();place(c);bsDrawKit(c,s,lv,r.X,Y,f.t,f.opt,r.st,r.br);if(r.br&&r.br.grow>0)bsBranchFx(c,r.X,Y,r.st,r.br);bsSignals(c,lv,r.X,Y,r.st,r);c.restore();
+        // kit 0.36.0 (version 26): o.mend { t, steps, d, end, broken } and o.glance [{ t, x, y }] (see mdKit); its light behind and over the boss
+        const md=o.mend&&name!=="knock"?mdKit(lv,o.mend,(o.glance||[]).map(g=>({t:g.t,x:m(g.x),y:g.y})),{bx:X0,G:f.gy,t:f.t,st:r.st,rm:f.rm}):null;
+        c.save();place(c);if(md)md.pre.forEach(fn=>fn(c));bsDrawKit(c,s,lv,r.X,Y,f.t,f.opt,r.st,r.br);
+        if(md){mdTintKit(c,s,lv,r.X,Y,r.st,0.48*md.light,md.band);mdLids(c,r.X,Y,r.st,lv,md.lid);}
+        if(r.br&&r.br.grow>0)bsBranchFx(c,r.X,Y,r.st,r.br);bsSignals(c,lv,r.X,Y,r.st,r);if(md)md.post.forEach(fn=>fn(c));c.restore();
         if(r.fx.length)F.late.push(k=>{k.save();place(k);try{for(const fn of r.fx)fn(k);}finally{k.restore();}});
-        return{phase:r.phase,x:m(r.endX!=null&&r.phase==="done"?r.endX:r.X),facing:r.endFacing!=null&&u>=BS_PHASES[lv][name][1]?(mir?-r.endFacing:r.endFacing):fl,targets:r.targets?r.targets.map(m):undefined};
+        return{mending:md?md.on:false,phase:r.phase,x:m(r.endX!=null&&r.phase==="done"?r.endX:r.X),facing:r.endFacing!=null&&u>=BS_PHASES[lv][name][1]?(mir?-r.endFacing:r.endFacing):fl,targets:r.targets?r.targets.map(m):undefined};
       }
       const X=o.x-f.camX,Y=o.y==null?f.gy(o.x)+4:o.y;
       const u=clamp(o.defeat,0,1),d=defeatCanvas("B",460,330,s),K=scene.defK||(scene.defK={});
@@ -6485,7 +6824,7 @@ function makeTools(env){
       drawFairyKit(f.ctx,[ax-f.camX,ay,qx-f.camX,qy,bx-f.camX,by,seed||0],f.t,f.level,f.s);
     },
     // for the test page's readout
-    get stats(){return{tileBytes:KIT.bytes,poses:KIT.poses,builds:KIT.builds,thru:KIT.thruN};},
+    get stats(){return{tileBytes:KIT.bytes,poses:KIT.poses,builds:KIT.builds,thru:KIT.thruN,tints:KIT.tints||0,mdReads:KIT.mdReads||0};},   // kit 0.36.0: tints, mana's colour laid on (a fill, not a repaint); mdReads, a boss's outline read
     _thruCloud(on){KIT.thru=on!==false;},   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
     get _legs(){return{legs:moLegs,gait:MO_GAIT,stoop:MO_STOOP,hand:moWalkerHandAt,room:MON_ROOM,box:MON_BOX,scene};},   // test only (kit 0.34.0): the walker's and the ghoul's legs, the stoop and the painter, for measuring where their feet and the stooped arm are and how far each reaches
   };
@@ -6550,12 +6889,17 @@ function potion(k,phone,keys){const P=POT[k],kk=keyLetter(k==="health"?"Q":"E"),
       <path class="glass" d="${P.glass}"/><path class="mark" d="${P.mark}"/><path class="glint" d="M5 22 L9 22 L20 3 L16 3 Z"/></svg></span></button>${keys?`<span class="lb-pkey" aria-hidden="true">${kk}</span>`:""}<span class="lb-potion-pips" aria-hidden="true" hidden></span></span>`;}
 function potions(phone,beside,keys){return `<div class="lb-potions${beside?" is-beside":""}${phone?" is-phone":""}" role="group" aria-label="Potions kept">${potion("health",phone,keys)}${potion("mana",phone,keys)}</div>`;}
 function counter(phone,label,num){return `<div class="lb-plaque is-hud lb-counter${phone?" is-phone":""}" role="status" aria-label="${num} ${label.toLowerCase()}"><div class="lb-face"><span class="lb-counter-label" aria-hidden="true">${label}</span><span class="lb-counter-num" aria-hidden="true">${num}</span></div></div>`;}
+// kit 0.36.0 (design system 26, BossBar): play.js 1.13.0's, word for word
+function hudMend(tr,md){ /* version 26: the bar while a boss mends. md: {m0,mw,ma,g0,gw,ga,marks:[{at,spent}]}, or nothing */const m=tr.querySelector(".mend"),g=tr.querySelector(".goal");if(!m||!g)return;
+   const z=md||{m0:0,mw:0,ma:0,g0:0,gw:0,ga:0,marks:[]},put=(el,k,v)=>{if(el["_"+k]!==v){el["_"+k]=v;el.style.setProperty(k,v);}};
+   put(m,"--m0",z.m0.toFixed(4));put(m,"--mw",z.mw.toFixed(4));put(m,"--ma",z.ma.toFixed(2));put(g,"--g0",z.g0.toFixed(4));put(g,"--gw",z.gw.toFixed(4));put(g,"--ga",z.ga.toFixed(2));
+   tr.querySelectorAll(".mark").forEach((el,i)=>{const k=z.marks[i];if(el.hidden===!!k)el.hidden=!k;if(k){put(el,"--at",String(k.at));el.classList.toggle("is-spent",!!k.spent);}});}
 function build(el,phone,o){o=o||{};if(!defsDone){document.body.insertAdjacentHTML("afterbegin",defs);defsDone=true;}
   const pot=o.pot||null,big=phone||!!o.touch,keys=!o.touch; // kit 0.9.0: o.pot "under" (the design's choice) or "beside" adds the potion sockets
   el.insertAdjacentHTML("beforeend",`<div class="lb-ui lb-hud${phone?" is-phone":""}">
     <div class="lb-hud-left">${pot==="beside"?vitals(phone,"",potions(big,true,keys)):vitals(phone)}${pot==="under"?potions(big,false,keys):""}</div>
     <div class="lb-hud-right">${o.full?tile("full","Full screen"):""}${tile("help","How to play",phone)}${tile("pause","Pause",phone)}${counter(phone,"Echo","0000")}</div>
-    <div class="lb-bossbar" role="meter" aria-valuemin="0" aria-valuemax="100" hidden><p class="lb-bossbar-name"></p><div class="lb-bossbar-edge"><div class="lb-bossbar-track"><i class="trace"></i><i class="fill"></i></div></div></div>
+    <div class="lb-bossbar" role="meter" aria-valuemin="0" aria-valuemax="100" hidden><p class="lb-bossbar-name"></p><div class="lb-bossbar-edge"><div class="lb-bossbar-track"><i class="trace"></i><i class="fill"></i><i class="mend"></i><i class="goal"></i><i class="mark" hidden></i><i class="mark" hidden></i><i class="mark" hidden></i></div></div></div>
     <div class="lb-plaque is-hud lb-line" hidden><div class="lb-face"><svg class="pic" viewBox="0 0 24 24" aria-hidden="true"></svg><span class="lb-line-text"></span></div></div>
     <div class="lb-plaque is-hud lb-line is-name" hidden><div class="lb-face"><span class="lb-line-text"></span><div class="lb-rule" aria-hidden="true"><i></i></div><span class="lb-line-sub" hidden></span></div></div>
     <div class="lb-card" hidden><div class="lb-plaque${phone?" is-phone":""}"><div class="lb-face is-centred"><h2 class="lb-heading"></h2><p class="lb-card-again" hidden></p><div class="lb-rule" aria-hidden="true"><i></i></div><p class="lb-card-sub"></p><p class="lb-card-life" hidden></p><p class="lb-card-daily" hidden><span class="lb-daily-mark"></span>echo for the first run today</p></div></div></div>
@@ -6651,11 +6995,11 @@ function set(hud,st){const q=s=>hq(hud,s);
       pf.forEach((p,j)=>{const v=(u-0.3-j*0.12)/0.55;if(v<=0||v>=1){p.style.opacity=0;return;}p.setAttribute("cy",String(3-9*v));p.setAttribute("cx",String(5+Math.sin(v*5+j*2)*1.6));p.setAttribute("r",String(1+1.4*v));p.style.opacity=String(0.75*(1-v));});}
     else{l.classList.toggle("is-out",i>=st.lives);g.style.fill="";f.style.opacity="";f.removeAttribute("transform");pf.forEach(p=>p.style.opacity=0);}});
   const sp=q(".lb-spell"),pic=hq(sp,".pic"),marks=hq(sp,".lb-spell-marks"),n=st.spells.length,kind=n?st.spells[st.sel%n]:null,short=n&&st.mp<st.cost;
-  sp.classList.toggle("is-empty",!n);sp.classList.toggle("has-two",n>1);sp.classList.toggle("is-short",!!short);
+  sp.classList.toggle("is-empty",!n);sp.classList.toggle("has-two",n>1);sp.classList.toggle("is-short",!!short);sp.classList.toggle("is-called",!!st.called);sp.classList.toggle("is-other",!!st.called&&n>1&&kind==="heal"); /* version 26: the spell's call while a boss mends */
   picFor(pic,st.flipKind||kind);pic.style.transform=st.flip!=null?`translateY(${n>1?-3:0}px) scaleX(${Math.max(0.04,Math.abs(1-2*st.flip))})`:"";
   setOnce(marks,"m",n>1?n+":"+(st.sel%n):"",v=>{marks.innerHTML=n>1?st.spells.map((s,i)=>`<i${i===st.sel%n?' class="is-on"':""}></i>`).join(""):"";});
   setOnce(sp,"lab",kind?`Spell: ${NAME[kind]}${n>1?". Tap to switch":""}${short?". Not enough mana":""}`:"No spell yet",v=>sp.setAttribute("aria-label",v));
-  const cast=q(".b-cast");if(cast){cast.classList.toggle("is-empty",!n);cast.classList.toggle("is-short",!!short);picFor(hq(cast,".ic"),kind);}
+  const cast=q(".b-cast");if(cast){cast.classList.toggle("is-empty",!n);cast.classList.toggle("is-short",!!short);cast.classList.toggle("is-called",!!st.called);picFor(hq(cast,".ic"),kind);}
   setOnce(q(".lb-vitals"),"lab",`Health ${hp} per cent, armour ${st.pips} of 3, mana ${mp} per cent, ${st.lives} ${st.lives===1?"life":"lives"} left`,v=>q(".lb-vitals").setAttribute("aria-label",v));
   hqa(hud,".lb-potion").forEach(b=>setPotion(b,st));
   const ctr=q(".lb-counter");if(ctr){const lab=st.counter||"Echo";setOnce(ctr,"cl",lab,v=>{ctr.querySelector(".lb-counter-label").textContent=v;ctr._w=undefined;});   // version 23: the label from the state
@@ -6664,7 +7008,7 @@ function set(hud,st){const q=s=>hq(hud,s);
   const ln=q(".lb-line:not(.is-name)");if(ln)setLine(ln,st.line);const nm=q(".lb-line.is-name");if(nm)setLine(nm,st.name&&st.name.u<2.6?{kind:null,text:st.name.name,sub:st.name.sub,gain:st.name.gain,u:st.name.u}:null);const cd=q(".lb-card");if(cd)setCard(cd,st.card);
   const bb=q(".lb-bossbar");if(bb){const on=!!(st.boss&&st.boss.a>0&&ha>0);if(bb.hidden===on)bb.hidden=!on;
     if(on){setOnce(bb,"n",st.boss.name,v=>{figText(bb.querySelector(".lb-bossbar-name"),v);bb.setAttribute("aria-label",v);});bb.style.opacity=String(st.boss.a*ha);
-      const tr=bb.querySelector(".lb-bossbar-track");tr.style.setProperty("--v",st.boss.hp.toFixed(3));tr.style.setProperty("--trace",Math.max(st.boss.hp,st.boss.trace).toFixed(3));setOnce(bb,"vn",Math.round(st.boss.hp*100),v=>bb.setAttribute("aria-valuenow",String(v)));}}}
+      const tr=bb.querySelector(".lb-bossbar-track");tr.style.setProperty("--v",st.boss.hp.toFixed(3));tr.style.setProperty("--trace",Math.max(st.boss.hp,st.boss.trace).toFixed(3));hudMend(tr,st.boss.mend);setOnce(bb,"vn",Math.round(st.boss.hp*100),v=>bb.setAttribute("aria-valuenow",String(v)));}}}
 const CARDS={night:["Night","The Graveyard"],storm:["Blood Red Rain","The Old Town"],dawn:["Dawn","The Open Moor"],mist:["Mist","The Wind Bent Forest"]}; // from mv10.js: the places' names (Barney, 4 November 2026)
 // kit 0.26.0 (design system 21, play.js 1.9.0): the pull-down roll's zone, the one place it is kept, so the roll (the shell's stickMove)
 // and the arrowheads (stickShow) always agree (starting figures from Barney's test build): the knob at least 70% of its 31 px travel,
@@ -6846,10 +7190,16 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
        keeps (lanternbox.era.<game>), the table and Personal bests are removed and the number kept. Nothing else is touched: the saved
        record, the stored initials and the settings stay. The number has a key of its own, which no earlier kit reads or writes, so an
        older copy of the game on the same site neither undoes the wipe nor is upset by it (raising the save's version would make an
-       older copy start its record afresh). lb.scoresWiped says whether this opening of the page did it. */
+       older copy start its record afresh). lb.scoresWiped says whether this opening of the page did it.
+       Kit 0.36.0: scoresKeep: [run ids] in the config spares those runs' Personal bests (every setting's) when the table is wiped: Gloam
+       Hallow's The Endless Rot, which has no bosses, when design system 26 made the bosses harder (Barney, 17 November 2026). */
     const eraKey = 'lanternbox.era.' + gameId, eraWant = Math.max(1, Math.floor(+cfg.scoresEra) || 1);
     let scoresWiped = false;
-    if (eraWant > (Math.floor(+store.get(eraKey, 1)) || 1)) { store.remove(scoreKey()); store.remove(bestKey()); store.set(eraKey, eraWant); scoresWiped = true; }
+    if (eraWant > (Math.floor(+store.get(eraKey, 1)) || 1)) {
+      const keep = Array.isArray(cfg.scoresKeep) ? cfg.scoresKeep.map(String) : [], old = keep.length ? store.get(bestKey(), null) : null, kept = {};
+      if (old && typeof old === 'object') Object.keys(old).forEach((k) => { if (keep.indexOf(k.split('@')[0]) >= 0) kept[k] = old[k]; });
+      store.remove(scoreKey()); store.remove(bestKey()); if (Object.keys(kept).length) store.set(bestKey(), kept); store.set(eraKey, eraWant); scoresWiped = true;
+    }
     /* kit 0.35.0 (design system version 25, SettingTag): the run's setting as a small tag, the setting's word in a thin brass outline.
        lb.runTag(name) gives the run in play its tag (The Bare Reckoning gives none); it is forgotten as each run starts, so a game
        sets it in start(). The kit then draws it in the top right corner of the pause plaque, the run's end and the win, and with the
@@ -7401,6 +7751,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       if (h8.line && h8.line.gain) st.name = { name: h8.line.text, sub: h8.line.sub, gain: true, u: T - h8.line.t0 };
       else if (h8.line) st.line = { kind: h8.line.kind, text: h8.line.text, u: T - h8.line.t0 };
       if (naming) st.name = { name: h8.name.name, u: T - h8.name.t0 };
+      st.called = !!h8.called;   // kit 0.36.0: the spell's call (lb.hud.call)
       const b = h8.boss;
       if (b) {
         const a = b.out != null ? 1 - (T - b.out) / 0.4 : Math.min(1, (T - b.t0) / 0.4);
@@ -7408,6 +7759,19 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
         else {
           const fill = b.full ? 1 : Math.min(1, (T - b.t0) / 1), hp = Math.min(b.hp, fill), drain = b.hitT == null ? 1 : 1 - clamp((T - b.hitT - 0.35) / 0.6, 0, 1);   // kit 0.30.0: a wave's bar appears full (BossBar, version 23)
           st.boss = { name: b.name, hp: hp, trace: Math.max(hp, hp + (b.trace - b.hp) * drain), a: a };
+          // kit 0.36.0 (design system 26, BossBar): its marks (a pale notch where a mend waits, dark once spent), the part that has come back
+          // in mana's colours while the mend runs (fading to the bar's own colour after it: 0.5 s, or 0.3 s when a spell broke it), and the
+          // outline of where the mend will reach, shrinking as it fills
+          if (b.marks || b.mend) {
+            const M = b.mend, md = { m0: 0, mw: 0, ma: 0, g0: 0, gw: 0, ga: 0, marks: (b.marks || []).slice(0, 3) };
+            if (M) {
+              const on = M.off == null, fa = on ? 1 : 1 - clamp((T - M.off) / (M.broken ? 0.3 : 0.5), 0, 1);
+              md.m0 = M.from; md.mw = Math.max(0, Math.min(M.peak, hp - M.from)); md.ma = fa; md.g0 = M.from + M.peak; md.gw = on ? Math.max(0, M.to - M.from - M.peak) : 0;
+              const ge = clamp((T - M.t0) / 0.4, 0, 1); md.ga = on ? ge * ge * (3 - 2 * ge) : 0;   // eased in, as MD_FIGHT's bar()
+              if (!on && fa <= 0) b.mend = null;
+            }
+            st.boss.mend = md;
+          }
         }
       }
       const c = h8.card;
@@ -7466,7 +7830,19 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
         if (!b || b.name !== o.name || b.out != null) { h8.boss = { name: String(o.name), hp: hp, trace: hp, t0: state.time, hitT: null }; if (o.full) h8.boss.full = true; }
         else if (hp < b.hp) { const shown = b.hitT == null ? b.hp : b.hp + (b.trace - b.hp) * (1 - clamp((state.time - b.hitT - 0.35) / 0.6, 0, 1)); b.trace = Math.max(shown, b.hp); b.hitT = state.time; b.hp = hp; }
         else b.hp = hp;
+        // kit 0.36.0 (design system 26, BossBar): o.marks [{ at, spent }] (shares of the bar; numbers alone are marks not yet spent), at
+        // most three; o.mend { from, to, on, broken }: the bar when the mend began and where it will reach, true while it runs; on false
+        // when it ends, broken true if a spell broke it
+        const B = h8.boss;
+        if (Array.isArray(o.marks)) B.marks = o.marks.slice(0, 3).map((k) => (typeof k === 'number' ? { at: clamp(k, 0, 1), spent: false } : { at: clamp(+k.at, 0, 1), spent: !!k.spent }));
+        if (o.mend && o.mend.on) {
+          if (!B.mend || B.mend.off != null) B.mend = { from: clamp(+o.mend.from, 0, 1), to: clamp(+o.mend.to, 0, 1), t0: state.time, off: null, broken: false, peak: 0 };
+          B.mend.peak = Math.max(B.mend.peak, Math.min(B.mend.to, hp) - B.mend.from);
+        } else if (o.mend && B.mend && B.mend.off == null) { B.mend.off = state.time; B.mend.broken = !!o.mend.broken; }
       },
+      // kit 0.36.0 (design system 26, Vitals): call(true) while a boss mends: the spell's picture takes a slow ring of mana's light (with heal
+      // chosen, the other spell's mark takes the colour), and on a phone the cast button's outline; call(false) ends it
+      call(on) { h8.called = !!on; },
       fade(a) { h8.hudA = clamp(+a, 0, 1); syncHud(); },                                // the HUD's own fade (a tap on the spell's socket presses input.pressed.switch)
       // kit 0.30.0 (design system version 23, HUD and WispCounter): counter(label, n) shows n on the counter under that label, in place of the
       // run's echo ("Felled": "41 felled" to a screen reader); counter(null) gives it back to echo. Each run starts with echo. The echo is
@@ -9584,7 +9960,16 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
          keeps a best for each setting (see bestsCfg); lb.bests.offer and get take the setting. scoresEra: n wipes the table and
          Personal bests once (see scoresEra; lb.scoresWiped). The stylesheet has version 25's parts for a game's own plaques: Segments
          three in a row (is-three), a figure beside a word (lb-seg-fig) and held (is-held); the choice of run's name row and foot row
-         (lb-mode-head, lb-modes-foot, lb-modes-for, lb-modes-go). */
+         (lb-mode-head, lb-modes-foot, lb-modes-for, lb-modes-go).
+       Kit 0.36.0 (design system version 26, a boss's knock-back and its mend; HANDOVER-design-26.md Part 3; play.js 1.13.0's new code, word
+         for word, as 4c-5c): world.boss takes attack { name: 'knock', t } (each boss's own move: a steady ember glow round its feet out
+         to its reach for the tell, then the burst at world.KNOCK.at), mend { t, steps, d, end, broken } and glance [{ t, x, y }], and
+         returns mending; neither repaints a boss's kept picture (mana's colour is its shape laid over it, its eyes shut with ink lids).
+         world.throwTrack({ x, dir, dist, stop }) gives the wanderer's flight and landing, which world.wanderer draws from o.thrown (one
+         new picture, flung). world.KNOCK, world.MEND and world.SPLINTER hold the figures. lb.hud.boss takes marks and mend (the bar's
+         marks, the part that has come back and where it will reach), lb.hud.call(on) the spell's call. The Gaping Tree's eye and maw
+         glows and its splinters' start are on its face. Ten sounds (lb.sounds). scoresKeep: [run ids] spares those runs' Personal bests
+         from scoresEra's wipe. */
     const api = {
       H: H, version: VERSION, touch: touch, input: input, hud: hud, sfx: sfx, world: world, color: colour,
       portal: PORTAL, portalContext: cgContext,   // kit 0.27.0: the portal this copy was built for ('' or 'crazygames'), and the feedback context
@@ -9813,6 +10198,42 @@ const DIFF = {
   normal: { blow: [1, 1.1, 1.25, 1.4], hits: [1, 1, 1.25, 1.5], loopBlow: 1.3, echo: 1, drop: 1 / 7, walker: 1 / 4, fewer: 2, speed: 0.03, heal: 0.5 },
   hard:   { blow: [1.2, 1.35, 1.5, 1.7], hits: [1.25, 1.25, 1.5, 1.75], loopBlow: 1.3, echo: 1.5, drop: 1 / 10, walker: 1 / 5, fewer: 3, speed: 0.03, heal: 0.6 },
 };
+// Design system 26 (HANDOVER-design-26.md Parts 2 D and 4; kit 0.36.0; the figures Claude proposed and Barney approved, 17 November 2026:
+// "Approved, proceed"): each boss's knock-back and mend, climbing from one place's boss to the next, from Shallow to Grim to Agony, and on
+// through the second loop. Each boss on each setting stands at a step of the climb (CLIMB_AT); each step gives how far he is thrown (dist,
+// lines: the same on every screen, unless the arena's end stops him), how long he may stand within its reach before the knock-back comes
+// (close, seconds), the marks on its bar where it mends (shares of the bar, each once a fight), and each mend (amt, a share of the bar, back
+// in steps of d seconds after a first 0.9 s in which nothing comes back). Left alone a boss mends no more than about half its bar in a fight
+// (marks times amt: 0.48 at most; Barney's ceiling). The Veiled Ghost has them on Agony only in the first loop (so not in The Bare
+// Reckoning's, which is Grim), and on every setting in the second loop (Barney: "x1agreed"); the other three on every setting, so Shallow
+// changes for the first time (his "2a ... yes"). The second loop is two steps on, as far as the top; the Ghost's there is the lowest step on
+// Shallow and Grim and two on from its first loop's on Agony (Claude's reading, with the figures). A throw is held under each boss's room
+// on a computer (THROW_MAX), so a phone, whose arena is wider, never throws him further. The play check has its own step (CLIMB_CHECK) at
+// every boss, so each of its boss legs sees a knock-back and a mend. All starting figures, Barney's to tune.
+const CLIMB = [
+  { dist: 170, close: 4.0, marks: [0.5], amt: 0.10, steps: 3, d: 0.8 },        // the bottom drawn: The Tentacled Skull on Shallow
+  { dist: 270, close: 3.5, marks: [0.5], amt: 0.12, steps: 3, d: 0.8 },
+  { dist: 370, close: 3.0, marks: [2 / 3, 1 / 3], amt: 0.13, steps: 4, d: 0.75 },
+  { dist: 480, close: 2.5, marks: [2 / 3, 1 / 3], amt: 0.15, steps: 4, d: 0.75 },
+  { dist: 600, close: 2.0, marks: [0.75, 0.5, 0.25], amt: 0.16, steps: 4, d: 0.7 },   // the top drawn: The Gaping Tree on Agony
+  { dist: 600, close: 1.75, marks: [0.75, 0.5, 0.25], amt: 0.16, steps: 4, d: 0.7 },
+  { dist: 600, close: 1.5, marks: [0.75, 0.5, 0.25], amt: 0.16, steps: 4, d: 0.7 },
+];
+const CLIMB_AT = { night: { hard: 0 }, storm: { easy: 0, normal: 1, hard: 2 }, dawn: { easy: 1, normal: 2, hard: 3 }, mist: { easy: 2, normal: 3, hard: 4 } };
+const CLIMB_AT2 = { night: { easy: 0, normal: 0, hard: 2 } };   // the second loop's own step, where it is not the first loop's two on
+const THROW_MAX = { night: 550, storm: 550, dawn: 500, mist: 600 };   // each boss's room behind him on a computer (910 lines), less a little
+const CLIMB_CHECK = 2;
+function climbFor(g, place) {          // this boss's step of the climb in this run, or null where it has neither move
+  if (g.run === 'rot') return null;
+  if (g.check) return CLIMB[CLIMB_CHECK];
+  const d = diffOk(g.diff) ? g.diff : 'normal', A = CLIMB_AT[place];
+  const k = g.loop === 2 ? (CLIMB_AT2[place] && CLIMB_AT2[place][d] != null ? CLIMB_AT2[place][d] : A[d] != null ? A[d] + 2 : null) : A[d];
+  return k == null ? null : CLIMB[Math.min(CLIMB.length - 1, k)];
+}
+const MEND_LINE = 'Only magic stops its regeneration';   // Barney's words (17 November 2026), in sentence case as the other plaque lines (his choice)
+// the Gaping Tree's splinters, as the kit draws them (kit 0.36.0, world.SPLINTER): from its maw, and 23 lines further in the same time,
+// so their far end is where it was (Barney's choice)
+const SPLINTER_AT = [23, -53], SPLINTER_V = 470 + 23 / 0.7;
 const DIFF_NAME = { easy: 'Shallow', normal: 'Grim', hard: 'Agony' };   // Barney's words (16 November 2026; design system 25, SettingTag)
 const DIFF_ORDER = ['easy', 'normal', 'hard'];                         // the picker's order
 const diffOk = (d) => typeof d === 'string' && Object.prototype.hasOwnProperty.call(DIFF, d);
@@ -10057,6 +10478,7 @@ function freshRecord() {
     played: false, hintsHidden: false,    // whether the first run has been played, and whether the hints were hidden
     furthest: -1,                         // the furthest place reached (0 to 3; 4 the win), for "Furthest yet"
     rotOpen: false, rotNews: false,       // design system 23: The Endless Rot open (The Veiled Ghost beaten), and its news plaque shown
+    mendBroken: false,                    // design system 26: a boss's mend broken by a spell, in any run (its plaque line shows no more)
     lastRun: '',                          // the run last played, so the choice of run can open on The Endless Rot
     doubled: '',                          // the day of the last doubled Echo Infusion run (the device's own date)
     diffs: { infusion: 'normal', rot: 'normal' },   // design system 25: each run's setting, the one last played in it (Grim until then)
@@ -10076,6 +10498,7 @@ function readRecord(old) {
   r.played = old.played === true; r.hintsHidden = old.hintsHidden === true;
   r.furthest = whole(old.furthest, -1, PLACES.length, -1);
   r.rotOpen = old.rotOpen === true; r.rotNews = old.rotNews === true;   // design system 23
+  r.mendBroken = old.mendBroken === true;   // design system 26
   r.lastRun = ['bare', 'infusion', 'rot'].indexOf(old.lastRun) >= 0 ? old.lastRun : '';
   r.doubled = typeof old.doubled === 'string' && /^\d{4}-\d\d-\d\d$/.test(old.doubled) ? old.doubled : '';
   const od = old.diffs && typeof old.diffs === 'object' ? old.diffs : {}, os = old.streak && typeof old.streak === 'object' ? old.streak : {};   // design system 25
@@ -10468,7 +10891,9 @@ const wantRotCheck = (lb) => CHECK_ROT || !!(lb.test && lb.test.check && lb.test
 // test page's speed check (WARM, RUN, LOAD), and at most 6 s of play while its drawing is timed; eight frames a refresh then; 30 ways for
 // each place's encounters to fall; the picture settled once at one level for 3.2 s (10 s at most); 150 walked before a stretch's timing;
 // at a boss, the sword swung from within 125 of it and a step back nearer than 90
-const CHECK = { warm: 1.5, run: 4, load: 2.5, loadPlay: 6, reps: 8, seeds: 30, settle: 3.2, settleMax: 10, ahead: 150, reach: 125, near: 90 };
+// design system 26: a boss leg is timed for bossRun seconds, not run, so a knock-back and a mend both come in it (each boss's fight primed
+// as he reaches it: its bar just above its first mark, the knock-back's clock due; see checkUpdate)
+const CHECK = { warm: 1.5, run: 4, bossRun: 12, load: 2.5, loadPlay: 6, reps: 8, seeds: 30, settle: 3.2, settleMax: 10, ahead: 150, reach: 125, near: 90 };
 // The Endless Rot's play check: each arena's last wave the first time round and again, harder (waves 3 to 24, the most on screen 3 to 8);
 // while the arena fills, a monster sent every 0.4 s; then the wave's own gap, and he strikes only while the wave has its most on screen, so
 // it stays at its most or one under
@@ -10581,7 +11006,7 @@ if (RUN_LOG) {                         // the page hidden or closed mid-run: the
 const RUN_MON = { crawler: 'a crawler', bat2: 'a flyer', hatmaw: 'a mouth-hat', ghoul2: 'a ghoul', walker: 'a walker' };
 const RUN_ATK = { lunge: 'lunge', dive: 'swoop', bite: 'bite', spit: 'spit', swipe: 'swipe', high: 'high sweep', low: 'low sweep', touch: 'touch',
   behind: 'strike from behind', wail: 'wail', slam: 'tentacle slam', snap: 'jaw snap', call: 'call', leap: 'leap', sickle: 'sickle', bolts: 'ember bolts',
-  roots: 'roots', branch: 'branch', splinters: 'splinters' };
+  roots: 'roots', branch: 'branch', splinters: 'splinters', knock: 'knock-back' };
 const RUN_END = { over: 'game over', quit: 'quit to menu', restart: 'restarted',
   abandon: 'abandoned from the title', closed: 'ended when the page closed after a continue' };   // part C (Barney, 11 November 2026)
 const clockText = (s) => {
@@ -10680,7 +11105,8 @@ function runsLines(lb) {
    meanwhile is written but leaves it used. As the page opens (settleSaved), a run that can't be continued (used, out of lives, an older
    version's or damaged) is ended: its echo banked as Quit to menu banks it, if it can be read, and the title's line says so. On the
    speed test's link nothing is settled or offered: the title keeps Start game, and the run waits for the next ordinary opening. */
-const RUN_V = 2;                       // design system 25 (the one-time wipe): 2, so a run saved before the settings is ended as the page opens, its echo kept
+const RUN_V = 3;                       // design system 25 (the one-time wipe): 2, so a run saved before the settings is ended as the page opens, its echo kept;
+                                       // design system 26: 3, a run saved before the harder bosses ended the same way
 const SAVED_LIVES = 9;                 // the most lives a saved run may hold (Barney, 11 November 2026: a later change gives a bonus life for each boss, so more than LIVES)
 const LANTERN = ['the first lantern', 'the halfway lantern', 'Boss'];   // Barney's set A (TitleArch)
 let RESUME = null;                     // the saved run being returned to, for start()
@@ -10824,7 +11250,10 @@ LanternBox.game({
   // the first time a device opens this version the kit removes The Bare Reckoning's table (and so "Best" on the title) and both Personal
   // bests: Grim is harder than the game was and The Bare Reckoning's echo is never scaled, so every score was made on an easier game. The
   // stolen echo, everything bought, the initials and the settings stay. A run saved before is ended by RUN_V, its echo kept
-  scoresEra: 2,
+  // design system 26 (Barney, "x3 yes"; its scope as 25's, but for The Endless Rot's bests, kept: it has no bosses; 17 November 2026): wiped
+  // again, as runs from before and after the harder bosses would share the table
+  scoresEra: 3,
+  scoresKeep: ['rot'],
   shrine: { bank: (lb) => lb.progress.echo, open: openShrine },   // kit 0.10.2: on the title's arch; step 5e-1: the Echo Shrine itself
   chooseRun,   // step 5e-1: the choice of run, once anything is bought
   // Testing (delete for the finished game): where a run starts, and help for trying it out; never in the playtest's copy (step 5f-1)
@@ -10881,7 +11310,8 @@ LanternBox.game({
     const sv = RESUME; RESUME = null;
     if (wantCheck(lb)) return startCheck(g, lb);   // step 5f-1: the play check, in place of a run
     if (!wantCheck(lb)) rec.lastRun = g.run;   // design system 23: the run last played (saved with the run as it begins)
-    lb.runTag(tagOf(g.run, sv ? sv.diff : g.diff));   // design system 25 (kit 0.35.0): its setting's tag, for the pause plaque, the run's end and the win (a saved run's own)
+    lb.runTag(tagOf(g.run, sv ? sv.diff : g.diff));
+    lb.hud.call(false);   // design system 26: no spell's call left from a run before   // design system 25 (kit 0.35.0): its setting's tag, for the pause plaque, the run's end and the win (a saved run's own)
     if (sv) return sv.run === 'rot' ? resumeRot(g, lb, sv) : resumeRun(g, lb, sv);   // part C: Return to the lantern (step 5: or to the wave)
     if (g.run === 'rot') { startRot(g, lb, t); runBegin(g, lb); return g; }   // design system 23: The Endless Rot, in its arenas (its run logged on the test link)
     runBegin(g, lb);                              // the Night pass, part D: the playtest's run log (the play check is no run)
@@ -10967,6 +11397,7 @@ function moveUpdate(g, lb, dt) {
   if (g.mode === 'roll') return rollUpdate(g, lb, dt);
   if (g.mode === 'air') return airUpdate(g, lb, dt, dir, i);
   if (g.mode === 'hurt') return hurtUpdate(g, lb, dt);
+  if (g.mode === 'thrown') return thrownUpdate(g, lb, dt);   // design system 26: thrown by a boss's knock-back
   if (g.mode === 'sword') return swordUpdate(g, lb, dt, i);
   if (g.mode === 'cast') return castUpdate(g, lb, dt);
   // on the ground (or a piece's top)
@@ -11000,6 +11431,7 @@ function loadPlace(g, lb, p, ci, back) {   // the place's level and its checkpoi
   spawnMonsters(g, lb);
   placeLoot(g, lb);
   if (back) g.loot = g.loot.filter((it) => !it.path || it.x > g.x);   // part C: the path's scroll and sword only if they lie ahead of the lantern
+  if (back && p === 0 && g.loop === 1 && !g.took.scroll && !g.loot.some((it) => it.path === 'scroll')) pathScroll(g, g.x);   // the scroll can't be missed: ahead of him again
   g.boss = newBoss(g);
 }
 // the second loop (step 5e-5): the same run carries on at Night, harder, each place's hill sections shuffled (never the same one twice running);
@@ -11603,7 +12035,7 @@ function lostUpdate(g, lb, dt) {
     // loot picked up stays picked up
     g.shots = []; g.cast = null; g.castBuf = 0; g.zaps = []; g.sprays = []; g.patches = []; g.strikes = []; g.gobs = []; g.splats = [];
     if (g.boss && g.boss.st !== 'done') {   // a life lost in a boss fight: back at its door, the boss whole again, its crawlers gone
-      g.boss = newBoss(g); lb.hud.boss(null);
+      g.boss = newBoss(g); lb.hud.boss(null); lb.hud.call(false);
       g.mons = g.mons.filter((m) => !m.summoned);
     }
     lb.hud.health(0); lb.hud.mana(0);
@@ -11682,7 +12114,7 @@ function swordHits(g, lb) {
     damage(g, lb, m, swordBite(g), f);
   }
   const share = bossShare(g, (b) => !(b[1] < x0 || b[0] > x1 || b[3] < y0 || b[2] > y1));
-  if (share) { hits++; bossDamage(g, lb, swordBite(g) * share); }
+  if (share && bossDamage(g, lb, swordBite(g) * share, 'sword') !== 'glance') hits++;   // design system 26: a blow glancing off a mend has its own sound
   if (hits) lb.sfx('hit');
 }
 // how much of a hit the boss takes, where meets(box) says it reaches: all of it on its body, LEG_HIT on the Moor Mother's legs, else nothing
@@ -11876,9 +12308,12 @@ function drawPatches(g, lb, w) { for (const p of g.patches) if (p.t >= 0) w.acid
 const ease3 = (v) => (v <= 0 ? 0 : v >= 1 ? 1 : v * v * (3 - 2 * v)), lerp3 = (a, b, v) => a + (b - a) * v, win3 = (u, a, b) => (u >= a && u < b ? (u - a) / (b - a) : null);
 function newBoss(g) {
   const P = PLACES[g.p], B = BOSS[P];
+  const C = climbFor(g, P);   // design system 26: its step of the climb, its marks whole (so whole again after a life lost)
   return { st: 'wait', place: P, name: '', hp: B.hp * hard(g, 'boss'), max: B.hp * hard(g, 'boss'), bx: g.L.length - B.at, f: 1, move: null, rest: 1.2, t: 0, hitT: null,
-    last: null, lock: false };
+    last: null, lock: false, climb: C, marks: C ? C.marks.map((at) => ({ at, spent: false })) : null, close: 0, mendDue: null, glances: [], after: null };
 }
+// design system 26: the boss's bar, with its marks, and the mend's parts when given
+function bossBar(lb, b, more) { lb.hud.boss(Object.assign({ name: b.name, hp: b.hp / b.max, marks: b.marks || undefined }, more)); }
 function bossUpdate(g, lb, dt) {
   const b = g.boss;
   if (!b || b.st === 'done') return;
@@ -11886,7 +12321,7 @@ function bossUpdate(g, lb, dt) {
   if (b.st === 'wait') {               // he walks in as far as the camera's stop at the arena's end, on his feet: it begins
     if (g.x >= g.L.length - lb.W * 0.68 && g.mode === 'ground' && !g.out) {
       b.st = 'arrive'; b.t = 0; b.lock = true; b.name = lb.world.bossNames[b.place];
-      lb.hud.bossName(b.name); lb.hud.boss({ name: b.name, hp: 1 }); lb.sfx('bossArrives');
+      lb.hud.bossName(b.name); bossBar(lb, b); lb.sfx('bossArrives');
     }
     return;
   }
@@ -11896,18 +12331,90 @@ function bossUpdate(g, lb, dt) {
   if (b.st === 'arrive') { if (b.t >= lb.world.BOSS_MOVES[b.place].arrive) { b.st = 'fight'; b.t = 0; b.rest = 0.8; } return; }
   if (b.st === 'defeat') { if (b.t >= 2.2) { b.st = 'done'; b.lock = false; } return; }
   if (g.mode === 'lost' || g.mode === 'return') return;
+  // design system 26: the knock-back's clock runs while he stands within its reach and starts again when he leaves it; it waits while the
+  // boss mends or reels, and while he is thrown. Blows glancing off fade (0.3 s); a mend ended on its own fades (0.5 s)
+  if (b.climb) {
+    const near = Math.abs(g.x - b.bx) <= lb.world.KNOCK.reach[b.place], busy = g.mode === 'thrown' || (b.move && (b.move.name === 'mend' || b.move.name === 'reel'));
+    if (!near) b.close = 0; else if (!busy) b.close += dt;
+    if (b.mendDue != null) b.mendDue -= dt;
+    b.glances = b.glances.filter((q) => (q.t += dt) < 0.3);
+    if (b.after) { b.after.t += dt; if (b.after.t > 1) b.after = null; }
+  }
   if (b.move) {
     b.move.t += dt;
     if (b.move.name === 'call' && !b.move.called && b.move.t >= 0.6) { b.move.called = true; callCrawlers(g, lb, b); }
+    if (b.move.name === 'mend') return mendUpdate(g, lb, b);
+    if (b.move.name === 'reel') { if (b.move.t >= lb.world.MEND.stagger) { b.move = null; b.rest = 0.2; } return; }   // the opening, then on
+    if (b.move.name === 'knock') knockUpdate(g, lb, b);
     if (b.move.t >= lb.world.BOSS_MOVES[b.place][b.move.name]) endBossMove(g, lb, b);
     return;
   }
+  if (b.mendDue != null && b.mendDue <= 0) return startMend(g, lb, b);   // the mend is its very next move, ahead of any attack or knock-back
   b.rest -= dt;
   if (b.rest <= 0) startBossMove(g, lb, b);
+}
+// design system 26 (BossAttacks, the knock-back): once he has stood within its reach for its time, its next move: each boss's own, a 0.7 s
+// tell over a steady ember glow out to its reach, then the burst (world.KNOCK.at), which catches him anywhere within its reach, rolling or
+// jumping too: a light hurt (KNOCK.hurt, through his armour as any blow), and thrown away from it (world.throwTrack), safe until he has risen.
+// Lantern Ward ignores it as it ignores a first hit. Still safe from another blow, or in Testing's safe run, he is thrown but not hurt
+function knockUpdate(g, lb, b) {
+  const K = lb.world.KNOCK, m = b.move;
+  if (!m.told) { m.told = true; lb.sfx('kbTell'); }
+  if (m.hit || m.t < K.at) return;
+  m.hit = true; lb.sfx('kbBurst');
+  const free = g.mode !== 'lost' && g.mode !== 'return' && g.mode !== 'thrown';
+  if (free && Math.abs(g.x - b.bx) <= K.reach[b.place]) throwHim(g, lb, b);
+}
+function throwHim(g, lb, b) {
+  const K = lb.world.KNOCK, still = g.safeT > 0;   // still safe from another blow: thrown, not hurt
+  if (!still) { g.safeT = safeLen(g); g.hitBy = { by: 'boss', atk: 'knock' }; }
+  if (!still && g.graces.ward && !g.warded) { g.warded = true; g.wardT = 0; lb.sfx('ward'); return; }
+  g.atkBuf = 0; g.castBuf = 0;
+  if (!g.safe && !still) {
+    g.hurtT = 0;
+    g.health = Math.max(0, g.health - K.hurt * (1 - ARMOUR_CUT * Math.min(3, g.armour))); lb.hud.health(g.health); g.hurtKind = 'health'; lb.sfx('hurt');
+    if (g.armour > 0) lb.hud.armourGlint();
+    if (g.health <= 0.001) return startLost(g, lb, 'health', null);
+  }
+  const dir = g.x < b.bx ? -1 : 1, lo = Math.max(0, g.L.length - lb.W) + 20, hi = g.L.length - 30;
+  const tr = lb.world.throwTrack({ x: g.x, dir, dist: Math.min(b.climb.dist, THROW_MAX[b.place]), stop: dir < 0 ? lo : hi });
+  g.thrown = { tr, t: 0, h0: g.y - surfaceAt(g, g.x), landed: false, q: tr.at(0) };
+  g.mode = 'thrown'; g.mt = 0; g.vy = 0; g.on = null; g.cast = null; g.facing = -dir;
+  g.safeT = Math.max(g.safeT, tr.total); lb.sfx('thrown');
+}
+function thrownUpdate(g, lb, dt) {     // along the kit's track: flung, then on his feet or in a tumble, then standing
+  const T = g.thrown; T.t += dt;
+  const q = T.tr.at(T.t), fly = Math.max(0, 1 - T.t / Math.max(0.01, T.tr.land));
+  g.x = q.x; g.y = surfaceAt(g, g.x) + q.y + T.h0 * fly; T.q = q;   // from the height he was struck at (in a jump), down to the arc's
+  if (!T.landed && T.t >= T.tr.land) { T.landed = true; lb.sfx(T.tr.tumble ? 'landTumble' : 'landFeet'); }
+  if (q.done) { g.mode = 'ground'; g.mt = 0; g.landT = 9; g.thrown = null; g.y = surfaceAt(g, g.x); g.on = pieceUnder(g, g.x, g.y); }
+}
+// design system 26 (BossAttacks, the mend): the blow that takes its bar past a mark sets it off, 0.3 s later (world.MEND.wait), as its very
+// next move; the boss does nothing else while it mends. Nothing comes back in the first 0.9 s; then each step brings back its share over its
+// first 60%. A blow glances off; any attack spell's damage breaks it (the boss keeps what it mended, takes the damage and reels 0.9 s).
+// Left alone it ends on its own. The spell's picture is called while it runs; the first time in a run, until one has been broken, the line
+function startMend(g, lb, b) {
+  const C = b.climb; b.mendDue = null; b.after = null;
+  b.move = { name: 'mend', t: 0, from: b.hp / b.max, step: 0 };
+  lb.sfx('mendBegin'); lb.hud.call(true);
+  bossBar(lb, b, { mend: { from: b.move.from, to: Math.min(1, b.move.from + C.amt), on: true } });
+  if (!g.mendLine && !(lb.progress && lb.progress.mendBroken)) { g.mendLine = true; lb.hud.line(g.attack, MEND_LINE); }
+}
+function mendBack(C, M, t) { const x = t - M.gather; if (x <= 0) return 0; const k = Math.floor(x / C.d), u = (x - k * C.d) / C.d; return Math.min(C.amt, (C.amt / C.steps) * (k + ease3(Math.min(1, u / 0.6)))); }
+function mendUpdate(g, lb, b) {
+  const C = b.climb, M = lb.world.MEND, m = b.move, len = M.gather + C.steps * C.d, x = m.t - M.gather;
+  if (x > 0) { const k = Math.min(C.steps, Math.floor(x / C.d) + 1); if (k > m.step && k <= C.steps) { m.step = k; lb.sfx('mendStep', k); } }
+  b.hp = Math.min(b.max, (m.from + mendBack(C, M, Math.min(m.t, len))) * b.max);
+  if (m.t < len) { bossBar(lb, b, { mend: { from: m.from, to: Math.min(1, m.from + C.amt), on: true } }); return; }
+  b.after = { kind: 'end', t: 0, m: { t: len, steps: C.steps, d: C.d } }; b.move = null;   // ended on its own
+  const R = BOSS[b.place].rest; b.rest = R[0] + lb.rand() * (R[1] - R[0]);
+  lb.sfx('mendEnd'); lb.hud.call(false); bossBar(lb, b, { mend: { on: false } });
 }
 // its choice: what suits where he is, never the same twice running when it has another
 function startBossMove(g, lb, b) {
   const d = Math.abs(g.x - b.bx), faceHim = g.x < b.bx ? 1 : -1, opts = [];
+  // design system 26: he has stood within its reach for its time: the knock-back takes this turn (it never cuts an attack short)
+  if (b.climb && b.close >= b.climb.close) { b.close = 0; if (b.place !== 'mist') b.f = faceHim; b.move = { name: 'knock', t: 0, at: g.x }; b.last = 'knock'; return; }
   const add = (name, w) => { if (w > 0) opts.push([name, b.last === name ? w * 0.25 : w]); };
   if (b.place === 'night') { add('lunge', d > 100 && d < 520 ? 2 : 0); add('behind', 1.4); add('wail', 1.2); }
   if (b.place === 'storm') { add('snap', d < 170 ? 3 : 0); add('slam', 2); add('call', g.mons.filter((m) => m.summoned && alive(m)).length < 2 ? 1.3 : 0); }
@@ -12044,18 +12551,28 @@ function bossAttackHits(g, b, rolling) {
       }
     }
     if (m.name === 'splinters' && u >= 0.5 && u < 1.2 && !rolling) {   // a fan of five splinters from its maw
-      const d = (u - 0.5) * 470, ox = b.bx, oy = Gd(b.bx) - 48;
+      const d = (u - 0.5) * SPLINTER_V, ox = b.bx + SPLINTER_AT[0], oy = Gd(b.bx) + 4 + SPLINTER_AT[1];   // design system 26: from its maw
       if (d < 600) for (let k = 0; k < 5; k++) { const a = Math.PI + (k - 2) * 0.11, px = ox + Math.cos(a) * d, py = oy + Math.sin(a) * d; if (ball(px, py, 9)) return { dmg, x: M(px) }; }
     }
   }
   return null;
 }
-function bossDamage(g, lb, n) {
+function bossDamage(g, lb, n, src) {   // src: 'sword' for a blow; else an attack spell (the fireball, the bolt, the spray or its patch)
   const b = g.boss;
   if (!b || b.st !== 'fight') return;
+  if (b.move && b.move.name === 'mend') {   // design system 26: a blow glances off; a spell breaks it
+    if (src === 'sword') { b.glances.push({ t: 0, x: g.x + g.facing * 44, y: g.y - 62 }); lb.sfx('glance'); return 'glance'; }
+    const C = b.climb; b.after = { kind: 'broken', t: 0, m: { t: b.move.t, steps: C.steps, d: C.d } }; b.move = { name: 'reel', t: 0 };
+    lb.sfx('mendBreak'); lb.hud.call(false); bossBar(lb, b, { mend: { on: false, broken: true } });
+    if (lb.progress && !lb.progress.mendBroken) { lb.progress.mendBroken = true; lb.saveProgress(); }   // its line shows no more
+  }
+  const before = b.hp / b.max;
   b.hp = Math.max(0, b.hp - n); b.hitT = 0;
-  lb.hud.boss({ name: b.name, hp: b.hp / b.max });
+  // design system 26: a blow that takes its bar past a mark not yet spent: the mend is due, 0.3 s on
+  if (b.marks && b.hp > 0) for (const k of b.marks) if (!k.spent && before > k.at && b.hp / b.max <= k.at) { k.spent = true; if (b.mendDue == null && !(b.move && b.move.name === 'mend')) b.mendDue = lb.world.MEND.wait; }
+  bossBar(lb, b);
   if (b.hp > 0) return;
+  lb.hud.call(false);
   // beaten: its card pieces and golden wisp, the bar goes, its sure drop, and its crawlers break up with it
   b.st = 'defeat'; b.t = 0; b.move = null;
   lb.sfx('bossDefeated'); lb.hud.boss(null);
@@ -12097,7 +12614,11 @@ function drawBoss(g, lb, w) {
   if (b.st === 'defeat') { w.boss({ x: b.bx, defeat: Math.min(1, b.t / 2.2) }); return; }
   const o = { x: b.bx, facing: b.f };
   if (b.st === 'arrive') o.arrive = b.t;
+  else if (b.move && b.move.name === 'mend') o.mend = { t: b.move.t, steps: b.climb.steps, d: b.climb.d };   // design system 26 (kit 0.36.0)
+  else if (b.move && b.move.name === 'reel') o.mend = { t: b.after.m.t, steps: b.after.m.steps, d: b.after.m.d, broken: b.move.t };
   else if (b.move) o.attack = { name: b.move.name, t: b.move.t, at: b.move.at, targets: b.move.targets };
+  else if (b.after && b.after.kind === 'end' && b.after.t < 0.5) o.mend = { t: b.after.m.t, steps: b.after.m.steps, d: b.after.m.d, end: b.after.t };
+  if (o.mend && b.glances.length) o.glance = b.glances.map((q) => ({ t: q.t, x: q.x, y: q.y }));
   if (b.hitT != null && b.hitT < 0.13) o.hit = b.hitT;
   w.boss(o);
 }
@@ -12142,11 +12663,21 @@ function placeLoot(g, lb) {            // the scenery potions made real: on abou
 // about 40% of the way through the place (its path to the boss's arena: 3,728 in Night, in B on the slope down after its crag): the nearest
 // spot to that with no pit within 160, no steep face within 24 and no piece within 20 (starting figures). Not on the second loop. It is an
 // ordinary scroll.
+// It can't be missed (Barney, 16 November 2026, for the bosses to come: every player who reaches a boss is to have the attack spell): it
+// is taken as he passes it at any height, a jump clean over it too (lootUpdate), and a run that comes back at a lantern beyond it without
+// it finds it on the first open ground ahead of that lantern (pathScroll's from, from loadPlace).
 const PATH_SCROLL_AT = 0.4;
 // open ground for loot laid on the path: no pit within 160, no steep face within 24 and no piece within 20 (starting figures)
 const pathOpen = (g, x) => g.L.pits.every((p) => p[1] < x - 160 || p[0] > x + 160) &&
   g.L.banks.every((b) => b[1] < x - 24 || b[0] > x + 24) && !g.pieces.some((p) => x > p.x0 - 20 && x < p.x1 + 20);
-function pathScroll(g) {
+function pathScroll(g, from) {
+  if (from != null) {
+    let at = null;
+    for (let x = from + 120; x < g.L.arena - 100 && at == null; x += 8) if (pathOpen(g, x)) at = x;
+    if (at == null) at = Math.min(g.L.length - 60, from + 120);   // come back at the boss's door: inside its arena, just ahead of him
+    g.loot.push({ kind: g.attack, x: at, y: g.L.ground(at), seed: 300, path: 'scroll' });
+    return;
+  }
   const B = g.L.sections.find((q) => q.id === 'B');
   if (!B) return;
   const want = Math.max(B.x0 + 40, Math.min(B.x1 - 40, PATH_SCROLL_AT * g.L.arena));
@@ -12176,7 +12707,8 @@ function lootUpdate(g, lb, dt) {
     if (it.keep != null) { it.keep += dt; if (it.keep >= 0.45) it.gone = true; continue; }   // version 11: flying up to its socket (0.45 s)
     if (it.x < camX - 200 && g.run !== 'rot') { it.gone = true; continue; }   // left behind off the screen (in an arena he can always walk back to it)
     // touched: it hovers a little above the ground (or a piece) at his feet
-    if (free && Math.abs(it.x - g.x) < BODY_W + 12 * LOOT_SIZE && it.y > g.y - BODY_H && it.y - 34 * LOOT_SIZE < g.y + 2) { const r = take(g, lb, it); if (r === 'keep') it.keep = 0; else if (r) it.pick = 0; }
+    // (the path's scroll at any height: it can't be jumped over)
+    if (free && Math.abs(it.x - g.x) < BODY_W + 12 * LOOT_SIZE && (it.path === 'scroll' || (it.y > g.y - BODY_H && it.y - 34 * LOOT_SIZE < g.y + 2))) { const r = take(g, lb, it); if (r === 'keep') it.keep = 0; else if (r) it.pick = 0; }
   }
   if (g.loot.some((it) => it.gone)) g.loot = g.loot.filter((it) => !it.gone);
 }
@@ -12686,6 +13218,7 @@ function drawWanderer(g, lb, w) {
     case 'roll': { const rt = rollAt(g); return w.wanderer(g.x, o({ move: 'roll', step: rt < ROLL_T ? rt * R : 3 + ((rt - ROLL_T) * R) % 1 })); }   // carrying on: tumbling still
     case 'sword': return w.wanderer(g.x, o({ move: 'sword', step: Math.min(g.mt * R * swingRate(g), 3.99) }));
     case 'hurt': return w.wanderer(g.x, o({ move: 'hurt', step: Math.min(g.mt * R, 2.99) }));
+    case 'thrown': return w.wanderer(g.x, o({ thrown: g.thrown.q, y: g.y + 1, safe: g.thrown.t % (2 / 3) }));   // design system 26 (kit 0.36.0): flung, landing; safe until he has risen
     case 'cast': {                     // heal, the fireball's throw, or the fizzle (its sparks from the "fiz" step)
       const c = g.cast, steps = w.move(c.move, 0).steps;
       return w.wanderer(g.x, o({ move: c.move, step: Math.min(g.mt * R, steps - 0.01), fizzle: c.move === 'fizzle' && g.mt * R >= 1 ? g.mt - 1 / R : undefined }));
@@ -12872,7 +13405,11 @@ function checkUpdate(g, lb) {
     if (ready || C.leadT > 15) { C.phase = 'warm'; C.t = 0; C.legLvl = lb.picture.level; }
   }
   if (leg && leg.wave) rotCheckHold(g, lb, C);
-  if (leg && leg.boss && b && b.st === 'fight' && b.hp < b.max * 0.3) { b.hp = b.max * 0.6; lb.hud.boss({ name: b.name, hp: b.hp / b.max }); }   // never beaten
+  if (leg && leg.boss && b && b.st === 'fight' && b.hp < b.max * 0.3) { b.hp = b.max * 0.6; bossBar(lb, b); }   // never beaten
+  // design system 26: as he first comes within its reach, the fight primed so a mend and then a knock-back come while it is timed
+  if (leg && leg.boss && b && b.st === 'fight' && b.climb && C.primed !== C.i + ':' + C.redone && Math.abs(g.x - b.bx) <= lb.world.KNOCK.reach[b.place]) {
+    C.primed = C.i + ':' + C.redone; b.hp = b.max * (b.climb.marks[0] + 0.02); b.close = b.climb.close; bossBar(lb, b);
+  }
   C.work += performance.now() - u0;
 }
 function checkDraw(ctx, g, lb) {
@@ -12905,7 +13442,7 @@ function checkDraw(ctx, g, lb) {
   } else if (C.phase === 'run') {
     C.cur.gaps.push(gap); C.cur.work.push(work); C.t += gap;
     if (C.rot) C.cur.most = Math.max(C.cur.most || 0, rotOut(g));   // The Endless Rot's: the most monsters on screen while timed
-    if (C.t >= CHECK.run * 1000) { C.phase = 'load'; C.t = 0; C.loadStart = null; C.loadN = 0; C.loadPlay = 0; C.cur.level = lb.picture.level; }
+    if (C.t >= (C.legs[C.i] && C.legs[C.i].boss ? CHECK.bossRun : CHECK.run) * 1000) { C.phase = 'load'; C.t = 0; C.loadStart = null; C.loadN = 0; C.loadPlay = 0; C.cur.level = lb.picture.level; }
   } else if (C.phase === 'load') {
     if (C.loadStart == null) { C.loadStart = now; C.loadN = 0; } else C.loadN++;
     C.t += gap;
