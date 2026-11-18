@@ -10193,11 +10193,20 @@ const HARD = { hits: 1.5, speed: 1.2, boss: 1.5, echo: 2 };
 // The heal's cost (Barney, the same day, after winning both loops on Grim: "I was easily able to heal my way through with barely having
 // to touch a potion"; his figures): heal, the share of the mana bar a heal costs on the journey (as it was, SPELL.heal.cost, 30%, which
 // Shallow keeps). The Endless Rot has its own (ROT_RAMP's and ROT_DIFF's healCost).
+// Agony's Night in the first loop (Barney, 18 November 2026, after his runs on Agony kept ending before Night's halfway lantern:
+// "I take too much damage to normally even get to the hallway checkpoint. Bats are easily dodged but crawlers and hats are more difficult to";
+// offered Claude's two ways, the first, its pick, with "Let's try this, adjust it and push to both test and Playtest"): night1, Night's blow and hits in the first loop
+// where they are not the place's own. Agony's are Grim's, so its harder blows and hits start at Blood Red Rain; the second loop's Night
+// keeps the place's (1.2 / 1.25, with the loop's own on top). The rest Agony changes in Night stays: what is found, the heal's cost,
+// the boss's knock-back and mend, the echo kept. blowAt and hitsAt read a setting's figures for a place and loop, for the journey
+// (journeyBlow, hard) and the suggestion (easierAt) alike.
 const DIFF = {
   easy:   { blow: [1, 1, 1, 1], hits: [1, 1, 1, 1], loopBlow: 1, echo: 0.75 },
   normal: { blow: [1, 1.1, 1.25, 1.4], hits: [1, 1, 1.25, 1.5], loopBlow: 1.3, echo: 1, drop: 1 / 7, walker: 1 / 4, fewer: 2, speed: 0.03, heal: 0.5 },
-  hard:   { blow: [1.2, 1.35, 1.5, 1.7], hits: [1.25, 1.25, 1.5, 1.75], loopBlow: 1.3, echo: 1.5, drop: 1 / 10, walker: 1 / 5, fewer: 3, speed: 0.03, heal: 0.6 },
+  hard:   { blow: [1.2, 1.35, 1.5, 1.7], hits: [1.25, 1.25, 1.5, 1.75], loopBlow: 1.3, echo: 1.5, drop: 1 / 10, walker: 1 / 5, fewer: 3, speed: 0.03, heal: 0.6, night1: { blow: 1, hits: 1 } },
 };
+const blowAt = (D, p, loop) => (loop !== 2 && p === 0 && D.night1 ? D.night1.blow : D.blow[p]) * (loop === 2 ? D.loopBlow : 1);
+const hitsAt = (D, p, loop) => (loop !== 2 && p === 0 && D.night1 ? D.night1.hits : D.hits[p]);
 // Design system 26 (HANDOVER-design-26.md Parts 2 D and 4; kit 0.36.0; the figures Claude proposed and Barney approved, 17 November 2026:
 // "Approved, proceed"): each boss's knock-back and mend, climbing from one place's boss to the next, from Shallow to Grim to Agony, and on
 // through the second loop. Each boss on each setting stands at a step of the climb (CLIMB_AT); each step gives how far he is thrown (dist,
@@ -10262,13 +10271,13 @@ const scaled = (n, run, d) => { const k = echoScale(run, d); return k === 1 ? n 
 // no rewording; and a run's tag, the setting's word (none for The Bare Reckoning, which has no setting to tell)
 const shareText = (run, d) => { const k = echoScale(run, d); return k === 1 ? '' : '×' + k; };
 const tagOf = (run, d) => (run !== 'bare' && diffOk(d) ? DIFF_NAME[d] : '');
-const journeyBlow = (g) => { const D = DIFF[g.diff]; return D ? D.blow[g.p] * (g.loop === 2 ? D.loopBlow : 1) : 1; };
+const journeyBlow = (g) => { const D = DIFF[g.diff]; return D ? blowAt(D, g.p, g.loop) : 1; };
 const journeyClimb = (g) => { const D = g.run !== 'rot' && diffOk(g.diff) ? DIFF[g.diff] : null; return D && D.speed ? 1 + D.speed * (g.p + (g.loop === 2 ? PLACES.length : 0)) : 1; };
 const hard = (g, k) => {
   if (g.run === 'rot') return rotRamp(g, k);
   const h = g.loop === 2 ? HARD[k] : 1, D = DIFF[g.diff];
   if (k === 'speed') return h * journeyClimb(g);   // the setting's climb on the monsters' moving (16 November 2026)
-  return D && k === 'hits' ? h * D.hits[g.p] : h;   // a setting: the place's share of health on top
+  return D && k === 'hits' ? h * hitsAt(D, g.p, g.loop) : h;   // a setting: the place's share of health on top
 };   // The Endless Rot: its own ramp, wave by wave (rotRamp)           // echo for each life still lit at the win (the win's words below)
 const RETURN_AT = 46;            // he forms again this far past the checkpoint that brought him back
 
@@ -10589,8 +10598,8 @@ const STREAK = 3;
 const streakReset = (lb) => { const s = lb.progress && lb.progress.streak; if (s && s.n) { s.n = 0; lb.saveProgress(); } };
 const lowerDiff = (d) => DIFF_ORDER[DIFF_ORDER.indexOf(d) - 1] || null;
 const easierAt = (lo, d, p, loop) => {
-  const A = DIFF[lo], B = DIFF[d], blow = (D) => D.blow[p] * (loop === 2 ? D.loopBlow : 1), at = p + (loop === 2 ? PLACES.length : 0);
-  return blow(A) < blow(B) || A.hits[p] < B.hits[p]
+  const A = DIFF[lo], B = DIFF[d], at = p + (loop === 2 ? PLACES.length : 0);
+  return blowAt(A, p, loop) < blowAt(B, p, loop) || hitsAt(A, p, loop) < hitsAt(B, p, loop)
     || (A.drop || DROP_ANY) > (B.drop || DROP_ANY) || (A.walker || WALKER_ANY) > (B.walker || WALKER_ANY) || (A.fewer || 0) < (B.fewer || 0)   // what is found (16 November 2026)
     || (A.speed || 0) * at < (B.speed || 0) * at                                                                                               // the speed's climb
     || (A.heal || SPELL.heal.cost) < (B.heal || SPELL.heal.cost);                                                                              // the heal's cost
