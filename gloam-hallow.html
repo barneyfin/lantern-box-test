@@ -11261,9 +11261,13 @@ LanternBox.game({
   // design system 23 (HighScores): Personal bests beside The Bare Reckoning's table: The Endless Rot's best (with "Your best" when a run
   // falls short) and The Echo Infusion's (with none: the handover's reading 9)
   // design system 25 (kit 0.35.0): The Endless Rot keeps a best for each setting (its score is monsters felled, which no share scales);
-  // The Echo Infusion keeps one, the echo kept, with the setting it was made on
+  // The Echo Infusion kept one, the echo kept, with the setting it was made on. From 18 November 2026 (Barney: "Why are my echo infusion agony runs not showing on the personal best like the different runs show for endless rot?", then
+// "the formatting difference between the endless rot and difficult and the echo infusion is confusing. We need standardised formatting and display between echo infusion and endless rot") The Echo Infusion keeps a best for each setting too, shown as The Endless Rot's are: its name once, then a
+// row for each setting played with the setting's tag (each: true; the kit's own layout, kit 0.35.0); its echo is still the setting's
+// share of what the run earned, without the day's double. The one best kept before (under "infusion") is no longer shown: the kit keeps these under
+// infusion@<setting>, and a game may not touch storage itself (the build's rule), so moving it would be the kit's to do; it stays stored
   bests: { table: 'The Bare Reckoning', settings: DIFF_ORDER.map((id) => ({ id, name: DIFF_NAME[id] })),
-    runs: [{ id: 'rot', name: 'The Endless Rot', yours: true, each: true }, { id: 'infusion', name: 'The Echo Infusion' }] },
+    runs: [{ id: 'rot', name: 'The Endless Rot', yours: true, each: true }, { id: 'infusion', name: 'The Echo Infusion', each: true }] },
   // design system 25, the one-time wipe (Barney, 16 November 2026: "all wiped, we are in test phase only"; "Scores and saved run only"):
   // the first time a device opens this version the kit removes The Bare Reckoning's table (and so "Best" on the title) and both Personal
   // bests: Grim is harder than the game was and The Bare Reckoning's echo is never scaled, so every score was made on an easier game. The
@@ -12681,15 +12685,16 @@ function placeLoot(g, lb) {            // the scenery potions made real: on abou
 }
 // Night's own health potions (Barney, 17 November 2026: "add a landscape health potion at the entrace to the boss room on night and also at
 // the start of the night level - this should be on grim and on shallow just the entrance to the boss room"): on Grim, and so The Bare
-// Reckoning (always Grim), one at Night's start and one at its boss's door; on Shallow the door's only; Agony has neither (he named Grim
-// and Shallow only); the play check has no setting, so none. The first loop only (Barney, the same day: "second loop shouldnt have them
+// Reckoning (always Grim), one at Night's start and one at its boss's door; on Shallow the door's only; on Agony both, as on Grim (Barney, 18 November 2026,
+// after three runs on Agony lost in Night: "Agony echo infusion is too difficult on night before any powerups. Too much damage is being taken. I would like the two potions adding to this mode the start and bosses door";
+// until then Agony had neither, as he had named Grim and Shallow only); the play check has no setting, so none. The first loop only (Barney, 17 November 2026: "second loop shouldnt have them
 // but both potions should be replenished on dying"). Each is an ordinary health potion lying on the path, as the scenery's: kept if a
 // socket is free, left lying if not, and gone once he has walked on past it. After a life lost (again), each that lies ahead of the
 // lantern he forms at and is no longer there (taken, or gone off the screen) is laid again; one still lying is not doubled, and one
 // behind him is not laid (it would go at once, as anything left behind). Where (starting figures): the start's about 260 along, past the start's lantern (120), on
 // the flat lead-in, so he walks onto it; the door's 100 past the boss door's lantern, on the arena's flat, well before the fight begins
 // (at the arena's end less 0.68 of the screen); each the nearest open ground (pathOpen) to that, ahead first.
-const NIGHT_POTIONS = { easy: ['door'], normal: ['start', 'door'] };
+const NIGHT_POTIONS = { easy: ['door'], normal: ['start', 'door'], hard: ['start', 'door'] };
 const NIGHT_POTION_AT = { start: 260, door: 100 };
 function nightPotions(g, again) {
   const at = g.p === 0 && g.loop === 1 && g.diff ? NIGHT_POTIONS[g.diff] : null;
