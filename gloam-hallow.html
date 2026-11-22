@@ -11394,7 +11394,7 @@ function shrinePlaqueOne(lb, ui, back) {
   } else {
     const hy = ui.el('div', 'lb-shrine-row is-soon', ui.spell('hysteria', true) + '<span class="lb-shrine-text is-inline"><span class="lb-shrine-name">Hysteria</span><span class="lb-shrine-note"></span></span><span class="lb-shrine-state">Coming soon \u00b7 500</span>');
     hy.setAttribute('aria-disabled', 'true'); hy.querySelector('.lb-shrine-note').textContent = HYSTERIA;
-    foot.append(ui.hint('Bought for good. The spell and belt can be changed here before any run.' + (ui.touch ? '' : ' ' + ui.kbd('Backspace') + ' back')), backBtn);
+    foot.append(ui.hint('Bought for good. The spell and belt can be changed here before any run.'), backBtn);   // design system 29: no key hint on this screen (Backspace still goes back)
     face.append(head, cols, hy, foot);
   }
   return { panel, items, opts: { back } };
@@ -11486,7 +11486,7 @@ function shrinePlaqueTwo(lb, ui, back) {
   head.append(ui.heading('gh-sh', 'Echo Shrine'), tabs, bank);
   const backBtn = ui.button('Back'), foot = ui.el('div', 'lb-shrine-foot');
   const soon = () => { const s = ui.el('p', 'lb-hint lb-shrine-soon', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3 H17 M7 21 H17 M8 3 C8 8 16 9 16 12 C16 15 8 16 8 21 M16 3 C16 8 8 9 8 12 C8 15 16 16 16 21"/></svg><span><b>Hysteria</b> \u00b7 Coming soon \u00b7 500</span>'); s.setAttribute('aria-disabled', 'true'); return s; };
-  const hint = (words) => ui.hint(words + (ui.touch ? '' : ' ' + ui.kbd('Backspace') + ' back'));
+  const hint = (words) => ui.hint(words);   // design system 29 (Barney, 22 November 2026: the keycap lay over the sentence's end in CrazyGames' QA tool): the sentence alone, no key hint, for good; Backspace still goes back
   if (page === 0) {                    // Spells and potions: version 12's two columns, two wide
     const cols = ui.el('div', 'lb-shrine-cols is-two');
     const column = (id, title) => { const c = ui.el('div', 'lb-shrine-col'); c.setAttribute('role', 'group'); c.setAttribute('aria-labelledby', id); const t = ui.txt('p', 'lb-shrine-title', title); t.id = id; c.append(t); cols.append(c); return c; };
@@ -11659,11 +11659,12 @@ function modesPlaque(lb, ui, start, pick, runs) {
   const items = [], buttons = [], ids = [], cell = [], tags = {};   // cell: each entry's item index, or -1 when locked (Hysteria the last)
   let SEG = -1;                        // the picker's place among the items, after the runs
   // the foot row: the chosen run's name, its picker, the buttons
-  const foot = ui.el('div', 'lb-modes-foot'), forEl = ui.txt('span', 'lb-modes-for', ''), seg = ui.el('div', 'lb-segments is-three'), goRow = ui.el('div', 'lb-modes-go');
+  // design system 29 (Barney, 22 November 2026, from CrazyGames' QA tool, where a run's name ran into "Shallow"): the label reads
+  // "Difficulty:" on every run, and never changes; it was the chosen run's name (design system 25)
+  const foot = ui.el('div', 'lb-modes-foot'), forEl = ui.txt('span', 'lb-modes-for', 'Difficulty:'), seg = ui.el('div', 'lb-segments is-three'), goRow = ui.el('div', 'lb-modes-go');
   forEl.id = 'gh-md-for'; seg.setAttribute('role', 'group'); seg.setAttribute('aria-labelledby', 'gh-md-for');
   const show = () => {                 // the chosen run's band, the picker for it, and each run's tag
     const held = !has(pick.id), now = held ? 'normal' : set[pick.id];
-    forEl.textContent = runs.find((r) => r.id === pick.id).name;
     seg.classList.toggle('is-held', held);
     segBtns.forEach((b, i) => {
       const on = DIFF_ORDER[i] === now;

@@ -11312,7 +11312,7 @@ function runsPicker(lb, n, at, daily) {
     list.setAttribute('role', 'radiogroup'); list.setAttribute('aria-labelledby', 'ls-md');
     const items = [], cells = [], tags = {}, leave = () => { lb.sfx('back'); ui.close(); }, start = () => { lb.sfx('confirm'); console.log('start ' + pick.id + (pick.id in set ? ' on ' + set[pick.id] : '')); ui.close(); };
     // the foot row: the chosen run's name, its picker, the buttons
-    const foot = ui.el('div', 'lb-modes-foot'), forEl = ui.txt('span', 'lb-modes-for', ''), seg = ui.el('div', 'lb-segments is-three'), go = ui.el('div', 'lb-modes-go');
+    const foot = ui.el('div', 'lb-modes-foot'), forEl = ui.txt('span', 'lb-modes-for', 'Difficulty:'), seg = ui.el('div', 'lb-segments is-three'), go = ui.el('div', 'lb-modes-go');   // design system 29: the label reads "Difficulty:" on every run
     forEl.id = 'ls-md-for'; seg.setAttribute('role', 'group'); seg.setAttribute('aria-labelledby', 'ls-md-for');
     const segBtns = SETTINGS.map(([id, w, fig]) => {
       const b = ui.txt('button', '', w);
@@ -11324,7 +11324,6 @@ function runsPicker(lb, n, at, daily) {
     });
     const showSeg = () => {
       const held = !(pick.id in set), now = held ? 'normal' : set[pick.id];
-      forEl.textContent = RUNS.find((r) => r[0] === pick.id)[1];
       seg.classList.toggle('is-held', held);
       segBtns.forEach((b, i) => {
         const on = SETTINGS[i][0] === now;
