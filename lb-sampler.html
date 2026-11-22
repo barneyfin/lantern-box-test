@@ -1275,20 +1275,21 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 .lb-plaque.is-phone .lb-looks-group{gap:4px}
 .lb-plaque.is-phone .lb-looks-group+.lb-looks-group{padding-top:6px}
 .lb-plaque.is-phone .lb-look{gap:4px}
-/* a belt's glow: one lb-buy under the belt. On: a brass edge and the dot lit; needs its belt first: a dashed edge */
+/* a belt's glow: one lb-buy under the belt. On: a brass edge and the dot lit; needs its belt first: a dashed edge.
+   Kit 0.44.0 (design system 28): the dot and a glowing band use the strong glow's colours (belt-*-glow-strong), the glow the game now draws */
 .lb-glow{width:100%;min-width:0}
 .lb-plaque.is-phone .lb-glow{height:var(--target)}
 .lb-glow.is-on{border-color:var(--brass);color:var(--heading)}
 .lb-glow.is-locked{border-style:dashed}
-.lb-glow-dot{display:block;flex:none;width:10px;height:10px;border-radius:50%;background:var(--belt-red-glow);box-shadow:0 0 6px 2px var(--belt-red-halo)}
-.lb-glow-dot.is-night-blue{background:var(--belt-night-blue-glow);box-shadow:0 0 6px 2px var(--belt-night-blue-halo)}
-.lb-glow-dot.is-mulberry{background:var(--belt-mulberry-glow);box-shadow:0 0 6px 2px var(--belt-mulberry-halo)}
-.lb-glow-dot.is-ash{background:var(--belt-ash-glow);box-shadow:0 0 6px 2px var(--belt-ash-halo)}
+.lb-glow-dot{display:block;flex:none;width:10px;height:10px;border-radius:50%;background:var(--belt-red-glow-strong);box-shadow:0 0 6px 2px var(--belt-red-halo)}
+.lb-glow-dot.is-night-blue{background:var(--belt-night-blue-glow-strong);box-shadow:0 0 6px 2px var(--belt-night-blue-halo)}
+.lb-glow-dot.is-mulberry{background:var(--belt-mulberry-glow-strong);box-shadow:0 0 6px 2px var(--belt-mulberry-halo)}
+.lb-glow-dot.is-ash{background:var(--belt-ash-glow-strong);box-shadow:0 0 6px 2px var(--belt-ash-halo)}
 .lb-glow-dot.is-off{background:transparent;box-shadow:inset 0 0 0 1.5px var(--text-dim)}
-.lb-belt .band.is-glow{background:var(--belt-red-glow);box-shadow:0 0 7px 2px var(--belt-red-halo)}
-.lb-belt .band.is-night-blue.is-glow{background:var(--belt-night-blue-glow);box-shadow:0 0 7px 2px var(--belt-night-blue-halo)}
-.lb-belt .band.is-mulberry.is-glow{background:var(--belt-mulberry-glow);box-shadow:0 0 7px 2px var(--belt-mulberry-halo)}
-.lb-belt .band.is-ash.is-glow{background:var(--belt-ash-glow);box-shadow:0 0 7px 2px var(--belt-ash-halo)}
+.lb-belt .band.is-glow{background:var(--belt-red-glow-strong);box-shadow:0 0 7px 2px var(--belt-red-halo)}
+.lb-belt .band.is-night-blue.is-glow{background:var(--belt-night-blue-glow-strong);box-shadow:0 0 7px 2px var(--belt-night-blue-halo)}
+.lb-belt .band.is-mulberry.is-glow{background:var(--belt-mulberry-glow-strong);box-shadow:0 0 7px 2px var(--belt-mulberry-halo)}
+.lb-belt .band.is-ash.is-glow{background:var(--belt-ash-glow-strong);box-shadow:0 0 7px 2px var(--belt-ash-halo)}
 /* a lantern glass: the belt's tile with a small lantern where the band is, its glass in the glass's colour and its light behind it */
 .lb-glass{flex-direction:row;align-items:center;gap:8px;padding:6px 8px;min-height:var(--target)}
 .lb-glass .row{flex-grow:1;flex-direction:column;align-items:flex-start;gap:1px;min-width:0}
@@ -1314,7 +1315,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.43.0';
+  const VERSION = '0.44.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';

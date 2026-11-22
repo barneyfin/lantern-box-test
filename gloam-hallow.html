@@ -1275,20 +1275,21 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 .lb-plaque.is-phone .lb-looks-group{gap:4px}
 .lb-plaque.is-phone .lb-looks-group+.lb-looks-group{padding-top:6px}
 .lb-plaque.is-phone .lb-look{gap:4px}
-/* a belt's glow: one lb-buy under the belt. On: a brass edge and the dot lit; needs its belt first: a dashed edge */
+/* a belt's glow: one lb-buy under the belt. On: a brass edge and the dot lit; needs its belt first: a dashed edge.
+   Kit 0.44.0 (design system 28): the dot and a glowing band use the strong glow's colours (belt-*-glow-strong), the glow the game now draws */
 .lb-glow{width:100%;min-width:0}
 .lb-plaque.is-phone .lb-glow{height:var(--target)}
 .lb-glow.is-on{border-color:var(--brass);color:var(--heading)}
 .lb-glow.is-locked{border-style:dashed}
-.lb-glow-dot{display:block;flex:none;width:10px;height:10px;border-radius:50%;background:var(--belt-red-glow);box-shadow:0 0 6px 2px var(--belt-red-halo)}
-.lb-glow-dot.is-night-blue{background:var(--belt-night-blue-glow);box-shadow:0 0 6px 2px var(--belt-night-blue-halo)}
-.lb-glow-dot.is-mulberry{background:var(--belt-mulberry-glow);box-shadow:0 0 6px 2px var(--belt-mulberry-halo)}
-.lb-glow-dot.is-ash{background:var(--belt-ash-glow);box-shadow:0 0 6px 2px var(--belt-ash-halo)}
+.lb-glow-dot{display:block;flex:none;width:10px;height:10px;border-radius:50%;background:var(--belt-red-glow-strong);box-shadow:0 0 6px 2px var(--belt-red-halo)}
+.lb-glow-dot.is-night-blue{background:var(--belt-night-blue-glow-strong);box-shadow:0 0 6px 2px var(--belt-night-blue-halo)}
+.lb-glow-dot.is-mulberry{background:var(--belt-mulberry-glow-strong);box-shadow:0 0 6px 2px var(--belt-mulberry-halo)}
+.lb-glow-dot.is-ash{background:var(--belt-ash-glow-strong);box-shadow:0 0 6px 2px var(--belt-ash-halo)}
 .lb-glow-dot.is-off{background:transparent;box-shadow:inset 0 0 0 1.5px var(--text-dim)}
-.lb-belt .band.is-glow{background:var(--belt-red-glow);box-shadow:0 0 7px 2px var(--belt-red-halo)}
-.lb-belt .band.is-night-blue.is-glow{background:var(--belt-night-blue-glow);box-shadow:0 0 7px 2px var(--belt-night-blue-halo)}
-.lb-belt .band.is-mulberry.is-glow{background:var(--belt-mulberry-glow);box-shadow:0 0 7px 2px var(--belt-mulberry-halo)}
-.lb-belt .band.is-ash.is-glow{background:var(--belt-ash-glow);box-shadow:0 0 7px 2px var(--belt-ash-halo)}
+.lb-belt .band.is-glow{background:var(--belt-red-glow-strong);box-shadow:0 0 7px 2px var(--belt-red-halo)}
+.lb-belt .band.is-night-blue.is-glow{background:var(--belt-night-blue-glow-strong);box-shadow:0 0 7px 2px var(--belt-night-blue-halo)}
+.lb-belt .band.is-mulberry.is-glow{background:var(--belt-mulberry-glow-strong);box-shadow:0 0 7px 2px var(--belt-mulberry-halo)}
+.lb-belt .band.is-ash.is-glow{background:var(--belt-ash-glow-strong);box-shadow:0 0 7px 2px var(--belt-ash-halo)}
 /* a lantern glass: the belt's tile with a small lantern where the band is, its glass in the glass's colour and its light behind it */
 .lb-glass{flex-direction:row;align-items:center;gap:8px;padding:6px 8px;min-height:var(--target)}
 .lb-glass .row{flex-grow:1;flex-direction:column;align-items:flex-start;gap:1px;min-width:0}
@@ -1314,7 +1315,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.43.0';
+  const VERSION = '0.44.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -10705,9 +10706,10 @@ const CG_PIECES = {
   happyMoments: true,        // CrazyGames' happy moments: a boss first beaten, a journey won, wave 12 of The Endless Rot endured on Agony (kit 0.40.0)
   cosmetics: true,           // the Echo Shrine's Cosmetics page: a glow for each belt, and lantern glass (kits 0.41.0 and 0.42.0; HANDOVER-design-27.md, parts 2 and 3);
                              // on since CM261, 22 November 2026, after Barney's four named checks on the test link
-  fastestLook: false,        // a bought look kept at Picture: Fastest, where slow devices play (kit 0.43.0; HANDOVER-design-28.md, part A): a glowing
+  fastestLook: true,         // a bought look kept at Picture: Fastest, where slow devices play (kit 0.43.0; HANDOVER-design-28.md, part A): a glowing
                              // belt's two lines and his light. It needs cosmetics on. false: Fastest as it was; true: the look kept; 'over': kept, with
-                             // the coloured lights laid over the scene (part 4's fallback). Off until Barney's Fire has timed it
+                             // the coloured lights laid over the scene (part 4's fallback). On since CM266, 22 November 2026: Barney's "On" after
+                             // twelve play checks on his Fire (no cost that could be measured; one lost picture, in the fallback's first run)
 };
 
 const PLACES = ['night', 'storm', 'dawn', 'mist'];
@@ -11531,7 +11533,12 @@ function shrinePlaqueTwo(lb, ui, back) {
     if (slot.belt) items.push(slot.belt);
     if (slot.glow) items.push(slot.glow);
   });
-  const r5 = ui.el('div', 'lb-looks-row is-five'); group('gh-shg', 'Lantern glass').append(r5);
+  // design system 28 (part 12; the words are Barney's): a line by "Lantern glass", shown only while a bought look is not drawn: with Effects off;
+  // or with the picture at Fastest, chosen or reached by Picture: Automatic, in a build that does not keep the looks there (fastestLook).
+  // Both at once: the Effects line. The samples on the page do not change
+  const lookNote = !lb.settings.effects ? 'With Effects off, glows and light are not drawn'
+    : lb.picture.level === 'fastest' && !fastestLook(lb) ? 'Glows and light show at Picture: Faster or Best' : '';
+  const r5 = ui.el('div', 'lb-looks-row is-five'); group('gh-shg', 'Lantern glass', lookNote).append(r5);
   glassIds(lb).forEach((id) => {
     const gl = ui.glass(id), chosen = lampNow(lb) === id, nm = gl.name.toLowerCase();
     const b = ui.el('button', 'lb-belt lb-glass' + (chosen ? ' is-worn' : ''), '<span class="lb-pane' + gl.pane + '">' + gl.lamp + '</span><span class="row"><span class="nm"></span></span>');
