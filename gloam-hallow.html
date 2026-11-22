@@ -1315,7 +1315,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.44.0';
+  const VERSION = '0.45.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2266,7 +2266,17 @@ const HXC=new Map();
 function hx(c){let a=HXC.get(c);if(!a){const n=parseInt(c.slice(1),16);a=[(n>>16)&255,(n>>8)&255,n&255];if(HXC.size>500)HXC.clear();HXC.set(c,a);}return a;}
 function mixc(c1,c2,t){const a=hx(c1),b=hx(c2);return"rgb("+Math.round(lerp(a[0],b[0],t))+","+Math.round(lerp(a[1],b[1],t))+","+Math.round(lerp(a[2],b[2],t))+")";}
 function rgba(c,al){const a=hx(c);return"rgba("+a[0]+","+a[1]+","+a[2]+","+al+")";}
-function mk(w,h){const c=document.createElement("canvas");c.width=Math.max(1,Math.ceil(w));c.height=Math.max(1,Math.ceil(h));return c;}
+/* kit 0.45.0: the picture after a graphics reset (the browser restarting its drawing: a device short of graphics memory, a driver
+   that fell over; Barney's Fire, 22 November 2026, lost its backgrounds for the rest of the visit). A reset blanks every canvas at
+   once, the picture's own and every one the kit keeps a finished picture in; each is told (contextlost), and given back blank but
+   usable (contextrestored), the picture's own after about half a second and the rest over the next few seconds. The kit paints its
+   kept pictures once, so until now they stayed blank. In a game that has asked (world.repaint), every canvas made here is watched
+   until it is given back (CV_LOST: the ones still away), and once the picture is back and none is away the kit forgets every
+   picture it keeps (forgetKept, and the scene made again), so each is painted again when it is next needed, as when the picture's
+   size changes. Not asked (REPAINT 0, as it starts), nothing is watched and nothing is forgotten: the kit as it was. */
+let REPAINT=0,CV_BACK=0,RESETS=0;const CV_LOST=new Set(),CV_SEEN=new WeakSet();
+function cvWatch(c){c.addEventListener("contextlost",()=>{CV_LOST.add(c);});c.addEventListener("contextrestored",()=>{CV_LOST.delete(c);});}
+function mk(w,h){const c=document.createElement("canvas");c.width=Math.max(1,Math.ceil(w));c.height=Math.max(1,Math.ceil(h));if(REPAINT)cvWatch(c);return c;}
 function range(n){return Array.from({length:n},(_,i)=>i);}
 function qpts(a,c,b,n){const out=[];for(let i=0;i<=n;i++){const t=i/n,u=1-t;out.push([u*u*a[0]+2*u*t*c[0]+t*t*b[0],u*u*a[1]+2*u*t*c[1]+t*t*b[1]]);}return out;}
 const INK="#060508";
@@ -4972,7 +4982,7 @@ BOSS_BOXES.dawn=[-140,-278,140,12]; // measured over a stepping cycle
    compared; only these are approved: graded blacks (tone), the skull's horns, the tree leaning with the wind, and the nod to the
    level's colour as lit details plus the glow behind. */
 const BOSS_LOOK={tone:true,horns:true,wind:true},BOSS_NOD={detail:true,aura:true};
-const _bossCache=new WeakMap();
+let _bossCache=new WeakMap();   // kit 0.45.0: let, so forgetKept can begin it again
 function renderBossStrip(cv,t,o){ // the wanderer and the place's boss; on a 7.5 s loop the boss breaks into card pieces and its golden wisp rises
   const c=cv.getContext("2d"),s=cv.height/BOSS_H,SW=cv.width/s,lv=o.level,sk=SKY[lv];
   let K=_bossCache.get(cv);if(!K){K={};_bossCache.set(cv,K);}
@@ -6837,11 +6847,26 @@ function mvDrawKitRot(x,s,X,Y,P,tq,f,edge,k,o,rot){const F=mvFigure(s,P,tq,k,edg
    ground, and rise left out is the level's own camera rise where the wanderer is held (32% across the picture, as play.js). */
 // kit 0.17.4: a pose's key, its numbers rounded, so the same pose gets the same key
 function poseKey(P){return JSON.stringify(P,(k,v)=>typeof v==="number"?Math.round(v*1000)/1000:v);}
+// kit 0.45.0: every store of kept pictures that is not the scene's own (the scene is made again in makeTools). Each is filled again the
+// next time its picture is wanted. Not here: MD_PROF and CP_HOOK (figures read from a picture once, not pictures), HXC (colours)
+function forgetKept(){
+  TILE_POOL.clear();RIM_E.clear();MV_LIT.clear();MVC.length=0;CV_LOST.clear();
+  KIT.fc=null;KIT.fs=null;KIT.th=null;
+  for(const o of[BOSS_CACHE,SH,MV_SH,CPK,BSK,MDK,_lvP])for(const k of Object.keys(o))delete o[k];
+  _bossCache=new WeakMap();RESETS++;
+}
 function makeTools(env){
   if(TRIAL.fl!=null)trialLook();             // kit 0.43.0: a timing trial's look, from the first frame
   const PLACE_SET={night:"village5",storm:"town",dawn:"moor",mist:"forest"};
   const STAND={crawler:3,ghoul2:2};          // how far a monster's feet sit below the ground line, as on the directions page
   let scene=null,sceneScale=0,F=null;        // F: the frame being drawn
+  // kit 0.45.0: at a frame's start, in a game that has asked: the picture's own canvas watched too; and once it has been given back
+  // after a reset, and no canvas the kit made is still away (or 6 s have passed), everything kept is forgotten and the scene made again
+  function repaintDue(ctx){
+    if(!REPAINT)return;
+    const cv=ctx.canvas;if(!CV_SEEN.has(cv)){CV_SEEN.add(cv);cvWatch(cv);cv.addEventListener("contextrestored",()=>{CV_BACK=performance.now();});}
+    if(CV_BACK){const dt=performance.now()-CV_BACK;if(dt>=120&&(!CV_LOST.size||dt>6000)){CV_BACK=0;forgetKept();scene=null;sceneScale=0;}}
+  }
   function sceneFor(S){ // one Scene, for the picture's sharpness in quarter steps; its sprites are painted for that sharpness
     const sc=Math.min(2,Math.max(0.5,Math.round(S*4)/4));
     if(sc!==sceneScale){scene=new Scene(5,sc);sceneScale=sc;}
@@ -6908,7 +6933,7 @@ function makeTools(env){
       return T.api;
     },
     begin(ctx,o){
-      o=o||{};
+      o=o||{};repaintDue(ctx);   // kit 0.45.0
       const L=o.level&&o.level._T?o.level:null,S=env.k(),level=L?L.place:(o.place||"night");
       FX=env.fx();QUICK=!!(env.quick&&env.quick());
       setPicture(QUICK?(LOOK_ASK?"fastest":"bare"):"",env.fxSet?!!env.fxSet():FX);   // kit 0.43.0: the looks' picture (see LOOK_ASK)
@@ -6954,6 +6979,10 @@ function makeTools(env){
     // kit 0.43.0 (HANDOVER-design-28.md, part 5): atFastest is a game's one ask for a bought look at Picture Fastest: true, a glowing
     // belt's two lines and his light for every glass; 'over', the same with the red, night blue and mulberry lights laid over the
     // scene (part 4's fallback); false, Picture Fastest as kit 0.42.0 draws it, which is how it starts. Given, it stays until given again.
+    // kit 0.45.0: a game's ask that its pictures are painted again after a graphics reset (see mk). true or false; given, it stays until
+    // given again; it starts off, the kit as it was. It answers what is so: on, the resets lived through, whether a repaint is waiting
+    // for the canvases to come back, and how many are still away
+    repaint(on){if(on!=null)REPAINT=on?1:0;return{on:!!REPAINT,resets:RESETS,waiting:!!CV_BACK,away:CV_LOST.size};},
     look(o){if(TRIAL.fl!=null)return trialLook();o=o||{};if(GLOWS[o.strength])GLOW_STRENGTH=o.strength;if(o.lightX>0)LIGHT_X=+o.lightX;
       if(o.atFastest!=null){LOOK_ASK=o.atFastest?1:0;FAST_LAID=o.atFastest==='over'?1:0;if(LOOK_PIC)LOOK_PIC=LOOK_ASK?"fastest":"bare";}
       const b=o.belt==='scarf'||!BELTS[o.belt]?'red':o.belt,gl=GLASSES[o.glass]?o.glass:'gold';
@@ -10710,6 +10739,8 @@ const CG_PIECES = {
                              // belt's two lines and his light. It needs cosmetics on. false: Fastest as it was; true: the look kept; 'over': kept, with
                              // the coloured lights laid over the scene (part 4's fallback). On since CM266, 22 November 2026: Barney's "On" after
                              // twelve play checks on his Fire (no cost that could be measured; one lost picture, in the fallback's first run)
+  repaint: true,             // the pictures painted again after a graphics reset (kit 0.45.0): without it the backgrounds stay black or
+                             // missing until the page is loaded again, as on Barney's Fire, 22 November 2026. Barney: "Build now"
 };
 
 const PLACES = ['night', 'storm', 'dawn', 'mist'];
@@ -11392,6 +11423,9 @@ const looksAll = (lb) => !!(lb.test && lb.test.cosmetics === 'all');   // Testin
 // the game's one ask of the kit for a bought look at Picture: Fastest (kit 0.43.0; HANDOVER-design-28.md, part 5), only where the Cosmetics
 // page is on: in the CrazyGames build as CG_PIECES.fastestLook says, in the arcade's own build only through Testing's row (the test
 // link, for Barney's Fire). It answers false, true, or 'over' (the coloured lights laid over the scene)
+// the game's ask that the kit paints its kept pictures again after a graphics reset (kit 0.45.0): in the CrazyGames build as
+// CG_PIECES.repaint says, in the arcade's own build only through Testing's row (the test link)
+const repaintOn = (lb) => (lb.portal === 'crazygames' ? !!CG_PIECES.repaint : !!(lb.test && lb.test.repaint === 'on'));
 const fastestLook = (lb) => {
   if (!cosmeticsOn(lb)) return false;
   const v = lb.portal === 'crazygames' ? CG_PIECES.fastestLook : lb.test ? lb.test.fastest : false;
@@ -12055,7 +12089,8 @@ LanternBox.game({
   // step 5f-1: a play check just finished shows its result on the title (5f-2: only if it couldn't in play); the Night pass, part D: the
   // playtest page's Send my runs (?runs) opens the run log on the title
   // part C: a run that can't be continued is ended first (not on the speed test's link, which leaves it be)
-  init(lb) { if (!CHECK_LINK) settleSaved(lb); if (!checkShown(lb) && RUN_LOG && RUNS_LINK) lb.ui.open((ui) => runsPlaque(lb, ui)); },
+  init(lb) { lb.world.repaint(repaintOn(lb));   // kit 0.45.0
+    if (!CHECK_LINK) settleSaved(lb); if (!checkShown(lb) && RUN_LOG && RUNS_LINK) lb.ui.open((ui) => runsPlaque(lb, ui)); },
   // part C (kit 0.21.0): Continue on the title while a run waits, with its place and lantern, and the relight plaque's facts and choices
   resume: {
     waiting(lb) {
@@ -12113,6 +12148,7 @@ LanternBox.game({
     { id: 'cosmetics', name: 'Cosmetics page', choices: [['off', 'Off'], ['on', 'On'], ['all', 'On, all bought']] },
     { id: 'glow', name: "A belt's glow", choices: [['strong', 'Strong'], ['soft', 'Soft']] },
     { id: 'fastest', name: 'Looks at Fastest', choices: [['off', 'Off'], ['on', 'On'], ['over', 'On, lights laid over']] },   // kit 0.43.0: with the Cosmetics page on, a bought look kept at Picture: Fastest
+    { id: 'repaint', name: 'Repaint after a reset', choices: [['off', 'Off'], ['on', 'On']] },   // kit 0.45.0: the pictures painted again after a graphics reset
   ] },
 
   start(lb) {
@@ -12145,6 +12181,7 @@ LanternBox.game({
     g.loop = t.loop === '2' ? 2 : 1;               // step 5e-5: the first loop, each place in its own order (Testing can start in the second)
     g.orders = g.loop === 2 ? PLACES.map((p) => shuffledOrder(lb, lb.world.level(p).order)) : null;
     wearLook(lb, rec);              // his belt, and with the Cosmetics its glow and his lantern's glass (design system 27)
+    lb.world.repaint(repaintOn(lb));   // kit 0.45.0: again at a run's start, for Testing's row changed since the page opened
     const tg = { strong: ['grave', 'reverb', 'marrow'], new: ['quick', 'draught', 'robber', 'steady', 'thief'], ward: ['ward'] }[t.graces] || [];
     tg.forEach((id) => { g.graces[id] = true; g.bound.push(id); }); heldToKit(g, lb);   // Testing: Graces held from the start
     G = g;
