@@ -1314,7 +1314,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.42.0';
+  const VERSION = '0.43.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2242,10 +2242,15 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // tree (kit 0.20.6): the Gaping Tree's picture stepped a third as often (its sway and breathing about 1.6 times a second, not 4.8),
 // and its branch's sweep 12 times a second, as boss12 does; rim (kit 0.20.8): the thin rim kept pictures get when the glows are off
 // (Fastest) stamped from a coloured copy of the silhouette, with no shadows (see hardRim).
+// fl0 to fl3 (kit 0.43.0; HANDOVER-design-28.md, part 6): the timings T0 to T3 of a bought look at Picture Fastest. Each holds the
+// picture at Fastest for the visit, whatever is saved (it saves nothing), and dresses the wanderer itself, whatever a game asks: fl0,
+// Fastest as kit 0.42.0 draws it, a plain belt and the gold glass; fl1, his light kept, a plain belt and the gold glass; fl2, the
+// strong glow and the red glass, its light added to the scene; fl3, the same with its light laid over the scene (part 4's fallback).
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
-const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%")].filter(Boolean);
+  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
+const TRIAL_FL=["look timing T0: Fastest as it is, a plain belt and the gold glass","look timing T1: his light kept, a plain belt and the gold glass","look timing T2: the strong glow and the red glass, its light added","look timing T3: the strong glow and the red glass, its light laid over"];   // kit 0.43.0
+const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -5352,13 +5357,36 @@ const MV_INK="#060508",MV_GOLD="#ffcf6a",MV_LAMP="#ffdf9a";let MV_RED="#b3261e";
 // version 27: the lantern's glass and his light can be set (setGlass), and the belt can glow (setGlow). MV_POOL is the light's colour as
 // "r,g,b"; MV_POOLOP is "" (laid over the scene, as the gold always was) or "screen" (added to it); MV_POOLX multiplies its strength.
 let MV_GLASS="#ffd27a",MV_POOL="255,201,106",MV_POOLOP="",MV_POOLX=1,MV_GLOW=0,MV_GLOWC="#b3261e",MV_GLOWB=0,MV_GLOWN=2;
-// the kit: the checkpoint's lantern keeps the gold glass whatever he carries. play.js 1.14.0's cpLantern follows MV_GLASS, but the
-// Wanderer card says nothing else changes colour (Barney, 22 November 2026: keep them gold)
-const MV_GLASS_GOLD="#ffd27a";
+/* kit 0.43.0 (design system version 28, 22 November 2026; HANDOVER-design-28.md, parts 1 to 8 and 10; play.js 1.15.0's new code, word for
+   word but for what is marked "the kit"): a bought look at Picture: Fastest and with Effects off. */
+// version 28 (22 November 2026, Claude Code's brief BRIEF-design-28.md, settled with Barney): the looks at Picture: Fastest and with
+// Effects off. LOOK_PIC is "" (Picture: Faster or Best, the glows on), "fastest" (Picture: Fastest in a game that has asked the kit for
+// the looks there) or "bare" (Picture: Fastest as kit 0.42.0 draws it, and in a game that has not asked: no lines, no light). LOOK_FX is
+// 1 (Effects on) or 0 (off: colour only at every Picture setting; it wins over LOOK_PIC). At "fastest" no canvas shadow is used. A
+// glowing belt has two lines round it in the halo's colour, under its fill: FAST_LINES, each [width in the puppet's units, strength],
+// with round ends and joins, each stroked ONCE for the whole belt (band, knot and tails in one path), so that the lines do not stack
+// where the parts overlap. The strong figures are Claude Code's sketch; the soft ones keep its ratios to the halo's width and are a
+// starting guess. His light is drawn as with the glows on, for every glass; the kit lays a picture of the pool made once for each glass
+// in place of a gradient made each frame. FAST_LAID is the fallback if "added to the scene" is slow on a slow device: 1 lays the red,
+// night blue and mulberry lights over the scene at FAST_LAID_X times the gold's strength, in the same colours (gold and ash are
+// unchanged). MV_GLASS_GOLD is the gold glass, which the checkpoint's lanterns keep whatever glass he carries.
+let LOOK_PIC="",LOOK_FX=1,FAST_LAID=0,MV_GLOWL=null;const FAST_LINES={soft:[[6.75,0.16],[3.4,0.3]],strong:[[12,0.22],[6,0.4]]},FAST_LAID_X=2,MV_GLASS_GOLD="#ffd27a";
+// setPicture(pic,fx): pic "" , "fastest" or "bare"; fx true or false (Effects)
+function setPicture(pic,fx){LOOK_PIC=pic==="fastest"||pic==="bare"?pic:"";LOOK_FX=fx===false||fx===0?0:1;}
+function mvFastOn(){return !!(MV_GLOW&&LOOK_FX&&LOOK_PIC==="fastest");}
+// the two lines round a glowing belt at "fastest": path holds the whole belt, in the frame the tails are drawn in
+function mvFastLines(x,path){const ga=x.globalAlpha;x.save();x.lineJoin=x.lineCap="round";x.strokeStyle=MV_GLOWC;
+  for(const l of MV_GLOWL||FAST_LINES.strong){x.globalAlpha=ga*l[1];x.lineWidth=l[0];x.stroke(path);}x.restore();}
+// the kit: a game asks for the looks at Picture Fastest with world.look({ atFastest }) (LOOK_ASK, with FAST_LAID for 'over'), and
+// world.begin sets the picture each frame from the settings (setPicture): "" at Picture Faster and Best, "fastest" at Picture Fastest
+// in a game that has asked, "bare" at Fastest otherwise; fx is the Effects setting by itself. The kit's own FX (the Effects setting
+// and not Picture Fastest) is the same as LOOK_FX with LOOK_PIC "".
+let LOOK_ASK=0;
 // a glowing belt is filled through mvGlowFill: a canvas shadow in the halo's colour, laid MV_GLOWN times. The halo's width is in picture
-// units of the puppet, so it is scaled by the canvas's own transform (a shadow's blur is not). The kit: with Effects off (FX), as at
-// Picture Fastest, the halo goes and the belt keeps its lighter colour, as every glow in the kit loses its blur
-function mvGlowFill(x,f){if(!MV_GLOW||!FX){f();return;}const m=x.getTransform();x.shadowColor=MV_GLOWC;x.shadowBlur=MV_GLOWB*Math.hypot(m.a,m.b);
+// units of the puppet, so it is scaled by the canvas's own transform (a shadow's blur is not). With Effects off, as at Picture
+// Fastest, the halo goes and the belt keeps its lighter colour, as every glow in the kit loses its blur (kit 0.41.0's own rule, now
+// play.js 1.15.0's: its canvas shadow only with the glows on)
+function mvGlowFill(x,f){if(!MV_GLOW||LOOK_PIC||!LOOK_FX){f();return;}const m=x.getTransform();x.shadowColor=MV_GLOWC;x.shadowBlur=MV_GLOWB*Math.hypot(m.a,m.b);
   for(let i=0;i<MV_GLOWN;i++)f();x.shadowColor="transparent";x.shadowBlur=0;}
 // version 12: the tie belt is red to start; night blue, mulberry and ash are bought at the Echo Shrine (lightened to the red's 3.1 : 1 on
 // black, checked on the Pixel by Barney, 7 November 2026), each kept off the colours that already mean something (ember, gold,
@@ -5368,13 +5396,13 @@ const BELTS={red:"#b3261e",nightBlue:"#3d5cab",mulberry:"#94407f",ash:"#8f877c"}
 function setBelt(k){MV_RED=W_RED=BELTS[k]||BELTS.red;return MV_RED;}
 // version 27 (21 November 2026, the Full Launch work's design round with Barney): the looks bought on the Echo Shrine's Cosmetics page.
 // A glow: the belt's colour w towards white, with a halo (the belt's colour GLOW_HALO towards white) blur picture units wide, laid n times.
-// The game uses soft; strong is kept so that turning it up is this one setting, for all four belts. Tokens: belt-*-glow, belt-*-glow-strong,
-// belt-*-halo.
-const GLOWS={soft:{w:0.2,blur:4.5,n:2},strong:{w:0.38,blur:8,n:3}},GLOW_HALO=0.12;let GLOW_STRENGTH="soft";
+// Version 28: the game uses strong (Barney, on his phone, 22 November 2026: "Belt should be strong"); soft is kept as the second named
+// strength, this one setting for all four belts. Tokens: belt-*-glow (soft), belt-*-glow-strong, belt-*-halo.
+const GLOWS={soft:{w:0.2,blur:4.5,n:2},strong:{w:0.38,blur:8,n:3}},GLOW_HALO=0.12;let GLOW_STRENGTH="strong";
 function mvLift(h,w){return"#"+[1,3,5].map(i=>{const v=parseInt(h.slice(i,i+2),16);return Math.round(v+(255-v)*w).toString(16).padStart(2,"0");}).join("");}
 // setGlow(k,on): k the belt worn (red, nightBlue, mulberry, ash). Off, the belt is its own colour again.
-function setGlow(k,on){const base=BELTS[k]||BELTS.red;if(!on){MV_GLOW=0;MV_RED=W_RED=base;return;}const g=GLOWS[GLOW_STRENGTH]||GLOWS.soft;
-  MV_GLOW=1;MV_GLOWC=mvLift(base,GLOW_HALO);MV_GLOWB=g.blur;MV_GLOWN=g.n;MV_RED=W_RED=mvLift(base,g.w);}
+function setGlow(k,on){const base=BELTS[k]||BELTS.red;if(!on){MV_GLOW=0;MV_RED=W_RED=base;return;}const g=GLOWS[GLOW_STRENGTH]||GLOWS.strong;
+  MV_GLOW=1;MV_GLOWC=mvLift(base,GLOW_HALO);MV_GLOWB=g.blur;MV_GLOWN=g.n;MV_GLOWL=FAST_LINES[GLOW_STRENGTH]||FAST_LINES.strong;MV_RED=W_RED=mvLift(base,g.w);}
 // Lantern glass: gold to start, then the four belt colours. The glass is the belt's colour 40% towards white; ash is its own figure
 // (75% towards the warm white fff3df), because a grey lightened by the common rule read as an unlit lantern. His light follows the
 // glass: red, night blue and mulberry keep their colour (the belt's, 10% towards white) and are added to the scene at LIGHT_X times
@@ -5384,6 +5412,10 @@ function setGlow(k,on){const base=BELTS[k]||BELTS.red;if(!on){MV_GLOW=0;MV_RED=W
 const GLASSES={gold:{glass:"#ffd27a",light:"255,201,106",add:false},red:{glass:"#d17d78",light:"187,60,53",add:true},
   nightBlue:{glass:"#8b9dcd",light:"80,108,179",add:true},mulberry:{glass:"#bf8cb2",light:"159,83,140",add:true},ash:{glass:"#e3d8c6",light:"199,189,174",add:false}};
 let LIGHT_X=2;
+// the kit (0.43.0): the timing trials' look (?trial=fl0 to fl3; see TRIAL): the trial dresses him and asks, whatever a game says
+function trialLook(){const n=TRIAL.fl,on=n>=2;GLOW_STRENGTH="strong";LOOK_ASK=n>=1?1:0;FAST_LAID=n===3?1:0;if(LOOK_PIC)LOOK_PIC=LOOK_ASK?"fastest":"bare";
+  setLook({belt:"red",glow:on,glass:on?"red":"gold"});
+  return{belt:"red",glow:on,glass:on?"red":"gold",strength:GLOW_STRENGTH,lightX:LIGHT_X,atFastest:LOOK_ASK?(FAST_LAID?"over":true):false};}
 function setGlass(k){const g=GLASSES[k]||GLASSES.gold;MV_GLASS=g.glass;MV_POOL=g.light;MV_POOLOP=g.add?"screen":"";MV_POOLX=g.add?LIGHT_X:1;return g;}
 // the whole look: {belt, glow (true or false), glass}
 function setLook(o){o=o||{};setBelt(o.belt||"red");setGlow(o.belt||"red",!!o.glow);setGlass(o.glass||"gold");}
@@ -5450,28 +5482,59 @@ function mvSil(x,P,tq){x.lineCap="round";x.lineJoin="round";
   x.lineWidth=3.4;x.beginPath();x.moveTo(G.fS[0],G.fS[1]);x.lineTo(G.fE[0],G.fE[1]);x.lineTo(G.fHd[0],G.fHd[1]);x.stroke();
   x.restore();
   wLantern(x,G.hook[0],G.hook[1],P.lan);return G;}
-function mvTails(x,G,P,tq,origin){const sp=Math.min(1,Math.hypot(P.vx,P.vy)/54);let dx=-0.6-2.6*Math.max(-1.6,Math.min(1.6,P.vx/54))-Math.min(1,Math.abs(P.vy)/90)*1.1,dy=0.9-2.2*Math.max(-1.2,Math.min(1.2,P.vy/54));
+// version 28: with a Path2D as path the two tails are added to it and nothing is drawn (for the lines at Picture: Fastest)
+function mvTails(x,G,P,tq,origin,path){const sp=Math.min(1,Math.hypot(P.vx,P.vy)/54);let dx=-0.6-2.6*Math.max(-1.6,Math.min(1.6,P.vx/54))-Math.min(1,Math.abs(P.vy)/90)*1.1,dy=0.9-2.2*Math.max(-1.2,Math.min(1.2,P.vy/54));
   const d=Math.hypot(dx,dy)||1;dx/=d;dy/=d;const nx=-dy,ny=dx,L=24+10*sp,amp=(1.3+2.3*sp)*(MV_RM?0.4:1),K=origin||G.knot; /* the kit: calmer with Reduce motion */
   for(let k=0;k<2;k++){const top=[],bot=[];for(let i=0;i<=8;i++){const u=i/8,w=1.6-u*0.75,wv=Math.sin(tq*(MV_RM?2.5:7)+u*5+k*1.3)*u*amp,px=K[0]+dx*u*(L-k*7)+nx*wv,py=K[1]+k*2.2+dy*u*(L-k*7)+ny*wv;top.push([px-nx*w,py-ny*w]);bot.push([px+nx*w,py+ny*w]);}
-    x.beginPath();x.moveTo(top[0][0],top[0][1]);for(const q of top)x.lineTo(q[0],q[1]);for(let i=bot.length-1;i>=0;i--)x.lineTo(bot[i][0],bot[i][1]);x.closePath();x.fill();}}
+    const c=path||x;if(!path)x.beginPath();c.moveTo(top[0][0],top[0][1]);for(const q of top)c.lineTo(q[0],q[1]);for(let i=bot.length-1;i>=0;i--)c.lineTo(bot[i][0],bot[i][1]);c.closePath();if(!path)x.fill();}}
+// version 28: the whole belt as one path, in the frame the tails are drawn in: the band and the knot (drawn in the upper body's frame,
+// mvBody) and the two tails. In the tucked roll (K given) only the tails show.
+function mvBeltPath(G,P,tq,K){const p=new Path2D();
+  if(!K){const b=new Path2D();b.moveTo(-9.8,-11.3);b.lineTo(10.2,-11.3);b.lineTo(10.4,-7.9);b.lineTo(-9.8,-7.9);b.closePath();
+    b.moveTo(-9.6+2.3*Math.cos(0.3),-9.5+2.3*Math.sin(0.3));b.ellipse(-9.6,-9.5,2.3,2,0.3,0,Math.PI*2);b.closePath();
+    p.addPath(b,new DOMMatrix().translateSelf(P.hx,P.hy).rotateSelf(P.lean*180/Math.PI));}
+  mvTails(null,G,P,tq,K,p);return p;}
 function mvDet(x,P,tq,G){
-  if(P.ball!=null){mvBall(x,P,tq,true);const a=P.ball+0.5,K=[P.hx-Math.cos(a)*11,-13-Math.sin(a)*11];x.fillStyle=MV_RED;mvGlowFill(x,()=>mvTails(x,null,P,tq,K));return;}
+  if(P.ball!=null){mvBall(x,P,tq,true);const a=P.ball+0.5,K=[P.hx-Math.cos(a)*11,-13-Math.sin(a)*11];if(mvFastOn())mvFastLines(x,mvBeltPath(null,P,tq,K));x.fillStyle=MV_RED;mvGlowFill(x,()=>mvTails(x,null,P,tq,K));return;}
+  if(mvFastOn())mvFastLines(x,mvBeltPath(G,P,tq));
   mvBody(x,G,P);x.fillStyle=MV_RED;mvGlowFill(x,()=>wPoly(x,[[-9.8,-11.3],[10.2,-11.3],[10.4,-7.9],[-9.8,-7.9]]));
   x.lineWidth=1.3;x.strokeStyle=MV_INK;x.beginPath();x.moveTo(9.2,-9.5);x.lineTo(13.4,-8.5);x.stroke();
   x.fillStyle=MV_RED;mvGlowFill(x,()=>{x.beginPath();x.ellipse(-9.6,-9.5,2.3,2,0.3,0,Math.PI*2);x.fill();});x.restore();
   x.fillStyle=MV_RED;mvGlowFill(x,()=>mvTails(x,G,P,tq));
   mvBody(x,G,P);x.fillStyle=x.strokeStyle=MV_INK;mvSword(x,G,P);mvRunes(x,G,P);x.restore();
   x.fillStyle=x.strokeStyle=MV_INK;wLantern(x,G.hook[0],G.hook[1],P.lan,MV_GLASS);}
+// the kit (0.43.0; HANDOVER-design-28.md, part 2): his light at Picture Fastest, in a game that has asked: the pool round the lantern and
+// the light at his feet, in the colours and at the strengths they have with the glows on, for every glass. Each is laid from a picture
+// painted once for its colour and size at full strength and drawn at the strength wanted, in place of a gradient made every frame (a
+// gradient's strength is its alpha, so the picture drawn at that alpha is the gradient). s: the canvas's scale (0: read from it).
+// feet: the light at his feet, (cx, cy) his feet; else the pool, (cx, cy) where the lantern hangs. pl and pop: its strength and how it
+// is laid, as mvDraw works them out.
+const MV_LIT=new Map();
+function mvLit(x,s,feet,cx,cy,k,pl,pop){
+  const a=Math.min(1,(feet?0.2:0.42)*pl);if(!(a>0))return;
+  if(!s){const m=x.getTransform();s=Math.hypot(m.a,m.b);}
+  const key=(feet?"f|":"p|")+MV_POOL+"|"+k+"|"+s.toFixed(3);let L=MV_LIT.get(key);
+  if(!L){const R=(feet?30:74)*k/1.32,w=Math.ceil(2*R*s)+2,h=feet?Math.ceil(14*k*s):w,oy=feet?6*k:h/(2*s),cv=mk(w,h),c=cv.getContext("2d");
+    c.setTransform(s,0,0,s,w/2,oy*s);
+    const g=feet?c.createRadialGradient(0,1,1,0,1,R):c.createRadialGradient(0,0,2,0,0,R);g.addColorStop(0,"rgba("+MV_POOL+",1)");g.addColorStop(1,feet?"rgba(0,0,0,0)":"rgba("+MV_POOL+",0)");
+    c.fillStyle=g;if(feet)c.fillRect(-R-1,-6*k,2*R+2,14*k);else c.fillRect(-R-1,-R-1,2*R+2,2*R+2);
+    if(MV_LIT.size>=12)MV_LIT.clear();
+    L={cv,w:w/s,h:h/s,oy};MV_LIT.set(key,L);}
+  x.save();x.globalAlpha=x.globalAlpha*a;if(pop)x.globalCompositeOperation=pop;x.drawImage(L.cv,cx-L.w/2,cy-L.oy,L.w,L.h);x.restore();}
 // the wanderer in pose P with its feet origin at (X,Y) picture units; o: {edgeA (the lit edge's strength, 0..1), pool (lantern light, 0..1)}
-function mvDraw(x,X,Y,P,tq,f,edge,k,o){k=k||1.32;f=f||1;o=o||{};const eA=o.edgeA==null?1:o.edgeA,pl=(o.pool==null?1:o.pool)*MV_POOLX;
+// (the kit: with LOOK_PIC set, so at Picture Fastest, his light is laid from kept pictures, mvLit; and the light at his feet is not drawn at no strength)
+function mvDraw(x,X,Y,P,tq,f,edge,k,o){k=k||1.32;f=f||1;o=o||{};const eA=o.edgeA==null?1:o.edgeA,lit=LOOK_FX&&LOOK_PIC!=="bare",laid=LOOK_PIC==="fastest"&&FAST_LAID&&MV_POOLOP,
+  pl=lit?(o.pool==null?1:o.pool)*(laid?FAST_LAID_X:MV_POOLX):0,pop=laid?"":MV_POOLOP;
   // where the lantern hangs, for its pool of light
   let lx,ly;if(P.ball!=null){lx=X+f*(P.hx+5)*k;ly=Y-13*k;}else{const G0=mvGeo(P,tq);lx=X+f*G0.hook[0]*k;ly=Y+(G0.hook[1]+12)*k;}
-  if(pl>0&&FX){const g=x.createRadialGradient(lx,ly,2,lx,ly,74*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.42*pl)+")");g.addColorStop(1,"rgba("+MV_POOL+",0)");x.save();if(MV_POOLOP)x.globalCompositeOperation=MV_POOLOP;x.fillStyle=g;x.fillRect(lx-80*k,ly-80*k,160*k,160*k);x.restore();}
+  if(pl>0&&LOOK_PIC)mvLit(x,0,false,lx,ly,k,pl,pop);else
+  if(pl>0){const g=x.createRadialGradient(lx,ly,2,lx,ly,74*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.42*pl)+")");g.addColorStop(1,"rgba("+MV_POOL+",0)");x.save();if(pop)x.globalCompositeOperation=pop;x.fillStyle=g;x.fillRect(lx-80*k,ly-80*k,160*k,160*k);x.restore();}
   if(eA>0){x.save();x.globalAlpha=eA;x.translate(X+1.3*k/1.32,Y-1.3*k/1.32);x.scale(f*k,k);x.fillStyle=x.strokeStyle=edge||"rgba(255,231,184,0.9)";mvSil(x,P,tq);x.restore();}
   if(o.aura&&o.aura.a>0){const A=o.aura,top=Y-A.h*100*k;x.save();x.beginPath();x.rect(X-140*k,top,280*k,Y+30*k-top);x.clip();x.globalAlpha=Math.min(1,A.a);
     for(let i=0;i<8;i++){const an=i*Math.PI/4;x.save();x.translate(X+Math.cos(an)*A.w*k/1.32,Y+Math.sin(an)*A.w*k/1.32);x.scale(f*k,k);x.fillStyle=x.strokeStyle=A.col;mvSil(x,P,tq);x.restore();}x.restore();}
   x.save();x.translate(X,Y);x.scale(f*k,k);x.fillStyle=x.strokeStyle=MV_INK;const G=mvSil(x,P,tq);mvDet(x,P,tq,G);x.restore();
-  if(o.feet!==false&&FX){const g=x.createRadialGradient(X,Y+1,1,X,Y+1,30*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.2*pl)+")");g.addColorStop(1,"rgba(0,0,0,0)");x.save();if(MV_POOLOP)x.globalCompositeOperation=MV_POOLOP;x.fillStyle=g;x.fillRect(X-32*k,Y-6*k,64*k,14*k);x.restore();}
+  if(o.feet!==false&&lit&&LOOK_PIC)mvLit(x,0,true,X,Y,k,pl,pop);else
+  if(o.feet!==false&&lit){const g=x.createRadialGradient(X,Y+1,1,X,Y+1,30*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.2*pl)+")");g.addColorStop(1,"rgba(0,0,0,0)");x.save();if(pop)x.globalCompositeOperation=pop;x.fillStyle=g;x.fillRect(X-32*k,Y-6*k,64*k,14*k);x.restore();}
   return G;}
 // a point of the figure (in the upper body's frame) in picture units
 function mvPt(G,P,X,Y,f,k,bx,by){const p=G?G.T(bx,by):[P.hx+bx,P.hy+by];return[X+f*p[0]*k,Y+p[1]*k];}
@@ -5672,9 +5735,9 @@ let MV_RM=false;                                   // Reduce motion while a figu
 const MV_BOX=[-62,-122,98,14];                     // the figure's box in his own units, feet at (0, 0), with the sword at its longest
 const MVC=[];                                      // the painted figures, the most recent last
 function mvFigure(s,P,tq,k,edge,rm,f){ // painted facing its way, its feet on a whole pixel and its lit edge's offset painted in, so a blit is pixel for pixel
-  const key=s.toFixed(3)+"|"+k+"|"+f+"|"+edge+"|"+(rm?1:0)+"|"+tq.toFixed(4)+"|"+MV_RED+"|"+MV_GLASS+(MV_GLOW?"|"+MV_GLOWC+"|"+MV_GLOWB+"x"+MV_GLOWN+(FX?"g":""):"")+"|"+JSON.stringify(P);   // kit 0.11.0: and the belt; kit 0.41.0: the glass, and a glow's halo (none with Effects off)
+  const key=s.toFixed(3)+"|"+k+"|"+f+"|"+edge+"|"+(rm?1:0)+"|"+tq.toFixed(4)+"|"+MV_RED+"|"+MV_GLASS+(MV_GLOW?"|"+MV_GLOWC+"|"+MV_GLOWB+"x"+MV_GLOWN+(!LOOK_PIC&&LOOK_FX?"g":mvFastOn()?"l"+MV_GLOWL:""):"")+"|"+JSON.stringify(P);   // kit 0.11.0: and the belt; kit 0.41.0: the glass, and a glow's halo (none with Effects off)
   for(let i=MVC.length-1;i>=0;i--)if(MVC[i].key===key){const F=MVC[i];if(i!==MVC.length-1){MVC.splice(i,1);MVC.push(F);}return F;}
-  const b=MV_BOX,R=k*s,x0=f>0?b[0]:-b[2],x1=f>0?b[2]:-b[0],ox=Math.ceil(-x0*R)+4,oy=Math.ceil(-b[1]*R)+4,w=ox+Math.ceil(x1*R)+4,h=oy+Math.ceil(b[3]*R)+2,e=1.3*k/1.32*s;
+  const b=MV_BOX,R=k*s,x0=f>0?b[0]:-b[2],x1=f>0?b[2]:-b[0],ox=Math.ceil(-x0*R)+4,oy=Math.ceil(-b[1]*R)+4,w=ox+Math.ceil(x1*R)+4,h=oy+Math.ceil((b[3]+(mvFastOn()?1:0))*R)+2,e=1.3*k/1.32*s;   // kit 0.43.0: one more unit of room below while the belt's lines are drawn (in the tucked roll the tails' lines reach 14.8 below his feet; the rows are added at the bottom, so nothing moves)
   let F=MVC.length>=(TRIAL.hero?32:8)?MVC.shift():null;   // kit 0.20.4: the hero trial keeps 32
   if(!F||F.E.width!==w||F.E.height!==h)F={E:mk(w,h),I:mk(w,h)};
   F.key=key;F.ox=ox;F.oy=oy;F.w=w;F.h=h;MV_RM=!!rm;
@@ -5684,16 +5747,19 @@ function mvFigure(s,P,tq,k,edge,rm,f){ // painted facing its way, its feet on a 
   finally{MV_RM=false;}
   MVC.push(F);KIT.poses++;return F;}
 // as mvDraw (moves.js), from the painted figure: the pool of light, the lit edge (at its strength), the figure, the glow at the feet
-function mvDrawKit(x,s,X,Y,P,tq,f,edge,k,o){k=k||K132;f=f||1;o=o||{};const eA=o.edgeA==null?1:o.edgeA,pl=(o.pool==null?1:o.pool)*MV_POOLX,F=mvFigure(s,P,tq,k,edge,o.rm,f),G=F.G;
+function mvDrawKit(x,s,X,Y,P,tq,f,edge,k,o){k=k||K132;f=f||1;o=o||{};const eA=o.edgeA==null?1:o.edgeA,lit=LOOK_FX&&LOOK_PIC!=="bare",laid=LOOK_PIC==="fastest"&&FAST_LAID&&MV_POOLOP,   // kit 0.43.0: as mvDraw
+  pl=lit?(o.pool==null?1:o.pool)*(laid?FAST_LAID_X:MV_POOLX):0,pop=laid?"":MV_POOLOP,F=mvFigure(s,P,tq,k,edge,o.rm,f),G=F.G;
   let lx,ly;if(P.ball!=null){lx=X+f*(P.hx+5)*k;ly=Y-13*k;}else{lx=X+f*G.hook[0]*k;ly=Y+(G.hook[1]+12)*k;}
-  if(pl>0&&FX){const g=x.createRadialGradient(lx,ly,2,lx,ly,74*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.42*pl)+")");g.addColorStop(1,"rgba("+MV_POOL+",0)");x.save();if(MV_POOLOP)x.globalCompositeOperation=MV_POOLOP;x.fillStyle=g;x.fillRect(lx-80*k,ly-80*k,160*k,160*k);x.restore();}
+  if(pl>0&&LOOK_PIC)mvLit(x,s,false,lx,ly,k,pl,pop);else
+  if(pl>0){const g=x.createRadialGradient(lx,ly,2,lx,ly,74*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.42*pl)+")");g.addColorStop(1,"rgba("+MV_POOL+",0)");x.save();if(pop)x.globalCompositeOperation=pop;x.fillStyle=g;x.fillRect(lx-80*k,ly-80*k,160*k,160*k);x.restore();}
   const m=x.getTransform(),px=Math.round(X*m.a+m.e-F.ox),py=Math.round(Y*m.d+m.f-F.oy); // whole device pixels, as the kit places its bosses
   const put=cv=>{x.save();x.setTransform(1,0,0,1,0,0);x.drawImage(cv,px,py);x.restore();};
   if(eA>0){x.save();x.globalAlpha=eA;put(F.E);x.restore();}
   if(o.aura&&o.aura.a>0){const A=o.aura,top=Y-A.h*100*k;x.save();x.beginPath();x.rect(X-140*k,top,280*k,Y+30*k-top);x.clip();x.globalAlpha=Math.min(1,A.a); // the heal (4c-4): as mvDraw, drawn while it lasts
     for(let i=0;i<8;i++){const an=i*Math.PI/4;x.save();x.translate(X+Math.cos(an)*A.w*k/1.32,Y+Math.sin(an)*A.w*k/1.32);x.scale(f*k,k);x.fillStyle=x.strokeStyle=A.col;MV_RM=!!o.rm;try{mvSil(x,P,tq);}finally{MV_RM=false;}x.restore();}x.restore();}
   put(F.I);
-  if(o.feet!==false&&FX){const g=x.createRadialGradient(X,Y+1,1,X,Y+1,30*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.2*pl)+")");g.addColorStop(1,"rgba(0,0,0,0)");x.save();if(MV_POOLOP)x.globalCompositeOperation=MV_POOLOP;x.fillStyle=g;x.fillRect(X-32*k,Y-6*k,64*k,14*k);x.restore();}
+  if(o.feet!==false&&lit&&LOOK_PIC)mvLit(x,s,true,X,Y,k,pl,pop);else
+  if(o.feet!==false&&lit){const g=x.createRadialGradient(X,Y+1,1,X,Y+1,30*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.2*pl)+")");g.addColorStop(1,"rgba(0,0,0,0)");x.save();if(pop)x.globalCompositeOperation=pop;x.fillStyle=g;x.fillRect(X-32*k,Y-6*k,64*k,14*k);x.restore();}
   return G;}
 const MV_SH={};                                    // the life lost's card pieces, cut once for each sharpness
 
@@ -6756,7 +6822,9 @@ function kbThrow(o){const lo=KB.ends.low,hi=KB.ends.top,dist=Math.max(1,+o.dist|
 // pool of light with it
 function mvDrawKitRot(x,s,X,Y,P,tq,f,edge,k,o,rot){const F=mvFigure(s,P,tq,k,edge,o.rm,f),G=F.G,pv=26*k,eA=o.edgeA==null?1:o.edgeA;
   x.save();x.translate(X,Y-pv);x.rotate(f*rot);x.translate(0,pv);
-  if(FX){const lx=f*G.hook[0]*k,ly=(G.hook[1]+12)*k,g=x.createRadialGradient(lx,ly,2,lx,ly,74*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.42*MV_POOLX)+")");g.addColorStop(1,"rgba("+MV_POOL+",0)");x.save();if(MV_POOLOP)x.globalCompositeOperation=MV_POOLOP;x.fillStyle=g;x.fillRect(lx-80*k,ly-80*k,160*k,160*k);x.restore();}   // kit 0.41.0: his light follows the glass
+  const lit=LOOK_FX&&LOOK_PIC!=="bare",laid=LOOK_PIC==="fastest"&&FAST_LAID&&MV_POOLOP,pl=lit?(laid?FAST_LAID_X:MV_POOLX):0,pop=laid?"":MV_POOLOP;   // kit 0.43.0: as mvDraw, so at Picture Fastest his light does not go out while he is thrown
+  if(pl>0&&LOOK_PIC)mvLit(x,s,false,f*G.hook[0]*k,(G.hook[1]+12)*k,k,pl,pop);else
+  if(pl>0){const lx=f*G.hook[0]*k,ly=(G.hook[1]+12)*k,g=x.createRadialGradient(lx,ly,2,lx,ly,74*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.42*pl)+")");g.addColorStop(1,"rgba("+MV_POOL+",0)");x.save();if(pop)x.globalCompositeOperation=pop;x.fillStyle=g;x.fillRect(lx-80*k,ly-80*k,160*k,160*k);x.restore();}   // kit 0.41.0: his light follows the glass
   const put=cv=>x.drawImage(cv,-F.ox/s,-F.oy/s,F.w/s,F.h/s);if(eA>0){x.globalAlpha=eA;put(F.E);x.globalAlpha=1;}put(F.I);x.restore();return G;}
 
 /* ============================== the tools: what a game calls, as lb.world ==============================
@@ -6769,6 +6837,7 @@ function mvDrawKitRot(x,s,X,Y,P,tq,f,edge,k,o,rot){const F=mvFigure(s,P,tq,k,edg
 // kit 0.17.4: a pose's key, its numbers rounded, so the same pose gets the same key
 function poseKey(P){return JSON.stringify(P,(k,v)=>typeof v==="number"?Math.round(v*1000)/1000:v);}
 function makeTools(env){
+  if(TRIAL.fl!=null)trialLook();             // kit 0.43.0: a timing trial's look, from the first frame
   const PLACE_SET={night:"village5",storm:"town",dawn:"moor",mist:"forest"};
   const STAND={crawler:3,ghoul2:2};          // how far a monster's feet sit below the ground line, as on the directions page
   let scene=null,sceneScale=0,F=null;        // F: the frame being drawn
@@ -6841,6 +6910,7 @@ function makeTools(env){
       o=o||{};
       const L=o.level&&o.level._T?o.level:null,S=env.k(),level=L?L.place:(o.place||"night");
       FX=env.fx();QUICK=!!(env.quick&&env.quick());
+      setPicture(QUICK?(LOOK_ASK?"fastest":"bare"):"",env.fxSet?!!env.fxSet():FX);   // kit 0.43.0: the looks' picture (see LOOK_ASK)
       const rm=env.rm();KB_N=rm||QUICK?0.5:1;KB_SP=rm?0.5:1;MD_N=QUICK?0.5:1;MD_SOFT=FX;   // kit 0.36.0: what the settings change for the knock-back and the mend
       const t=o.t==null?env.t():o.t,sc=sceneFor(S),W=env.W(),camX=o.camX||0;
       const opt={level,rm,walking:true,facing:1,hud:false,splash:"on",emberMouth:true,defeat:"cardwisp",dcol:EMBER.danger,dglow:EMBER.glow,win:GOLD_LIGHT,litP:LV[level].litP,sample:!!o.sample,lvl:L?L._T:null};
@@ -6873,15 +6943,20 @@ function makeTools(env){
     move(name,step){const m=mvMove(name,step||0);return{tag:m.tag,steps:m.steps,done:m.done,dx:m.dx,dy:m.dy};},
     // kit 0.11.0 (design system version 12): belt(name) chooses the belt the wanderer wears from here on: 'red' (or 'scarf', its token's
     // name), 'nightBlue', 'mulberry' or 'ash'; the colours are the tokens', set in play.js's BELTS
-    belt(name){const k=name==='scarf'?'red':name;setGlow(k,false);return setBelt(k);},   // kit 0.41.0: a plain belt; a glow is look's
+    belt(name){if(TRIAL.fl!=null){trialLook();return MV_RED;}const k=name==='scarf'?'red':name;setGlow(k,false);return setBelt(k);},   // kit 0.41.0: a plain belt; a glow is look's
     // kit 0.41.0 (design system version 27, Wanderer; play.js 1.14.0's setLook): look({ belt, glow, glass }) is the whole look he wears from
     // here on: belt as belt(name) takes it; glow true for that belt's glow; glass 'gold' (what he starts with), 'red', 'nightBlue',
-    // 'mulberry' or 'ash', and his light follows it. strength ('soft', the one a game uses, or 'strong') and lightX (how many times the
-    // gold light's intensity a red, night blue or mulberry light is added at; 2) are the two figures the design keeps one setting away:
-    // given, they stay until given again. It answers what was set. LOOKS names what there is. A look adds no power.
-    look(o){o=o||{};if(GLOWS[o.strength])GLOW_STRENGTH=o.strength;if(o.lightX>0)LIGHT_X=+o.lightX;
+    // 'mulberry' or 'ash', and his light follows it. strength ('strong', the one a game uses and since kit 0.43.0 how it starts, or 'soft')
+    // and lightX (how many times the gold light's intensity a red, night blue or mulberry light is added at; 2) are the two figures the
+    // design keeps one setting away: given, they stay until given again. It answers what was set. LOOKS names what there is. A look adds
+    // no power.
+    // kit 0.43.0 (HANDOVER-design-28.md, part 5): atFastest is a game's one ask for a bought look at Picture Fastest: true, a glowing
+    // belt's two lines and his light for every glass; 'over', the same with the red, night blue and mulberry lights laid over the
+    // scene (part 4's fallback); false, Picture Fastest as kit 0.42.0 draws it, which is how it starts. Given, it stays until given again.
+    look(o){if(TRIAL.fl!=null)return trialLook();o=o||{};if(GLOWS[o.strength])GLOW_STRENGTH=o.strength;if(o.lightX>0)LIGHT_X=+o.lightX;
+      if(o.atFastest!=null){LOOK_ASK=o.atFastest?1:0;FAST_LAID=o.atFastest==='over'?1:0;if(LOOK_PIC)LOOK_PIC=LOOK_ASK?"fastest":"bare";}
       const b=o.belt==='scarf'||!BELTS[o.belt]?'red':o.belt,gl=GLASSES[o.glass]?o.glass:'gold';
-      setLook({belt:b,glow:!!o.glow,glass:gl});return{belt:b,glow:!!o.glow,glass:gl,strength:GLOW_STRENGTH,lightX:LIGHT_X};},
+      setLook({belt:b,glow:!!o.glow,glass:gl});return{belt:b,glow:!!o.glow,glass:gl,strength:GLOW_STRENGTH,lightX:LIGHT_X,atFastest:LOOK_ASK?(FAST_LAID?'over':true):false};},
     LOOKS:{belts:Object.keys(BELTS),glasses:Object.keys(GLASSES),strengths:Object.keys(GLOWS)},
     wanderer(x,o){ // version 8 (4c-3): the posable wanderer (Moves). o: y; move and step, or walking (true) or standing, in time; facing (1 or -1);
       // sword {reach, bite}: its upgrades; safe: seconds into the second of safety (his lit edge pulses slowly for 1 s); hurt {kind: "armour" or
@@ -7143,7 +7218,7 @@ function makeTools(env){
     // for the test page's readout
     get stats(){return{tileBytes:KIT.bytes,poses:KIT.poses,builds:KIT.builds,thru:KIT.thruN,tints:KIT.tints||0,mdReads:KIT.mdReads||0};},   // kit 0.36.0: tints, mana's colour laid on (a fill, not a repaint); mdReads, a boss's outline read
     _thruCloud(on){KIT.thru=on!==false;},   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
-    get _looks(){return{sil:mvSil,det:mvDet,draw:mvDraw,move:mvMove,rm(v){MV_RM=!!v;},state(){return{red:MV_RED,glass:MV_GLASS,pool:MV_POOL,op:MV_POOLOP,x:MV_POOLX,glow:MV_GLOW,halo:MV_GLOWC,blur:MV_GLOWB,n:MV_GLOWN,strength:GLOW_STRENGTH,lightX:LIGHT_X};}};},   // test only (kit 0.41.0): the wanderer's painting, to set beside the design system's own
+    get _looks(){return{sil:mvSil,det:mvDet,draw:mvDraw,move:mvMove,rm(v){MV_RM=!!v;},state(){return{red:MV_RED,glass:MV_GLASS,pool:MV_POOL,op:MV_POOLOP,x:MV_POOLX,glow:MV_GLOW,halo:MV_GLOWC,blur:MV_GLOWB,n:MV_GLOWN,strength:GLOW_STRENGTH,lightX:LIGHT_X,ask:LOOK_ASK,pic:LOOK_PIC,fx:LOOK_FX,laid:FAST_LAID,laidX:FAST_LAID_X,lines:MV_GLOWL,kept:MV_LIT.size};}};},   // test only (kit 0.41.0): the wanderer's painting, to set beside the design system's own
     get _legs(){return{legs:moLegs,gait:MO_GAIT,stoop:MO_STOOP,hand:moWalkerHandAt,room:MON_ROOM,box:MON_BOX,scene};},   // test only (kit 0.34.0): the walker's and the ghoul's legs, the stoop and the painter, for measuring where their feet and the stooped arm are and how far each reaches
   };
 }
@@ -7601,12 +7676,13 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
     const LEVELS = ['best', 'faster', 'fastest'];
     const AUTO_LIMIT = 0.025, AUTO_SPAN = 4;
     const auto = { level: 0, phase: 'wait', t: 0, n: 0, sum: 0, skip: false };   // phase: wait (for play), settle, time, watch, done
-    const pictureLevel = () => (own.picture === 'auto' ? LEVELS[auto.level] : own.picture);
+    // kit 0.43.0: a timing trial (?trial=fl0 to fl3) holds the picture at Fastest for the visit; what is saved is not touched
+    const pictureLevel = () => (TRIAL.fl != null ? 'fastest' : own.picture === 'auto' ? LEVELS[auto.level] : own.picture);
     // gap: seconds since the last frame, so the time the last frame took
     function timePicture(gap) {
       const skip = auto.skip;
       auto.skip = false;   // kit 0.20.1: asked for in the last frame only, so a game that stops asking (or quits) can't leave it on
-      if (own.picture !== 'auto' || auto.phase === 'done' || state.screen !== 'play' || skip) return;
+      if (TRIAL.fl != null || own.picture !== 'auto' || auto.phase === 'done' || state.screen !== 'play' || skip) return;
       if (auto.phase === 'wait') { Object.assign(auto, { phase: 'settle', t: 0 }); return; }
       if (gap > 0.25) return;   // a hitch (the window resized, the tab hidden), not the drawing
       auto.t += gap;
@@ -10207,6 +10283,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       t: () => (state.inGame ? state.time : state.t),
       rm: () => !!settings.reduceMotion,
       fx: () => !!settings.effects && pictureLevel() !== 'fastest',
+      fxSet: () => !!settings.effects,   // kit 0.43.0: the Effects setting by itself, so the World can tell Picture Fastest from Effects off
       quick: () => pictureLevel() === 'fastest',   // kit 0.17.4: attacking monsters' poses kept (world.monster); kit 0.18.0: at Fastest only (design system 14, Barney)
       socket: (k) => {   // kit 0.9.0: a potion socket's centre in picture lines, or null without one
         const b = hudNodes && hudNodes.full && hudNodes.full.querySelector('.lb-potion.is-' + k);
@@ -10395,7 +10472,15 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
          checkpoint's lantern stays gold; with Effects off a glow keeps its colour and loses its halo.
        Kit 0.42.0 (design system version 27, EchoShrine): the stylesheet has version 27's tokens and its block for the Echo Shrine's two
          pages and the looks (the tabs' width, two columns, lb-looks and its rows, a glow's button and dot, a glowing band, the lantern
-         glass's tile), for a game's own plaque; lb.ui.glass(id) gives a glass's name, its pane's class and its small lantern. */
+         glass's tile), for a game's own plaque; lb.ui.glass(id) gives a glass's name, its pane's class and its small lantern.
+       Kit 0.43.0 (design system version 28; HANDOVER-design-28.md, parts 1 to 8 and 10; play.js 1.15.0's new code, word for word): a
+         bought look at Picture Fastest, only in a game that asks. lb.world.look({ atFastest: true }) keeps, at Picture Fastest with
+         Effects on, a glowing belt's glow as two plain lines round the whole belt (no blur) and his light (the pool round the
+         lantern and the light at his feet, for every glass, gold too), which the kit lays from kept pictures; atFastest: 'over' lays
+         the red, night blue and mulberry lights over the scene at twice the gold's strength, where they are otherwise added to it;
+         false (how it starts) draws Picture Fastest exactly as kit 0.42.0. Effects off stays colour only; Picture Faster and Best
+         are not touched. A glow's strength now starts at 'strong' (a game that names it sees no change). The trials fl0 to fl3
+         (?trial=) time the look in a play check, at Picture Fastest. */
     const api = {
       H: H, version: VERSION, touch: touch, input: input, hud: hud, sfx: sfx, world: world, color: colour,
       get textZoom() { return TZ.z; },   // kit 0.36.1
@@ -10414,7 +10499,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
         return { mode: ACCT.mode, why: ACCT.why, waited: ACCT.waited, size: size };
       },
       get W() { return V.W; },
-      get settings() { return Object.assign({}, settings, { picture: own.picture }); },
+      get settings() { return Object.assign({}, settings, { picture: TRIAL.fl != null ? 'fastest' : own.picture }); },   // kit 0.43.0: a timing trial's picture
       get picture() { return { level: pictureLevel(), width: canvas.width, height: canvas.height, sharpness: V.k }; },
       pictureSkip: () => { auto.skip = true; },   // kit 0.20.1
       trials: TRIAL_WORDS.slice(),   // kit 0.20.2
@@ -10618,7 +10703,11 @@ const CG_PIECES = {
   earlyTitle: true,          // the title shown before the soundtrack has arrived (kit 0.38.0; Barney, 21 November 2026: "do this fix")
   usernameInitials: true,    // the score initials filled from the CrazyGames username, when none are saved (kit 0.39.0)
   happyMoments: true,        // CrazyGames' happy moments: a boss first beaten, a journey won, wave 12 of The Endless Rot endured on Agony (kit 0.40.0)
-  cosmetics: false,          // the Echo Shrine's Cosmetics page: a glow for each belt, and lantern glass (kits 0.41.0 and 0.42.0; HANDOVER-design-27.md, parts 2 and 3)
+  cosmetics: true,           // the Echo Shrine's Cosmetics page: a glow for each belt, and lantern glass (kits 0.41.0 and 0.42.0; HANDOVER-design-27.md, parts 2 and 3);
+                             // on since CM261, 22 November 2026, after Barney's four named checks on the test link
+  fastestLook: false,        // a bought look kept at Picture: Fastest, where slow devices play (kit 0.43.0; HANDOVER-design-28.md, part A): a glowing
+                             // belt's two lines and his light. It needs cosmetics on. false: Fastest as it was; true: the look kept; 'over': kept, with
+                             // the coloured lights laid over the scene (part 4's fallback). Off until Barney's Fire has timed it
 };
 
 const PLACES = ['night', 'storm', 'dawn', 'mist'];
@@ -11298,6 +11387,14 @@ const glassIds = (lb) => lb.world.LOOKS.glasses, glass0 = (lb) => glassIds(lb)[0
 const BELT_IDS = ['scarf'].concat(BELTS);              // scarf: the red belt he starts in
 const cosmeticsOn = (lb) => (lb.portal === 'crazygames' && CG_PIECES.cosmetics) || !!(lb.test && (lb.test.cosmetics === 'on' || lb.test.cosmetics === 'all'));
 const looksAll = (lb) => !!(lb.test && lb.test.cosmetics === 'all');   // Testing: every glow and glass as if bought, to try on; nothing of it is saved
+// the game's one ask of the kit for a bought look at Picture: Fastest (kit 0.43.0; HANDOVER-design-28.md, part 5), only where the Cosmetics
+// page is on: in the CrazyGames build as CG_PIECES.fastestLook says, in the arcade's own build only through Testing's row (the test
+// link, for Barney's Fire). It answers false, true, or 'over' (the coloured lights laid over the scene)
+const fastestLook = (lb) => {
+  if (!cosmeticsOn(lb)) return false;
+  const v = lb.portal === 'crazygames' ? CG_PIECES.fastestLook : lb.test ? lb.test.fastest : false;
+  return v === 'over' ? 'over' : v === true || v === 'on';
+};
 const TRIAL_LOOKS = { glow: {}, glass: {}, lamp: '' };
 const NO_LOOKS = { glow: {}, glass: {}, lamp: '' };
 const looksNow = (lb) => (looksAll(lb) ? TRIAL_LOOKS : lb.progress.looks || NO_LOOKS);
@@ -11327,8 +11424,10 @@ function turnGlow(lb, id) { const s = glowNow(lb, id); if (!s) return; looksToCh
 function chooseGlass(lb, id) { if (!glassHas(lb, id)) return; looksToChange(lb).lamp = id === glass0(lb) ? '' : id; looksSaved(lb); lb.sfx('confirm'); }
 // what the wanderer wears in the run about to start. Without the Cosmetics, his belt alone, as ever; never a look in the speed test
 function wearLook(lb, rec) {
-  if (!cosmeticsOn(lb) || wantCheck(lb)) { if (lb.test) lb.world.look({ belt: rec.belt }); else lb.world.belt(rec.belt); return; }   // with Testing there, a look tried on earlier is taken off
-  lb.world.look({ belt: rec.belt, glow: glowNow(lb, rec.belt) === 'on', glass: lampNow(lb), strength: lb.test && lb.test.glow === 'strong' ? 'strong' : 'soft' });
+  if (!cosmeticsOn(lb) || wantCheck(lb)) { if (lb.test) lb.world.look({ belt: rec.belt, atFastest: false }); else lb.world.belt(rec.belt); return; }   // with Testing there, a look tried on earlier is taken off (and its ask at Fastest)
+  // the glow is the strong one (Barney's first named check, 22 November 2026: "Belt should be strong"); Testing's row can still show the soft
+  lb.world.look({ belt: rec.belt, glow: glowNow(lb, rec.belt) === 'on', glass: lampNow(lb), strength: lb.test && lb.test.glow === 'soft' ? 'soft' : 'strong',
+    atFastest: fastestLook(lb) });   // kit 0.43.0: at Picture: Fastest the look is kept only where the game asks
 }
 let SHRINE_PAGE = 0;                   // 0 Spells and potions, 1 Cosmetics: it opens on the first
 function shrinePlaqueTwo(lb, ui, back) {
@@ -12005,7 +12104,8 @@ LanternBox.game({
     // design system 27, for Barney's four named checks: the Echo Shrine's Cosmetics page here too (in the CrazyGames build it is CG_PIECES.cosmetics);
     // all bought: every glow and glass to try on, nothing of it saved; and a glow at the design's two strengths
     { id: 'cosmetics', name: 'Cosmetics page', choices: [['off', 'Off'], ['on', 'On'], ['all', 'On, all bought']] },
-    { id: 'glow', name: "A belt's glow", choices: [['soft', 'Soft'], ['strong', 'Strong']] },
+    { id: 'glow', name: "A belt's glow", choices: [['strong', 'Strong'], ['soft', 'Soft']] },
+    { id: 'fastest', name: 'Looks at Fastest', choices: [['off', 'Off'], ['on', 'On'], ['over', 'On, lights laid over']] },   // kit 0.43.0: with the Cosmetics page on, a bought look kept at Picture: Fastest
   ] },
 
   start(lb) {
