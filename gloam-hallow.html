@@ -273,6 +273,28 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   --belt-night-blue: #3d5cab;
   --belt-mulberry: #94407f;
   --belt-ash: #8f877c;
+  /* kit 0.42.0: design system version 27's tokens (tokens version 17), as tokens.css has them: the belts' glows, soft and strong, and their halos; the lantern glasses; his light under each */
+  --belt-red-glow: #c2514b;
+  --belt-night-blue-glow: #647dbc;
+  --belt-mulberry-glow: #a96699;
+  --belt-ash-glow: #a59f96;
+  --belt-red-glow-strong: #d07874;
+  --belt-night-blue-glow-strong: #879acb;
+  --belt-mulberry-glow-strong: #bd89b0;
+  --belt-ash-glow-strong: #bab5ae;
+  --belt-red-halo: #bc403a;
+  --belt-night-blue-halo: #546fb5;
+  --belt-mulberry-halo: #a1578e;
+  --belt-ash-halo: #9c958c;
+  --glass-gold: #ffd27a;
+  --glass-red: #d17d78;
+  --glass-night-blue: #8b9dcd;
+  --glass-mulberry: #bf8cb2;
+  --glass-ash: #e3d8c6;
+  --light-red: #bb3c35;
+  --light-night-blue: #506cb3;
+  --light-mulberry: #9f538c;
+  --light-ash: #c7bdae;
   --potion: #e0473c;
   --ember: #ff7a3a;
   --ember-glow: #ff5a1f;
@@ -475,7 +497,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 .lb-segments.is-grid button{height:var(--target);border:1.5px solid var(--brass-dim)}
 .lb-segments.is-grid button[aria-pressed="true"]{border:0}
 
-.lb-slider{flex-grow:1;min-width:0;margin:0;accent-color:var(--brass);cursor:pointer}
+.lb-slider{flex-grow:1;min-width:0;margin:0;accent-color:var(--brass);cursor:pointer;font-size:13.3333px}   /* kit 0.36.1: the browser's own size for a control, written out so an app's enlargement of it can be undone (TZ) */
 .lb-slider:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 
 /* ---------- settings rows ---------- */
@@ -1070,6 +1092,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
 /* ---------- The shell: where the screens sit ---------- */
 html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text the size it was drawn at; an app's own enlargement is undone in the script (TZ) */
 .lb-root{position:fixed;inset:0;overflow:hidden;background:var(--ink);touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
 .lb-root.lb-loading{visibility:hidden}
 .lb-ui [hidden]{display:none!important}
@@ -1231,6 +1254,54 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 /* the kit's own Reduce motion setting (lb-reduce-motion on the root) stops the call's pulse too */
 .lb-reduce-motion .lb-spell.is-called>span,.lb-reduce-motion .lb-touch-btn.b-cast.is-called .oct polygon{animation:none}
 
+/* ---- kit 0.42.0: design system version 27's block, word for word: the Echo Shrine's two pages and the looks (EchoShrine). Left out: the ad's place on the
+   run's end (.lb-adslot, .lb-adline), which is not built before Full Launch ---- */
+/* the two pages: the kit's Segments in two, as tabs, in the header between the heading and the bank */
+.lb-shrine-tabs{flex:none;width:330px}
+.lb-plaque.is-phone .lb-shrine-tabs{width:340px}
+.lb-plaque.is-phone .lb-shrine-tabs button{height:var(--target)}
+.lb-shrine-cols.is-two{grid-template-columns:repeat(2,minmax(0,1fr))}
+/* Cosmetics: two rows, the belts with their glows, then the lantern glass */
+.lb-looks{display:flex;flex-direction:column;gap:12px}
+.lb-looks-group{display:flex;flex-direction:column;gap:6px}
+.lb-looks-group+.lb-looks-group{border-top:1px solid var(--rule-row);padding-top:10px}
+.lb-looks-group .lb-shrine-title{display:flex;justify-content:space-between;align-items:baseline;margin:0}
+.lb-looks-note{font:400 13px/16px var(--font-text);letter-spacing:0;text-transform:none;color:var(--text-3)}
+.lb-looks-row{display:grid;gap:10px}
+.lb-looks-row.is-four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.lb-looks-row.is-five{grid-template-columns:repeat(5,minmax(0,1fr))}
+.lb-look{display:flex;flex-direction:column;gap:6px;min-width:0}
+.lb-plaque.is-phone .lb-looks{gap:8px}
+.lb-plaque.is-phone .lb-looks-group{gap:4px}
+.lb-plaque.is-phone .lb-looks-group+.lb-looks-group{padding-top:6px}
+.lb-plaque.is-phone .lb-look{gap:4px}
+/* a belt's glow: one lb-buy under the belt. On: a brass edge and the dot lit; needs its belt first: a dashed edge */
+.lb-glow{width:100%;min-width:0}
+.lb-plaque.is-phone .lb-glow{height:var(--target)}
+.lb-glow.is-on{border-color:var(--brass);color:var(--heading)}
+.lb-glow.is-locked{border-style:dashed}
+.lb-glow-dot{display:block;flex:none;width:10px;height:10px;border-radius:50%;background:var(--belt-red-glow);box-shadow:0 0 6px 2px var(--belt-red-halo)}
+.lb-glow-dot.is-night-blue{background:var(--belt-night-blue-glow);box-shadow:0 0 6px 2px var(--belt-night-blue-halo)}
+.lb-glow-dot.is-mulberry{background:var(--belt-mulberry-glow);box-shadow:0 0 6px 2px var(--belt-mulberry-halo)}
+.lb-glow-dot.is-ash{background:var(--belt-ash-glow);box-shadow:0 0 6px 2px var(--belt-ash-halo)}
+.lb-glow-dot.is-off{background:transparent;box-shadow:inset 0 0 0 1.5px var(--text-dim)}
+.lb-belt .band.is-glow{background:var(--belt-red-glow);box-shadow:0 0 7px 2px var(--belt-red-halo)}
+.lb-belt .band.is-night-blue.is-glow{background:var(--belt-night-blue-glow);box-shadow:0 0 7px 2px var(--belt-night-blue-halo)}
+.lb-belt .band.is-mulberry.is-glow{background:var(--belt-mulberry-glow);box-shadow:0 0 7px 2px var(--belt-mulberry-halo)}
+.lb-belt .band.is-ash.is-glow{background:var(--belt-ash-glow);box-shadow:0 0 7px 2px var(--belt-ash-halo)}
+/* a lantern glass: the belt's tile with a small lantern where the band is, its glass in the glass's colour and its light behind it */
+.lb-glass{flex-direction:row;align-items:center;gap:8px;padding:6px 8px;min-height:var(--target)}
+.lb-glass .row{flex-grow:1;flex-direction:column;align-items:flex-start;gap:1px;min-width:0}
+.lb-glass .pr.is-buy{font-weight:700;color:var(--heading)}
+.lb-pane{--gl:var(--glass-gold);--lt:var(--lantern-glow);position:relative;display:flex;align-items:center;justify-content:center;flex:none;width:30px;height:34px}
+.lb-pane.is-red{--gl:var(--glass-red);--lt:var(--light-red)}
+.lb-pane.is-night-blue{--gl:var(--glass-night-blue);--lt:var(--light-night-blue)}
+.lb-pane.is-mulberry{--gl:var(--glass-mulberry);--lt:var(--light-mulberry)}
+.lb-pane.is-ash{--gl:var(--glass-ash);--lt:var(--light-ash)}
+.lb-pane::before{content:"";position:absolute;inset:-2px;border-radius:50%;background:radial-gradient(closest-side,var(--lt) 0,transparent 100%);opacity:.5}
+.lb-lamp{position:relative;width:16px;height:22px}
+.lb-lamp .ink{fill:var(--brass-dim)}.lb-lamp .fr{fill:none;stroke:var(--brass-dim);stroke-width:1.5}.lb-lamp .gl{fill:var(--gl)}.lb-lamp .fl{fill:#fff2c4}
+
 </style>
 <script>
 /* Lantern Box 0.20 — runtime
@@ -1243,7 +1314,7 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
 (function () {
   'use strict';
 
-  const VERSION = '0.36.0';
+  const VERSION = '0.42.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -1261,8 +1332,22 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
        cleared when the run ends or the player quits to the title;
      - CrazyGames' mute setting (B4, Barney's yes, 11 November 2026): while muteAudio is on the game is silent, whatever its own Volume
        and sound settings say, and a change during play is heard at once (addSettingsChangeListener). */
-  const CG = { on: false, sdk: null, muted: false, onMute: [], shown: false, loaded: false, playing: false, sent: false, last: -1e9, ctx: '', ctxObj: null };
+  const CG = { on: false, sdk: null, muted: false, onMute: [], shown: false, loaded: false, playing: false, sent: false, last: -1e9, ctx: '', ctxObj: null,
+    init: '', why: '', all: null, wait: [], userJob: null, happyOn: false, happyAt: -1e9 };   // kit 0.37.0: how the SDK's start went ('' not asked yet, 'asked', 'ready', 'none'), the whole SDK, and who waits to hear (the account save)
   const CG_GAP = 1000;             // the SDK refuses gameplayStart and gameplayStop within 1 s of the last, with an error in the console
+  function cgSettled(ok, why) {    // kit 0.37.0: the SDK's start has ended, well or not; nobody waits unless a game asked for the account save
+    CG.init = ok ? 'ready' : 'none'; CG.why = why;
+    const w = CG.wait; CG.wait = [];
+    w.forEach((f) => { try { f(); } catch (e) { setTimeout(() => { throw e; }, 0); } });   // a fault in the game's start is still reported
+  }
+  // kit 0.39.0: who the player is, asked of the SDK once however many pieces want to know (the account save, the initials): the SDK's
+  // user, or null for a guest or when the SDK can't say. Only called once the SDK has started (CG.all)
+  function cgUser() {
+    if (!CG.userJob) CG.userJob = new Promise((done) => {
+      try { Promise.resolve(CG.all.user.getUser()).then((u) => done(u || null), () => done(null)); } catch (e) { done(null); }
+    });
+    return CG.userJob;
+  }
   function cgCall(name, arg) {
     if (!CG.on) return;
     try { const job = arg === undefined ? CG.sdk[name]() : CG.sdk[name](arg); if (job && job.catch) job.catch(() => {}); } catch (e) { /* the game goes on without it */ }
@@ -1280,6 +1365,20 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
     CG.sent = on; CG.last = now;
     cgCall(on ? 'gameplayStart' : 'gameplayStop');
   }
+  /* kit 0.40.0 (HANDOVER-account-save.md, piece 3): a happy moment. CrazyGames' happytime makes its own page celebrate (confetti, say)
+     for a rare achievement, a boss beaten or a high score, never a level done or a thing picked up, and asks for it to be used
+     sparingly. A game with crazygames: { happyMoments: true } in its config calls lb.happy() at such a moment; the kit passes it on
+     in the CrazyGames build when the SDK is there, and never two within CG_HAPPY_GAP. It answers true only when the SDK was told, so
+     a game that keeps a moment to once for a player notes it only then. Nothing is drawn in the game. */
+  const CG_HAPPY_GAP = 5000;       // ms between two happy moments, at the least
+  function cgHappy() {
+    if (!CG.on || !CG.happyOn) return false;
+    const now = Date.now();
+    if (now - CG.happyAt < CG_HAPPY_GAP) return false;
+    CG.happyAt = now;
+    cgCall('happytime');
+    return true;
+  }
   function cgContext(o) {          // the game's context: a small object of plain values, or null to clear it
     let key = '';
     if (o && typeof o === 'object') { try { key = JSON.stringify(o); } catch (e) { key = ''; } }
@@ -1294,18 +1393,21 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
     try { S = window.CrazyGames && window.CrazyGames.SDK; } catch (e) { S = null; }
     let job = null;
     try { job = S && typeof S.init === 'function' ? S.init() : null; } catch (e) { job = null; }
+    CG.init = 'asked';
     if (job) Promise.resolve(job).then(() => {
       let env = '';
       try { env = S.environment; } catch (e) { env = ''; }
-      if (env !== 'local' && env !== 'crazygames') return;
+      if (env !== 'local' && env !== 'crazygames') { cgSettled(false, 'elsewhere'); return; }
       CG.sdk = S.game; CG.on = !!CG.sdk;
-      if (!CG.on) return;
+      if (!CG.on) { cgSettled(false, 'failed'); return; }
       cgCall('loadingStart');
       if (CG.shown) { CG.loaded = true; cgCall('loadingStop'); }
       try { cgMute(!!(CG.sdk.settings && CG.sdk.settings.muteAudio)); } catch (e) { /* ignore */ }
       try { CG.sdk.addSettingsChangeListener((s) => cgMute(!!(s && s.muteAudio))); } catch (e) { /* ignore */ }
       if (CG.ctxObj) cgCall('setGameContext', CG.ctxObj);
-    }, () => { /* init failed: the game goes on without it */ });
+      CG.all = S; cgSettled(true, 'ok');
+    }, () => { cgSettled(false, 'failed'); /* init failed: the game goes on without it */ });
+    else cgSettled(false, 'blocked');   // no SDK on the page (its script blocked or missing)
   }, 0);
   const H = 540;              // the picture's height in lines, whatever the window
   const STEP = 1 / 60;
@@ -1337,21 +1439,188 @@ html,body{margin:0;height:100%;background:var(--ink);overflow:hidden}
     return e;
   }
 
+  const asObject = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
+
+  /* kit 0.37.0 (HANDOVER-account-save.md; ARCADE.md's SDK rule as changed on 21 November 2026): the account save, in the CrazyGames
+     build only, and only for a game that asks for it (crazygames: { accountSave: true } in its config). The game's progress then
+     follows the player's CrazyGames account, through the SDK's Data module (CrazyGames.SDK.data: getItem, setItem and removeItem as
+     the browser's own storage has them; the player's data is loaded while the SDK starts, and a guest's is kept on the device by
+     the SDK itself). Without the switch, or in the arcade's build, none of this runs and store below is the storage it always was.
+     - Five entries follow the account: the progress record, the top ten, Personal bests, the initials and the scores' era (ACCT.keys).
+       Settings, Picture and Testing's values stay on the device.
+     - The one wait the kit makes for the SDK (PORTAL-crazygames.md): the game is set up once the SDK has the player's data, or
+       ACCT_WAIT after the game asked to start, whichever comes first; at once if the SDK's script is missing or its start fails.
+       Nothing new is shown: the page stays as it is before the title.
+     - A visit the SDK was too late for, or where its Data module refuses, plays from the device's copy and saves to it, as a build
+       without the account save does (mode 'device'). The device's copy is a spare kept for that: with the account there every save
+       goes to both, and nothing is read from the device's (the five entries are read once from the SDK as the visit begins, and
+       from memory after that).
+     - As a visit with the account begins, the two are brought into line (acctBegin). The device's copy goes up if the account is as
+       this device left it or found it and the device's has moved on (saved without the account, or saves that never arrived). If
+       both have moved on, the top ten and Personal bests are joined and the account's record kept. Otherwise the account's is used.
+       A device's first such visit copies its save into an account that has none, once for a device. What tells them apart: a small
+       entry saved with the account (lanternbox.sync.<game>: a line made once for a save, a tag made new by each visit that saves,
+       and a count of its saves) and the device's note of the same (lanternbox.account.<game>, with a sum of the copy it holds).
+       They say nothing about the player.
+     - A sign-in while playing: CrazyGames loads the game again itself. From the moment it is seen nothing more is saved, so the
+       guest's copy held here can't be written over the account's own; and after ACCT_RELOAD the kit loads the page again if nobody has.
+     lb.account says how this visit went: { mode: 'off' | 'account' | 'device', why, waited, size }. */
+  const ACCT_WAIT = 5000;          // the longest the game's start waits for the SDK, in ms
+  const ACCT_RELOAD = 2000;        // after a sign-in, how long the kit leaves the page's reload to CrazyGames, in ms
+  const ACCT = { mode: 'off', why: '', waited: 0, data: null, keys: null, syncKey: '', markKey: '', mark: null, raws: null, tagged: false, frozen: false };
+  const DEVICE = {                 // the device's own storage, as text: null for an entry that isn't there or can't be read
+    get(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } },
+    put(key, raw) { try { if (raw == null) window.localStorage.removeItem(key); else window.localStorage.setItem(key, raw); } catch (e) { /* storage unavailable */ } }
+  };
+  const acctId = () => {           // a few random letters and figures: a line or a tag
+    try { const a = new Uint32Array(2); window.crypto.getRandomValues(a); return a[0].toString(36) + a[1].toString(36); } catch (e) { return Date.now().toString(36) + Math.floor(Math.random() * 1e9).toString(36); }
+  };
+  const acctSum = (raws) => {      // a short sum of the five entries as text, to see whether a copy has changed
+    const s = ACCT.keys.map((k) => (raws[k] == null ? '~' : raws[k])).join('\u0001');
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return (h >>> 0).toString(36) + ':' + s.length;
+  };
+  const acctCode = (e) => String((e && (e.code || e.message)) || 'refused').slice(0, 40);
+  const acctMark = () => DEVICE.put(ACCT.markKey, JSON.stringify(ACCT.mark));
+  function acctWrite(key, raw) {   // one of the account's entries saved (raw: its text) or removed (null); false for any other key
+    if (ACCT.keys.indexOf(key) < 0) return false;
+    if (ACCT.frozen) return true;  // a sign-in has been seen: nothing more is saved until the page has loaded again
+    if (ACCT.mode === 'account') {
+      const M = ACCT.mark;
+      if ((ACCT.raws[key] == null ? null : ACCT.raws[key]) === raw) return true;   // as the account already has it: nothing to send
+      if (!ACCT.tagged) { ACCT.tagged = true; M.tag = acctId(); M.n = 0; if (!M.line) M.line = acctId(); }   // this visit's first save
+      M.n++; ACCT.raws[key] = raw; M.sum = acctSum(ACCT.raws);
+      acctMark(); DEVICE.put(key, raw);   // the device's note first, then its copy, then the account: a save cut short is found next time
+      try {
+        if (raw == null) ACCT.data.removeItem(key); else ACCT.data.setItem(key, raw);
+        ACCT.data.setItem(ACCT.syncKey, JSON.stringify({ line: M.line, tag: M.tag, n: M.n }));
+      } catch (e) { ACCT.mode = 'device'; ACCT.why = acctCode(e); }   // the rest of this visit is saved on the device, and goes up next time
+    } else DEVICE.put(key, raw);
+    return true;
+  }
+  // both copies have moved on: the account's kept, but for the top ten and Personal bests, joined when both are of the same era
+  function acctJoin(acct, mine, J) {
+    const K = ACCT.keys, out = {};
+    K.forEach((k) => { out[k] = acct[k]; });
+    if (out[K[0]] == null) out[K[0]] = mine[K[0]];
+    if (out[K[3]] == null) out[K[3]] = mine[K[3]];
+    const era = (raw) => Math.floor(+J(raw)) || 1;
+    if (era(acct[K[4]]) !== era(mine[K[4]])) return out;   // a wipe on one side is never undone by the other's scores
+    const rows = (raw) => { const t = J(raw); return (Array.isArray(t) ? t : []).filter((r) => r && typeof r.s === 'number'); };
+    const a = rows(acct[K[1]]), b = rows(mine[K[1]]), id = (r) => JSON.stringify([r.s, r.i, r.d]), held = {}, all = a.slice();
+    a.forEach((r) => { held[id(r)] = (held[id(r)] || 0) + 1; });
+    b.forEach((r) => { const k = id(r); if (held[k] > 0) held[k]--; else all.push(r); });   // a row both hold is one row
+    if (all.length > a.length) out[K[1]] = JSON.stringify(all.sort((x, y) => y.s - x.s).slice(0, 10));
+    const ba = asObject(J(acct[K[2]])), bm = asObject(J(mine[K[2]]));
+    let more = false;
+    Object.keys(bm).forEach((slot) => { const m = bm[slot], o = ba[slot]; if (m && typeof m.n === 'number' && !(o && typeof o.n === 'number' && o.n >= m.n)) { ba[slot] = m; more = true; } });
+    if (more) out[K[2]] = JSON.stringify(ba);
+    return out;
+  }
+  function acctSignIn() {          // a guest has signed in while the game is open
+    if (ACCT.mode !== 'account' || ACCT.frozen) return;
+    let last = 0;
+    try { last = +window.sessionStorage.getItem('lanternbox.signin') || 0; } catch (e) { last = 0; }
+    if (Date.now() - last < 60000) return;   // the kit has just loaded the page again for a sign-in: never round and round
+    ACCT.frozen = true;
+    setTimeout(() => {
+      try { window.sessionStorage.setItem('lanternbox.signin', String(Date.now())); } catch (e) { /* ignore */ }
+      try { window.location.reload(); } catch (e) { /* ignore */ }
+    }, ACCT_RELOAD);
+  }
+  function acctBegin(S) {          // the SDK has the player's data: bring the device's copy and the account's into line (it may throw)
+    const D = S.data, K = ACCT.keys, M = ACCT.mark, J = (raw) => { try { return raw == null ? null : JSON.parse(raw); } catch (e) { return null; } };
+    const sync = asObject(J(D.getItem(ACCT.syncKey)));   // the first read: it throws while the Data module is disabled
+    const aLine = typeof sync.line === 'string' ? sync.line : '', aTag = typeof sync.tag === 'string' ? sync.tag : '', aN = Math.max(0, Math.floor(+sync.n) || 0);
+    const acct = {}, mine = {};
+    K.forEach((k) => { const v = D.getItem(k); acct[k] = v == null ? null : String(v); mine[k] = DEVICE.get(k); });
+    const has = (o) => K.some((k) => o[k] != null);
+    const changed = M.sum !== acctSum(mine);                           // the device's copy was saved without the account
+    const missing = aTag === M.tag ? M.n > aN : aTag === M.seen;       // saves of this device's last visit never reached the account
+    const same = aLine === M.line && (aTag === M.tag || aTag === M.seen);   // the account is as this device left it or found it
+    let send = null;
+    if (!M.copied) {               // this device's first visit with the account: its save goes into an account that has none
+      if (!has(acct) && has(mine)) { send = mine; Object.assign(M, { copied: true, line: '', tag: '', seen: '', n: 0, sum: '' }); acctMark(); }   // noted first, so a copy cut short is made again
+    } else if (same && (changed || missing)) send = mine;
+    else if (changed && aLine === M.line) send = acctJoin(acct, mine, J);
+    let line = aLine, tag = aTag, n = aN;
+    if (send) {
+      K.forEach((k) => { if (send[k] !== acct[k]) { if (send[k] == null) D.removeItem(k); else D.setItem(k, send[k]); acct[k] = send[k]; } });
+      line = aLine || acctId(); tag = acctId(); n = 0;
+      D.setItem(ACCT.syncKey, JSON.stringify({ line: line, tag: tag, n: n }));   // last, so a sending cut short is made again
+      ACCT.tagged = true;
+    }
+    K.forEach((k) => { if (acct[k] !== mine[k]) DEVICE.put(k, acct[k]); });      // the device's copy follows the account
+    Object.assign(M, { copied: true, line: line, tag: tag, seen: aTag, n: n, sum: acctSum(acct) }); acctMark();
+    ACCT.raws = acct; ACCT.data = D; ACCT.mode = 'account'; ACCT.why = 'ok';
+    try {                          // a sign-in while playing (the user is held here only to tell a new one from the one at the start)
+      const U = S.user, who = (u) => (u && typeof u === 'object' ? String(u.__dangerousUserId || u.username || 'user') : '');
+      if (U && typeof U.getUser === 'function' && typeof U.addAuthListener === 'function') {
+        const listen = (first) => { try { U.addAuthListener((u) => { if (who(u) && who(u) !== first) acctSignIn(); }); } catch (e) { /* CrazyGames loads the game again itself */ } };
+        cgUser().then((u) => listen(who(u)));   // kit 0.39.0: the one question, shared with the initials
+      }
+    } catch (e) { /* ignore */ }
+  }
+  /* kit 0.39.0 (HANDOVER-account-save.md, piece 2; CrazyGames' account requirements: no standalone name where the profile has one): the
+     score initials from the CrazyGames username, in the CrazyGames build, for a game with crazygames: { usernameInitials: true } in
+     its config. The first time the initials are asked for and none are saved, a signed-in player's are filled in from their username:
+     its first three letters or figures, as capitals ("SingingCheese.TLNU" gives SIN, "a_b.c9" ABC; fewer than three, nothing). The
+     player changes them as ever, and nothing is saved until Done. Initials already saved, a guest, or no SDK: as ever. Only the three
+     characters are kept, here in memory; a sign-in while the game is open brings the new player's. */
+  const NAME = { letters: '' };
+  const nameLetters = (u) => { const s = u && typeof u.username === 'string' ? u.username.toUpperCase().replace(/[^A-Z0-9]/g, '') : ''; return s.length >= 3 ? s.slice(0, 3) : ''; };
+  function nameStart() {           // LanternBox.game() in the CrazyGames build, for a game with the switch on
+    const ask = () => {
+      if (CG.init !== 'ready') return;   // no SDK: the initials as ever
+      cgUser().then((u) => { NAME.letters = nameLetters(u); });
+      try { CG.all.user.addAuthListener((u) => { NAME.letters = nameLetters(u); }); } catch (e) { /* ignore */ }
+    };
+    if (CG.init === 'ready' || CG.init === 'none') ask(); else CG.wait.push(ask);
+  }
+  function acctStart(cfg, go) {    // LanternBox.game() in the CrazyGames build, for a game with the switch on: go() sets the game up
+    const id = slug(cfg.id || (Array.isArray(cfg.title) ? cfg.title : [cfg.title || 'Lantern Box game']).map(String).join(' '));   // as createGame's gameId
+    ACCT.keys = ['lanternbox.save.' + id, 'retrokit.scores.' + id, 'lanternbox.bests.' + id, 'retrokit.initials', 'lanternbox.era.' + id];
+    ACCT.syncKey = 'lanternbox.sync.' + id; ACCT.markKey = 'lanternbox.account.' + id;
+    let m = null;
+    try { m = JSON.parse(DEVICE.get(ACCT.markKey)); } catch (e) { m = null; }
+    m = asObject(m);
+    const str = (v) => (typeof v === 'string' ? v : '');
+    ACCT.mark = { copied: m.copied === true, line: str(m.line), tag: str(m.tag), seen: str(m.seen), n: Math.max(0, Math.floor(+m.n) || 0), sum: str(m.sum) };
+    ACCT.mode = 'device'; ACCT.why = 'late';
+    const t0 = Date.now();
+    let done = false;
+    const finish = () => { if (done) return; done = true; ACCT.waited = Date.now() - t0; go(); };
+    const answer = () => {
+      if (done) return;            // the SDK came after the wait: this visit stays on the device's copy
+      if (CG.init === 'ready') { try { acctBegin(CG.all); } catch (e) { ACCT.mode = 'device'; ACCT.why = acctCode(e); } }
+      else ACCT.why = CG.why;      // blocked, failed or elsewhere: no wait at all
+      finish();
+    };
+    if (CG.init === 'ready' || CG.init === 'none') answer();
+    else { CG.wait.push(answer); setTimeout(finish, ACCT_WAIT); }
+  }
   const store = {
     get(key, fallback) {
       try {
-        const v = window.localStorage.getItem(key);
+        // kit 0.37.0: with the account there, its five entries are read as the SDK loaded them at the start and as saved since (ACCT.raws)
+        const v = ACCT.mode === 'account' && ACCT.keys.indexOf(key) >= 0 ? ACCT.raws[key] : window.localStorage.getItem(key);
         return v == null ? fallback : JSON.parse(v);
       } catch (e) { return fallback; }
     },
     set(key, value) {
+      if (ACCT.keys) {             // kit 0.37.0: a game with the account save, in the CrazyGames build
+        let raw;
+        try { raw = JSON.stringify(value); } catch (e) { return; }
+        if (typeof raw === 'string' && acctWrite(key, raw)) return;
+      }
       try { window.localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* storage unavailable */ }
     },
     remove(key) {   // kit 0.10.0: Clear saved progress
+      if (ACCT.keys && acctWrite(key, null)) return;
       try { window.localStorage.removeItem(key); } catch (e) { /* storage unavailable */ }
     }
   };
-  const asObject = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
 
   /* ---------- Icons (the design system's strokes; the colours and widths are in the stylesheet) ---------- */
   const SVG24 = (body) => '<svg viewBox="0 0 24 24" aria-hidden="true">' + body + '</svg>';
@@ -1975,8 +2244,8 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // (Fastest) stamped from a coloured copy of the silhouette, with no shadows (see hardRim).
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon")};})();   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
-const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared"].filter(Boolean);
+  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
+const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%")].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -5072,13 +5341,52 @@ function wLantern(x,hx,hy,ang,fill){ // a lantern hanging from (hx,hy): bail, sh
      lan     the lantern's swing ; ball  when set, the tucked roll at that angle ; hand  a glow at the free hand (0..1)
    Everything that moves on its own (the hem's flutter, the tails' ripple) reads a stepped time, so the whole figure steps
    like the monsters' puppets; only where it stands glides. */
-const MV_INK="#060508",MV_GLASS="#ffd27a",MV_GOLD="#ffcf6a",MV_LAMP="#ffdf9a";let MV_RED="#b3261e";
+const MV_INK="#060508",MV_GOLD="#ffcf6a",MV_LAMP="#ffdf9a";let MV_RED="#b3261e";
+/* kit 0.41.0 (design system version 27, 21 November 2026; play.js 1.14.0, word for word but for the two things marked "the kit"):
+   the looks bought on the Echo Shrine's Cosmetics page. A glow for each belt (GLOWS, GLOW_STRENGTH, setGlow, mvGlowFill: the belt's
+   colour made lighter, with a halo round the band, the knot and the tails; soft is the one a game uses, strong is kept one setting
+   away). Lantern glass in the four belt colours beside the gold he starts with (GLASSES, setGlass): the glass's colour, and with it
+   the pool of light round the lantern and the light at his feet. Under a red, night blue or mulberry glass his light keeps its colour
+   and is added to the scene (canvas "screen") at LIGHT_X times the gold pool's intensity (2); under gold and ash it is laid over, as
+   before. setLook sets all three. The gold lantern and a plain belt draw exactly as before. */
+// version 27: the lantern's glass and his light can be set (setGlass), and the belt can glow (setGlow). MV_POOL is the light's colour as
+// "r,g,b"; MV_POOLOP is "" (laid over the scene, as the gold always was) or "screen" (added to it); MV_POOLX multiplies its strength.
+let MV_GLASS="#ffd27a",MV_POOL="255,201,106",MV_POOLOP="",MV_POOLX=1,MV_GLOW=0,MV_GLOWC="#b3261e",MV_GLOWB=0,MV_GLOWN=2;
+// the kit: the checkpoint's lantern keeps the gold glass whatever he carries. play.js 1.14.0's cpLantern follows MV_GLASS, but the
+// Wanderer card says nothing else changes colour (Barney, 22 November 2026: keep them gold)
+const MV_GLASS_GOLD="#ffd27a";
+// a glowing belt is filled through mvGlowFill: a canvas shadow in the halo's colour, laid MV_GLOWN times. The halo's width is in picture
+// units of the puppet, so it is scaled by the canvas's own transform (a shadow's blur is not). The kit: with Effects off (FX), as at
+// Picture Fastest, the halo goes and the belt keeps its lighter colour, as every glow in the kit loses its blur
+function mvGlowFill(x,f){if(!MV_GLOW||!FX){f();return;}const m=x.getTransform();x.shadowColor=MV_GLOWC;x.shadowBlur=MV_GLOWB*Math.hypot(m.a,m.b);
+  for(let i=0;i<MV_GLOWN;i++)f();x.shadowColor="transparent";x.shadowBlur=0;}
 // version 12: the tie belt is red to start; night blue, mulberry and ash are bought at the Echo Shrine (lightened to the red's 3.1 : 1 on
 // black, checked on the Pixel by Barney, 7 November 2026), each kept off the colours that already mean something (ember, gold,
 // witch-green, wisp-pale). setBelt chooses the one worn; it colours the puppet (MV_RED) and the stand-in (W_RED). Tokens: wanderer-scarf
 // (the red), belt-night-blue, belt-mulberry, belt-ash.
 const BELTS={red:"#b3261e",nightBlue:"#3d5cab",mulberry:"#94407f",ash:"#8f877c"};
 function setBelt(k){MV_RED=W_RED=BELTS[k]||BELTS.red;return MV_RED;}
+// version 27 (21 November 2026, the Full Launch work's design round with Barney): the looks bought on the Echo Shrine's Cosmetics page.
+// A glow: the belt's colour w towards white, with a halo (the belt's colour GLOW_HALO towards white) blur picture units wide, laid n times.
+// The game uses soft; strong is kept so that turning it up is this one setting, for all four belts. Tokens: belt-*-glow, belt-*-glow-strong,
+// belt-*-halo.
+const GLOWS={soft:{w:0.2,blur:4.5,n:2},strong:{w:0.38,blur:8,n:3}},GLOW_HALO=0.12;let GLOW_STRENGTH="soft";
+function mvLift(h,w){return"#"+[1,3,5].map(i=>{const v=parseInt(h.slice(i,i+2),16);return Math.round(v+(255-v)*w).toString(16).padStart(2,"0");}).join("");}
+// setGlow(k,on): k the belt worn (red, nightBlue, mulberry, ash). Off, the belt is its own colour again.
+function setGlow(k,on){const base=BELTS[k]||BELTS.red;if(!on){MV_GLOW=0;MV_RED=W_RED=base;return;}const g=GLOWS[GLOW_STRENGTH]||GLOWS.soft;
+  MV_GLOW=1;MV_GLOWC=mvLift(base,GLOW_HALO);MV_GLOWB=g.blur;MV_GLOWN=g.n;MV_RED=W_RED=mvLift(base,g.w);}
+// Lantern glass: gold to start, then the four belt colours. The glass is the belt's colour 40% towards white; ash is its own figure
+// (75% towards the warm white fff3df), because a grey lightened by the common rule read as an unlit lantern. His light follows the
+// glass: red, night blue and mulberry keep their colour (the belt's, 10% towards white) and are added to the scene at LIGHT_X times
+// the gold pool's intensity; gold and ash are laid over it, as the gold always was. LIGHT_X is the one figure to turn down if 2 proves
+// too much in the test build. Tokens: glass-gold, glass-red, glass-night-blue, glass-mulberry, glass-ash; lantern-glow, light-red,
+// light-night-blue, light-mulberry, light-ash.
+const GLASSES={gold:{glass:"#ffd27a",light:"255,201,106",add:false},red:{glass:"#d17d78",light:"187,60,53",add:true},
+  nightBlue:{glass:"#8b9dcd",light:"80,108,179",add:true},mulberry:{glass:"#bf8cb2",light:"159,83,140",add:true},ash:{glass:"#e3d8c6",light:"199,189,174",add:false}};
+let LIGHT_X=2;
+function setGlass(k){const g=GLASSES[k]||GLASSES.gold;MV_GLASS=g.glass;MV_POOL=g.light;MV_POOLOP=g.add?"screen":"";MV_POOLX=g.add?LIGHT_X:1;return g;}
+// the whole look: {belt, glow (true or false), glass}
+function setLook(o){o=o||{};setBelt(o.belt||"red");setGlow(o.belt||"red",!!o.glow);setGlass(o.glass||"gold");}
 const MV_BASE={hx:0,hy:-25,lean:0,ft:[[-2,-3,0],[2.2,-3,0]],sH:[17,-12.5],sb:0.4636,sbend:-1,fH:[4.5,-16.5],fl:[8.5,5.7],fbend:1,
   hem:1,lift:0,flare:0,bil:1,tip:2.5,nod:0,vx:0,vy:0,lan:0,ball:null,hand:0,flut:0,sword:true};
 function mvP(o){const P=Object.assign({},MV_BASE,o||{});P.ft=(o&&o.ft)||MV_BASE.ft;return P;}
@@ -5147,23 +5455,23 @@ function mvTails(x,G,P,tq,origin){const sp=Math.min(1,Math.hypot(P.vx,P.vy)/54);
   for(let k=0;k<2;k++){const top=[],bot=[];for(let i=0;i<=8;i++){const u=i/8,w=1.6-u*0.75,wv=Math.sin(tq*(MV_RM?2.5:7)+u*5+k*1.3)*u*amp,px=K[0]+dx*u*(L-k*7)+nx*wv,py=K[1]+k*2.2+dy*u*(L-k*7)+ny*wv;top.push([px-nx*w,py-ny*w]);bot.push([px+nx*w,py+ny*w]);}
     x.beginPath();x.moveTo(top[0][0],top[0][1]);for(const q of top)x.lineTo(q[0],q[1]);for(let i=bot.length-1;i>=0;i--)x.lineTo(bot[i][0],bot[i][1]);x.closePath();x.fill();}}
 function mvDet(x,P,tq,G){
-  if(P.ball!=null){mvBall(x,P,tq,true);const a=P.ball+0.5,K=[P.hx-Math.cos(a)*11,-13-Math.sin(a)*11];x.fillStyle=MV_RED;mvTails(x,null,P,tq,K);return;}
-  mvBody(x,G,P);x.fillStyle=MV_RED;wPoly(x,[[-9.8,-11.3],[10.2,-11.3],[10.4,-7.9],[-9.8,-7.9]]);
+  if(P.ball!=null){mvBall(x,P,tq,true);const a=P.ball+0.5,K=[P.hx-Math.cos(a)*11,-13-Math.sin(a)*11];x.fillStyle=MV_RED;mvGlowFill(x,()=>mvTails(x,null,P,tq,K));return;}
+  mvBody(x,G,P);x.fillStyle=MV_RED;mvGlowFill(x,()=>wPoly(x,[[-9.8,-11.3],[10.2,-11.3],[10.4,-7.9],[-9.8,-7.9]]));
   x.lineWidth=1.3;x.strokeStyle=MV_INK;x.beginPath();x.moveTo(9.2,-9.5);x.lineTo(13.4,-8.5);x.stroke();
-  x.fillStyle=MV_RED;x.beginPath();x.ellipse(-9.6,-9.5,2.3,2,0.3,0,Math.PI*2);x.fill();x.restore();
-  x.fillStyle=MV_RED;mvTails(x,G,P,tq);
+  x.fillStyle=MV_RED;mvGlowFill(x,()=>{x.beginPath();x.ellipse(-9.6,-9.5,2.3,2,0.3,0,Math.PI*2);x.fill();});x.restore();
+  x.fillStyle=MV_RED;mvGlowFill(x,()=>mvTails(x,G,P,tq));
   mvBody(x,G,P);x.fillStyle=x.strokeStyle=MV_INK;mvSword(x,G,P);mvRunes(x,G,P);x.restore();
   x.fillStyle=x.strokeStyle=MV_INK;wLantern(x,G.hook[0],G.hook[1],P.lan,MV_GLASS);}
 // the wanderer in pose P with its feet origin at (X,Y) picture units; o: {edgeA (the lit edge's strength, 0..1), pool (lantern light, 0..1)}
-function mvDraw(x,X,Y,P,tq,f,edge,k,o){k=k||1.32;f=f||1;o=o||{};const eA=o.edgeA==null?1:o.edgeA,pl=o.pool==null?1:o.pool;
+function mvDraw(x,X,Y,P,tq,f,edge,k,o){k=k||1.32;f=f||1;o=o||{};const eA=o.edgeA==null?1:o.edgeA,pl=(o.pool==null?1:o.pool)*MV_POOLX;
   // where the lantern hangs, for its pool of light
   let lx,ly;if(P.ball!=null){lx=X+f*(P.hx+5)*k;ly=Y-13*k;}else{const G0=mvGeo(P,tq);lx=X+f*G0.hook[0]*k;ly=Y+(G0.hook[1]+12)*k;}
-  if(pl>0&&FX){const g=x.createRadialGradient(lx,ly,2,lx,ly,74*k/1.32);g.addColorStop(0,"rgba(255,201,106,"+(0.42*pl)+")");g.addColorStop(1,"rgba(255,201,106,0)");x.fillStyle=g;x.fillRect(lx-80*k,ly-80*k,160*k,160*k);}
+  if(pl>0&&FX){const g=x.createRadialGradient(lx,ly,2,lx,ly,74*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.42*pl)+")");g.addColorStop(1,"rgba("+MV_POOL+",0)");x.save();if(MV_POOLOP)x.globalCompositeOperation=MV_POOLOP;x.fillStyle=g;x.fillRect(lx-80*k,ly-80*k,160*k,160*k);x.restore();}
   if(eA>0){x.save();x.globalAlpha=eA;x.translate(X+1.3*k/1.32,Y-1.3*k/1.32);x.scale(f*k,k);x.fillStyle=x.strokeStyle=edge||"rgba(255,231,184,0.9)";mvSil(x,P,tq);x.restore();}
   if(o.aura&&o.aura.a>0){const A=o.aura,top=Y-A.h*100*k;x.save();x.beginPath();x.rect(X-140*k,top,280*k,Y+30*k-top);x.clip();x.globalAlpha=Math.min(1,A.a);
     for(let i=0;i<8;i++){const an=i*Math.PI/4;x.save();x.translate(X+Math.cos(an)*A.w*k/1.32,Y+Math.sin(an)*A.w*k/1.32);x.scale(f*k,k);x.fillStyle=x.strokeStyle=A.col;mvSil(x,P,tq);x.restore();}x.restore();}
   x.save();x.translate(X,Y);x.scale(f*k,k);x.fillStyle=x.strokeStyle=MV_INK;const G=mvSil(x,P,tq);mvDet(x,P,tq,G);x.restore();
-  if(o.feet!==false&&FX){const g=x.createRadialGradient(X,Y+1,1,X,Y+1,30*k/1.32);g.addColorStop(0,"rgba(255,201,106,"+(0.2*pl)+")");g.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=g;x.fillRect(X-32*k,Y-6*k,64*k,14*k);}
+  if(o.feet!==false&&FX){const g=x.createRadialGradient(X,Y+1,1,X,Y+1,30*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.2*pl)+")");g.addColorStop(1,"rgba(0,0,0,0)");x.save();if(MV_POOLOP)x.globalCompositeOperation=MV_POOLOP;x.fillStyle=g;x.fillRect(X-32*k,Y-6*k,64*k,14*k);x.restore();}
   return G;}
 // a point of the figure (in the upper body's frame) in picture units
 function mvPt(G,P,X,Y,f,k,bx,by){const p=G?G.T(bx,by):[P.hx+bx,P.hy+by];return[X+f*p[0]*k,Y+p[1]*k];}
@@ -5364,7 +5672,7 @@ let MV_RM=false;                                   // Reduce motion while a figu
 const MV_BOX=[-62,-122,98,14];                     // the figure's box in his own units, feet at (0, 0), with the sword at its longest
 const MVC=[];                                      // the painted figures, the most recent last
 function mvFigure(s,P,tq,k,edge,rm,f){ // painted facing its way, its feet on a whole pixel and its lit edge's offset painted in, so a blit is pixel for pixel
-  const key=s.toFixed(3)+"|"+k+"|"+f+"|"+edge+"|"+(rm?1:0)+"|"+tq.toFixed(4)+"|"+MV_RED+"|"+JSON.stringify(P);   // kit 0.11.0: and the belt
+  const key=s.toFixed(3)+"|"+k+"|"+f+"|"+edge+"|"+(rm?1:0)+"|"+tq.toFixed(4)+"|"+MV_RED+"|"+MV_GLASS+(MV_GLOW?"|"+MV_GLOWC+"|"+MV_GLOWB+"x"+MV_GLOWN+(FX?"g":""):"")+"|"+JSON.stringify(P);   // kit 0.11.0: and the belt; kit 0.41.0: the glass, and a glow's halo (none with Effects off)
   for(let i=MVC.length-1;i>=0;i--)if(MVC[i].key===key){const F=MVC[i];if(i!==MVC.length-1){MVC.splice(i,1);MVC.push(F);}return F;}
   const b=MV_BOX,R=k*s,x0=f>0?b[0]:-b[2],x1=f>0?b[2]:-b[0],ox=Math.ceil(-x0*R)+4,oy=Math.ceil(-b[1]*R)+4,w=ox+Math.ceil(x1*R)+4,h=oy+Math.ceil(b[3]*R)+2,e=1.3*k/1.32*s;
   let F=MVC.length>=(TRIAL.hero?32:8)?MVC.shift():null;   // kit 0.20.4: the hero trial keeps 32
@@ -5376,16 +5684,16 @@ function mvFigure(s,P,tq,k,edge,rm,f){ // painted facing its way, its feet on a 
   finally{MV_RM=false;}
   MVC.push(F);KIT.poses++;return F;}
 // as mvDraw (moves.js), from the painted figure: the pool of light, the lit edge (at its strength), the figure, the glow at the feet
-function mvDrawKit(x,s,X,Y,P,tq,f,edge,k,o){k=k||K132;f=f||1;o=o||{};const eA=o.edgeA==null?1:o.edgeA,pl=o.pool==null?1:o.pool,F=mvFigure(s,P,tq,k,edge,o.rm,f),G=F.G;
+function mvDrawKit(x,s,X,Y,P,tq,f,edge,k,o){k=k||K132;f=f||1;o=o||{};const eA=o.edgeA==null?1:o.edgeA,pl=(o.pool==null?1:o.pool)*MV_POOLX,F=mvFigure(s,P,tq,k,edge,o.rm,f),G=F.G;
   let lx,ly;if(P.ball!=null){lx=X+f*(P.hx+5)*k;ly=Y-13*k;}else{lx=X+f*G.hook[0]*k;ly=Y+(G.hook[1]+12)*k;}
-  if(pl>0&&FX){const g=x.createRadialGradient(lx,ly,2,lx,ly,74*k/1.32);g.addColorStop(0,"rgba(255,201,106,"+(0.42*pl)+")");g.addColorStop(1,"rgba(255,201,106,0)");x.fillStyle=g;x.fillRect(lx-80*k,ly-80*k,160*k,160*k);}
+  if(pl>0&&FX){const g=x.createRadialGradient(lx,ly,2,lx,ly,74*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.42*pl)+")");g.addColorStop(1,"rgba("+MV_POOL+",0)");x.save();if(MV_POOLOP)x.globalCompositeOperation=MV_POOLOP;x.fillStyle=g;x.fillRect(lx-80*k,ly-80*k,160*k,160*k);x.restore();}
   const m=x.getTransform(),px=Math.round(X*m.a+m.e-F.ox),py=Math.round(Y*m.d+m.f-F.oy); // whole device pixels, as the kit places its bosses
   const put=cv=>{x.save();x.setTransform(1,0,0,1,0,0);x.drawImage(cv,px,py);x.restore();};
   if(eA>0){x.save();x.globalAlpha=eA;put(F.E);x.restore();}
   if(o.aura&&o.aura.a>0){const A=o.aura,top=Y-A.h*100*k;x.save();x.beginPath();x.rect(X-140*k,top,280*k,Y+30*k-top);x.clip();x.globalAlpha=Math.min(1,A.a); // the heal (4c-4): as mvDraw, drawn while it lasts
     for(let i=0;i<8;i++){const an=i*Math.PI/4;x.save();x.translate(X+Math.cos(an)*A.w*k/1.32,Y+Math.sin(an)*A.w*k/1.32);x.scale(f*k,k);x.fillStyle=x.strokeStyle=A.col;MV_RM=!!o.rm;try{mvSil(x,P,tq);}finally{MV_RM=false;}x.restore();}x.restore();}
   put(F.I);
-  if(o.feet!==false&&FX){const g=x.createRadialGradient(X,Y+1,1,X,Y+1,30*k/1.32);g.addColorStop(0,"rgba(255,201,106,"+(0.2*pl)+")");g.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=g;x.fillRect(X-32*k,Y-6*k,64*k,14*k);}
+  if(o.feet!==false&&FX){const g=x.createRadialGradient(X,Y+1,1,X,Y+1,30*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.2*pl)+")");g.addColorStop(1,"rgba(0,0,0,0)");x.save();if(MV_POOLOP)x.globalCompositeOperation=MV_POOLOP;x.fillStyle=g;x.fillRect(X-32*k,Y-6*k,64*k,14*k);x.restore();}
   return G;}
 const MV_SH={};                                    // the life lost's card pieces, cut once for each sharpness
 
@@ -5598,7 +5906,7 @@ function cpFrame(c,col){c.fillStyle=col;c.strokeStyle=col;c.lineCap="round";c.li
 function cpLantern(c,X,Y,ang,lit,flare,edge,t){c.save();c.translate(X,Y);c.rotate(ang);c.scale(CP_LK,CP_LK);const path=()=>{c.beginPath();CP_GLASS.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();};
   path();c.fillStyle="#241f29";c.fill();
   if(lit<1){c.save();c.globalAlpha=1-lit;c.strokeStyle=lvA(edge,0.7);c.lineWidth=1.2;c.lineCap="round";c.beginPath();c.moveTo(-4.2,23.6);c.lineTo(-2.2,31);c.stroke();c.beginPath();c.arc(-1.6,34.2,0.7,0,Math.PI*2);c.fillStyle=lvA(edge,0.6);c.fill();c.restore();}
-  if(lit>0){c.save();c.globalAlpha=lit;path();const g=c.createRadialGradient(0,32,1,0,30,14);g.addColorStop(0,"#fff6dc");g.addColorStop(0.45,MV_GLASS);g.addColorStop(1,"#c98a34");c.fillStyle=g;c.fill();
+  if(lit>0){c.save();c.globalAlpha=lit;path();const g=c.createRadialGradient(0,32,1,0,30,14);g.addColorStop(0,"#fff6dc");g.addColorStop(0.45,MV_GLASS_GOLD);g.addColorStop(1,"#c98a34");c.fillStyle=g;c.fill();
     const fl=1+0.12*Math.sin(t*5.3)+0.07*Math.sin(t*8.7);c.fillStyle="#fffaf0";c.beginPath();c.moveTo(0,35.6-9*fl);c.quadraticCurveTo(3,32.6,0,36);c.quadraticCurveTo(-3,32.6,0,35.6-9*fl);c.fill();c.restore();}
   if(flare>0){c.save();c.globalAlpha=flare;path();c.fillStyle="#fffaf0";c.fill();c.restore();}
   c.save();c.translate(1.3,-1.3);cpFrame(c,lvA(edge,0.85));c.restore();cpFrame(c,INK);c.restore();
@@ -6448,7 +6756,7 @@ function kbThrow(o){const lo=KB.ends.low,hi=KB.ends.top,dist=Math.max(1,+o.dist|
 // pool of light with it
 function mvDrawKitRot(x,s,X,Y,P,tq,f,edge,k,o,rot){const F=mvFigure(s,P,tq,k,edge,o.rm,f),G=F.G,pv=26*k,eA=o.edgeA==null?1:o.edgeA;
   x.save();x.translate(X,Y-pv);x.rotate(f*rot);x.translate(0,pv);
-  if(FX){const lx=f*G.hook[0]*k,ly=(G.hook[1]+12)*k,g=x.createRadialGradient(lx,ly,2,lx,ly,74*k/1.32);g.addColorStop(0,"rgba(255,201,106,0.42)");g.addColorStop(1,"rgba(255,201,106,0)");x.fillStyle=g;x.fillRect(lx-80*k,ly-80*k,160*k,160*k);}
+  if(FX){const lx=f*G.hook[0]*k,ly=(G.hook[1]+12)*k,g=x.createRadialGradient(lx,ly,2,lx,ly,74*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.42*MV_POOLX)+")");g.addColorStop(1,"rgba("+MV_POOL+",0)");x.save();if(MV_POOLOP)x.globalCompositeOperation=MV_POOLOP;x.fillStyle=g;x.fillRect(lx-80*k,ly-80*k,160*k,160*k);x.restore();}   // kit 0.41.0: his light follows the glass
   const put=cv=>x.drawImage(cv,-F.ox/s,-F.oy/s,F.w/s,F.h/s);if(eA>0){x.globalAlpha=eA;put(F.E);x.globalAlpha=1;}put(F.I);x.restore();return G;}
 
 /* ============================== the tools: what a game calls, as lb.world ==============================
@@ -6565,7 +6873,16 @@ function makeTools(env){
     move(name,step){const m=mvMove(name,step||0);return{tag:m.tag,steps:m.steps,done:m.done,dx:m.dx,dy:m.dy};},
     // kit 0.11.0 (design system version 12): belt(name) chooses the belt the wanderer wears from here on: 'red' (or 'scarf', its token's
     // name), 'nightBlue', 'mulberry' or 'ash'; the colours are the tokens', set in play.js's BELTS
-    belt(name){return setBelt(name==='scarf'?'red':name);},
+    belt(name){const k=name==='scarf'?'red':name;setGlow(k,false);return setBelt(k);},   // kit 0.41.0: a plain belt; a glow is look's
+    // kit 0.41.0 (design system version 27, Wanderer; play.js 1.14.0's setLook): look({ belt, glow, glass }) is the whole look he wears from
+    // here on: belt as belt(name) takes it; glow true for that belt's glow; glass 'gold' (what he starts with), 'red', 'nightBlue',
+    // 'mulberry' or 'ash', and his light follows it. strength ('soft', the one a game uses, or 'strong') and lightX (how many times the
+    // gold light's intensity a red, night blue or mulberry light is added at; 2) are the two figures the design keeps one setting away:
+    // given, they stay until given again. It answers what was set. LOOKS names what there is. A look adds no power.
+    look(o){o=o||{};if(GLOWS[o.strength])GLOW_STRENGTH=o.strength;if(o.lightX>0)LIGHT_X=+o.lightX;
+      const b=o.belt==='scarf'||!BELTS[o.belt]?'red':o.belt,gl=GLASSES[o.glass]?o.glass:'gold';
+      setLook({belt:b,glow:!!o.glow,glass:gl});return{belt:b,glow:!!o.glow,glass:gl,strength:GLOW_STRENGTH,lightX:LIGHT_X};},
+    LOOKS:{belts:Object.keys(BELTS),glasses:Object.keys(GLASSES),strengths:Object.keys(GLOWS)},
     wanderer(x,o){ // version 8 (4c-3): the posable wanderer (Moves). o: y; move and step, or walking (true) or standing, in time; facing (1 or -1);
       // sword {reach, bite}: its upgrades; safe: seconds into the second of safety (his lit edge pulses slowly for 1 s); hurt {kind: "armour" or
       // "health", t: seconds since the blow}; shatter: seconds since he broke into his card pieces (1.1 s); pit [x0, x1]: falling into that pit,
@@ -6826,6 +7143,7 @@ function makeTools(env){
     // for the test page's readout
     get stats(){return{tileBytes:KIT.bytes,poses:KIT.poses,builds:KIT.builds,thru:KIT.thruN,tints:KIT.tints||0,mdReads:KIT.mdReads||0};},   // kit 0.36.0: tints, mana's colour laid on (a fill, not a repaint); mdReads, a boss's outline read
     _thruCloud(on){KIT.thru=on!==false;},   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
+    get _looks(){return{sil:mvSil,det:mvDet,draw:mvDraw,move:mvMove,rm(v){MV_RM=!!v;},state(){return{red:MV_RED,glass:MV_GLASS,pool:MV_POOL,op:MV_POOLOP,x:MV_POOLX,glow:MV_GLOW,halo:MV_GLOWC,blur:MV_GLOWB,n:MV_GLOWN,strength:GLOW_STRENGTH,lightX:LIGHT_X};}};},   // test only (kit 0.41.0): the wanderer's painting, to set beside the design system's own
     get _legs(){return{legs:moLegs,gait:MO_GAIT,stoop:MO_STOOP,hand:moWalkerHandAt,room:MON_ROOM,box:MON_BOX,scene};},   // test only (kit 0.34.0): the walker's and the ghoul's legs, the stoop and the painter, for measuring where their feet and the stooped arm are and how far each reaches
   };
 }
@@ -7307,6 +7625,74 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       } else Object.assign(auto, { phase: last ? 'done' : 'watch', t: 0, n: 0, sum: 0 });   // kit 0.20.1: on watching
     }
 
+    /* ----- Text at its drawn size (kit 0.36.1; Barney, 19 November 2026, Gloam Hallow in the CrazyGames app on his phone: the choice of
+       run's Start ran off its plaque with The Bare Reckoning chosen, and "Fixing display font size fixed it") -----
+       An Android app that shows a web page (the CrazyGames app) draws the page's text larger or smaller by the phone's own font size
+       setting, the boxes left as they are: every text size and every line's height written in px is multiplied (1.5 on his phone, 0.85
+       at Small), so the layouts, drawn for the sizes in the design system, overflow. Chrome itself does not, and the page cannot switch
+       it off. So the kit measures it (a 100px line, out of sight: its height over 100) and divides it out: every font size and line
+       height in px in the page's style sheets (the kit's and a game's own; their text is written again from what it was, as the
+       browser cannot give back a font: shorthand that holds a variable once another font property follows it in the rule), the
+       page's own default size, and those a screen sets on its parts as it is built (swept as they join the page and before a
+       plaque is fitted, each once). The text is then the size it was
+       drawn at, on every screen, and nothing changes where nothing is enlarged (within 2%). Measured again when the page shows again;
+       a change builds the screens again. ?trial=tz150 pretends an enlargement of 150%, for testing: the text is then drawn two-thirds
+       its size. lb.textZoom is the enlargement found (1 when none). Text drawn on the canvas is not enlarged, and em and unitless
+       sizes follow their font size, so neither is touched. */
+    const TZ = { z: 1, recs: null, swept: new WeakMap() };
+    const tzNum = (n, z) => Math.round(parseFloat(n) / z * 1e4) / 1e4;
+    function tzVal(prop, v, z) {       // one declaration's value: the font size and a px line height in a font shorthand, or the one length
+      if (prop === 'font') return v.replace(/(\d*\.?\d+)px(\s*\/\s*)?(?:(\d*\.?\d+)px)?/, (m, a, sl, b) => tzNum(a, z) + 'px' + (sl || '') + (b != null ? tzNum(b, z) + 'px' : ''));
+      return v.replace(/^(\s*)(\d*\.?\d+)px/, (m, sp, a) => sp + tzNum(a, z) + 'px');
+    }
+    const tzText = (t, z) => t.replace(/(^|[;{\s])(font-size|line-height|font)(\s*:\s*)([^;{}]+)/gi, (m, pre, prop, c, v) => pre + prop + c + tzVal(prop.toLowerCase(), v, z));   // a style sheet's text
+    function tzMeasure() {
+      if (TRIAL.tz) return TRIAL.tz;
+      try {
+        const probe = document.createElement('div');
+        probe.textContent = 'M';
+        probe.style.cssText = 'position:absolute;left:0;top:0;visibility:hidden;pointer-events:none;margin:0;padding:0;border:0;font:400 100px/1 sans-serif;white-space:nowrap';
+        document.body.appendChild(probe);
+        const h = probe.getBoundingClientRect().height, c = parseFloat(getComputedStyle(probe).fontSize);
+        probe.remove();
+        const z = Math.round((h > 0 ? h : c > 0 ? c : 100) * 10) / 1000;
+        return z > 0.4 && z < 4 && Math.abs(z - 1) >= 0.02 ? z : 1;
+      } catch (e) { return 1; }
+    }
+    function tzApply(z) {
+      if (!TZ.recs) TZ.recs = Array.from(document.querySelectorAll('style')).map((el) => ({ el: el, text: el.textContent }))   // each style sheet in the page, as it was written
+        .filter((r) => /(font-size|line-height|font)\s*:[^;{}]*px/i.test(r.text));
+      for (const r of TZ.recs) r.el.textContent = z === 1 ? r.text : tzText(r.text, z);
+      document.documentElement.style.fontSize = z === 1 ? '' : tzNum(16, z) + 'px';   // the page's own default, which unsized text inherits
+      TZ.z = z;
+    }
+    function tzCheck() {               // true when the enlargement has changed, and the sizes with it
+      const z = tzMeasure();
+      if (Math.abs(z - TZ.z) < 0.02) return false;
+      tzApply(z);
+      return true;
+    }
+    function tzSweep(node) {           // the sizes a screen set on its own parts (style="..."), each divided once
+      if (TZ.z === 1 || !node || !node.querySelectorAll) return;
+      const list = Array.from(node.querySelectorAll('[style]'));
+      if (node.hasAttribute && node.hasAttribute('style')) list.unshift(node);
+      for (const e of list) {
+        const st = e.style, done = TZ.swept.get(e) || {};
+        let changed = false;
+        for (const prop of ['font', 'font-size', 'line-height']) {
+          const v = st.getPropertyValue(prop);
+          if (!v || v.indexOf('px') < 0 || done[prop] === v) continue;
+          if (prop === 'font' && st.getPropertyValue('font-size')) continue;   // read as its parts: they follow
+          const t = tzVal(prop, v, TZ.z);
+          if (t === v) continue;
+          st.setProperty(prop, t, st.getPropertyPriority(prop));
+          done[prop] = st.getPropertyValue(prop); changed = true;
+        }
+        if (changed) TZ.swept.set(e, done);
+      }
+    }
+    if (window.MutationObserver) new MutationObserver((ms) => { if (TZ.z === 1) return; for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1) tzSweep(n); }).observe(root, { childList: true, subtree: true });
+
     /* ----- The picture: 540 lines tall, its width following the window ----- */
     const V = { W: 960, k: 1, w: 0, h: 0, phone: false };
     function layout() {
@@ -7337,6 +7723,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       if (k < 1) node.style.transform = 'scale(' + k + ')';
     }
     function fitScreens() {
+      tzSweep(dialogLayer); tzSweep(titleScreen);   // kit 0.36.1: before anything is measured
       const plaque = dialogLayer.querySelector('.lb-dialog-wrap') || dialogLayer.querySelector('.lb-plaque');   // kit 0.17.0: a plaque with a row under it fits as one
       if (plaque) fitTo(plaque, dialogLayer.clientWidth - 12, dialogLayer.clientHeight - 12);
       const arch = titleScreen.querySelector('.lb-title-arch');
@@ -9289,6 +9676,11 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       },
       // a belt's name and its band's class, as the Echo Shrine shows them ('scarf' or 'red', 'nightBlue', 'mulberry', 'ash')
       belt: (id) => ({ red: { name: 'Red', band: '' }, scarf: { name: 'Red', band: '' }, nightBlue: { name: 'Night blue', band: ' is-night-blue' }, mulberry: { name: 'Mulberry', band: ' is-mulberry' }, ash: { name: 'Ash', band: ' is-ash' } })[id] || { name: String(id), band: '' },
+      // kit 0.42.0 (design system version 27, EchoShrine): a lantern glass for the Echo Shrine's Cosmetics page: its name, the class its pane takes
+      // (lb-pane, with the glass's colour and its light behind it) and the small lantern drawn in it. A belt's glow uses belt(id)'s band class: on
+      // the band with is-glow, and on the button's dot (lb-glow-dot)
+      glass: (id) => Object.assign({ lamp: '<svg class="lb-lamp" viewBox="0 0 16 22" aria-hidden="true"><circle class="fr" cx="8" cy="2.4" r="1.6"/><path class="fr" d="M8 4 V5.6"/><path class="ink" d="M4.2 5.6 H11.8 L13.4 8 H2.6 Z"/><rect class="gl" x="3.6" y="8" width="8.8" height="10"/><rect class="fr" x="3.6" y="8" width="8.8" height="10"/><ellipse class="fl" cx="8" cy="13.4" rx="1.5" ry="2.8"/><rect class="ink" x="2.6" y="18" width="10.8" height="2.2"/></svg>' },
+        ({ gold: { name: 'Gold', pane: '' }, red: { name: 'Red', pane: ' is-red' }, nightBlue: { name: 'Night blue', pane: ' is-night-blue' }, mulberry: { name: 'Mulberry', pane: ' is-mulberry' }, ash: { name: 'Ash', pane: ' is-ash' } })[id] || { name: String(id), pane: '' }),
       get phone() { return V.phone; },
       touch: touch
     };
@@ -9397,7 +9789,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
     // table is true; with no o, for the table alone, as before
     function openInitials(o) {
       state.screen = 'initials';
-      const last = String(store.get('retrokit.initials', 'AAA')).toUpperCase();
+      const last = String(store.get('retrokit.initials', NAME.letters || 'AAA')).toUpperCase();   // kit 0.39.0: with none saved, a CrazyGames username's first three (NAME), in a game that asks for it
       initials = { letters: [0, 1, 2].map((i) => (CHARS.indexOf(last[i]) >= 0 && last[i] ? last[i] : 'A')), sel: 0, slots: null,
         best: o && o.best ? String(o.best) : null, table: o ? !!o.table : true, n: o ? Math.max(0, o.n | 0) : 0, unit: o && o.unit ? String(o.unit) : 'echo' };
       showDialog(initialsDialog);
@@ -9699,6 +10091,12 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
     });
     document.addEventListener('keyup', (e) => { keys.delete(e.code); physical.delete(e.code); stale.delete(e.code); });
     window.addEventListener('blur', () => { keys.clear(); physical.clear(); stale.clear(); if (state.screen === 'play') pause(true); });
+    document.addEventListener('visibilitychange', () => {   // kit 0.36.1: the phone's font size may have changed while the page was out of sight
+      if (document.hidden || !tzCheck()) return;
+      if (state.inGame) buildHud(); else buildTitle();
+      if (currentDialog) showDialog(currentDialog, nav ? nav.index : 0);
+      fitScreens();
+    });
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) return;
       if (state.screen === 'play') pause(true);
@@ -9969,10 +10367,52 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
          new picture, flung). world.KNOCK, world.MEND and world.SPLINTER hold the figures. lb.hud.boss takes marks and mend (the bar's
          marks, the part that has come back and where it will reach), lb.hud.call(on) the spell's call. The Gaping Tree's eye and maw
          glows and its splinters' start are on its face. Ten sounds (lb.sounds). scoresKeep: [run ids] spares those runs' Personal bests
-         from scoresEra's wipe. */
+         from scoresEra's wipe.
+       Kit 0.36.1: text at its drawn size where an app enlarges it (the CrazyGames app, by the phone's font size; see TZ): no change
+         for a game to make. lb.textZoom is the enlargement found (1 when none); ?trial=tz150 pretends 150%, for testing.
+       Kit 0.37.0: the account save (see ACCT, beside store). crazygames: { accountSave: true } in the config keeps the game's progress
+         record, top ten, Personal bests, initials and scores' era with the player's CrazyGames account, in the CrazyGames build only;
+         the arcade's build, and a game without the switch, save as before. A game changes nothing else: lb.progress, lb.saveProgress()
+         and the scores work as they did. lb.account says how this visit went: mode ('off', 'account', or 'device' when the SDK was
+         late or refused and the visit plays from the device's copy), why, waited (ms the start waited for the SDK) and size (bytes
+         saved, of CrazyGames' 1 MB).
+       Kit 0.37.1: lb.account's size counts the entries as one JSON text, as CrazyGames counts its 1 MB (0.37.0 added up the entries'
+         own lengths, about a fifth less). Nothing else changes.
+       Kit 0.38.0: the title before the soundtrack, in the CrazyGames build. crazygames: { earlyTitle: true } in the config sets the
+         game up as soon as its own script has run, while the rest of the page, the soundtrack, is still arriving (see
+         LanternBox.game, at the end of this file). The game's script must hold everything its set-up needs.
+       Kit 0.39.0: the score initials from the CrazyGames username, in the CrazyGames build. crazygames: { usernameInitials: true } in
+         the config fills the initials screen, when no initials are saved, with the first three letters or figures of a signed-in
+         player's username (see NAME, beside ACCT). The player changes them as ever; nothing is saved until Done.
+       Kit 0.40.0: happy moments, in the CrazyGames build. With crazygames: { happyMoments: true } in the config, lb.happy() tells
+         CrazyGames of a rare happy moment (its page celebrates; nothing is drawn in the game) and answers true if it was told; never
+         two within five seconds. Anywhere else it does nothing and answers false.
+       Kit 0.41.0 (design system version 27, Wanderer; play.js 1.14.0's new code, word for word): the looks bought on the Echo Shrine's
+         Cosmetics page. lb.world.look({ belt, glow, glass }) sets what the wanderer wears: a glow for his belt (its colour lighter,
+         with a halo round the band, the knot and the tails) and lantern glass in gold or one of the four belt colours, his light
+         following the glass (red, night blue and mulberry added to the scene at twice the gold's intensity). lb.world.LOOKS names
+         them; lb.world.belt(name) is a plain belt, as before. The gold lantern and a plain belt draw exactly as before; the
+         checkpoint's lantern stays gold; with Effects off a glow keeps its colour and loses its halo.
+       Kit 0.42.0 (design system version 27, EchoShrine): the stylesheet has version 27's tokens and its block for the Echo Shrine's two
+         pages and the looks (the tabs' width, two columns, lb-looks and its rows, a glow's button and dot, a glowing band, the lantern
+         glass's tile), for a game's own plaque; lb.ui.glass(id) gives a glass's name, its pane's class and its small lantern. */
     const api = {
       H: H, version: VERSION, touch: touch, input: input, hud: hud, sfx: sfx, world: world, color: colour,
+      get textZoom() { return TZ.z; },   // kit 0.36.1
       portal: PORTAL, portalContext: cgContext,   // kit 0.27.0: the portal this copy was built for ('' or 'crazygames'), and the feedback context
+      happy: cgHappy,                    // kit 0.40.0: a happy moment told to the portal (true if it was); see cgHappy
+      get account() {                    // kit 0.37.0: the account save, this visit
+        // size: the entries as one JSON text, in bytes, as CrazyGames counts its 1 MB (the device's copy when the account isn't there)
+        let size = 0;
+        if (ACCT.keys) {
+          const all = {};
+          ACCT.keys.forEach((k) => { const v = ACCT.mode === 'account' ? ACCT.raws[k] : DEVICE.get(k); if (v != null) all[k] = String(v); });
+          if (ACCT.mode === 'account') all[ACCT.syncKey] = JSON.stringify({ line: ACCT.mark.line, tag: ACCT.mark.tag, n: ACCT.mark.n });
+          const s = JSON.stringify(all);
+          try { size = new TextEncoder().encode(s).length; } catch (e) { size = s.length; }
+        }
+        return { mode: ACCT.mode, why: ACCT.why, waited: ACCT.waited, size: size };
+      },
       get W() { return V.W; },
       get settings() { return Object.assign({}, settings, { picture: own.picture }); },
       get picture() { return { level: pictureLevel(), width: canvas.width, height: canvas.height, sharpness: V.k }; },
@@ -10007,6 +10447,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
     V.w = root.clientWidth;
     V.h = root.clientHeight;
     V.phone = V.h < PHONE_H || V.w < PHONE_W;
+    tzCheck();                       // kit 0.36.1: before the first screen is built
     buildTitle();
     nav = titleNav;
     layout();
@@ -10061,8 +10502,25 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
     game(cfg) {
       if (window.LanternBox.current) throw new Error('Lantern Box: only one LanternBox.game() per page.');
       const boot = () => { window.LanternBox.current = createGame(cfg); };
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
-      else boot();
+      /* kit 0.38.0 (Barney, 21 November 2026): the title before the soundtrack. A game is set up once the whole page has arrived
+         (DOMContentLoaded), and since kit 0.28.0 the soundtrack, most of the file, is the page's last script: measured on a build of
+         21 November at 1.5 MB a second, the game was set up at 7.8 s, though the music has been able to arrive late since 0.28.0.
+         With crazygames: { earlyTitle: true } in the config, in the CrazyGames build, the game is set up as soon as the game's own
+         script has run (the next moment the page's scripts are at rest), while the rest of the page is still arriving: the title at
+         0.9 s on the same connection. Only for a game whose own script holds everything its set-up needs (a soundtrack handed over
+         as a function, data: () => window.NAME, is looked for later). Without the switch, and in the arcade's build, as ever. */
+      const early = PORTAL === 'crazygames' && !!(cfg && cfg.crazygames && cfg.crazygames.earlyTitle === true);
+      const go = () => {
+        if (document.readyState !== 'loading') boot();
+        else if (early) Promise.resolve().then(() => { if (document.body) boot(); else document.addEventListener('DOMContentLoaded', boot); });
+        else document.addEventListener('DOMContentLoaded', boot);
+      };
+      // kit 0.37.0: the account save, in the CrazyGames build, for a game that asks for it: the game is set up once the SDK has the
+      // player's data, or after ACCT_WAIT (acctStart). Everywhere else, at once, as ever
+      if (PORTAL === 'crazygames' && cfg && cfg.crazygames && cfg.crazygames.usernameInitials === true) nameStart();   // kit 0.39.0
+      if (PORTAL === 'crazygames' && cfg && cfg.crazygames && cfg.crazygames.happyMoments === true) CG.happyOn = true;   // kit 0.40.0
+      if (PORTAL === 'crazygames' && cfg && cfg.crazygames && cfg.crazygames.accountSave === true) acctStart(cfg, go);
+      else go();
     },
     current: null
   };
@@ -10146,7 +10604,22 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
    Then (CM230; design system version 25 on kit 0.35.0, HANDOVER-design-25.md Parts 4 and 6): the difficulty setting built. Shallow, Grim
    and Agony (Barney's words) chosen in the choice of run's foot row, one remembered for each run; The Bare Reckoning always Grim, so every
    copy now plays Grim's figures there; the setting's tag, its share on the echo stolen line, a best for each of The Endless Rot's
-   settings, the suggestion after three runs lost in a row, and the one-time wipe of scores, bests and a saved run. No figure changed. */
+   settings, the suggestion after three runs lost in a row, and the one-time wipe of scores, bests and a saved run. No figure changed.
+   The account save (HANDOVER-account-save.md; kit 0.37.0): the CrazyGames build's pieces for its first submission, each switched on
+   or off in CG_PIECES, just below. The title before the soundtrack (kit 0.38.0) is one of them, and CrazyGames' happy moments
+   (kit 0.40.0; happyOnce, below). The Echo Shrine's Cosmetics page too (design system 27; shrinePlaqueTwo). */
+
+/* The CrazyGames build's pieces for its first submission (lantern-box/HANDOVER-account-save.md; Barney, 21 November 2026). Each piece is
+   switched on (true) or off (false) here and nowhere else, and only the CrazyGames build reads them: the arcade's own build, the test
+   link and the playtest are the same whatever these say. With every one off, the CrazyGames build is the build tested on 21 November
+   2026 (kit 0.36.1). */
+const CG_PIECES = {
+  accountSave: true,         // progress kept with the player's CrazyGames account (kit 0.37.0); on since CM249, 21 November 2026, for Barney's tests
+  earlyTitle: true,          // the title shown before the soundtrack has arrived (kit 0.38.0; Barney, 21 November 2026: "do this fix")
+  usernameInitials: true,    // the score initials filled from the CrazyGames username, when none are saved (kit 0.39.0)
+  happyMoments: true,        // CrazyGames' happy moments: a boss first beaten, a journey won, wave 12 of The Endless Rot endured on Agony (kit 0.40.0)
+  cosmetics: false,          // the Echo Shrine's Cosmetics page: a glow for each belt, and lantern glass (kits 0.41.0 and 0.42.0; HANDOVER-design-27.md, parts 2 and 3)
+};
 
 const PLACES = ['night', 'storm', 'dawn', 'mist'];
 const TRACK = { night: 0, storm: 0, dawn: 1, mist: 1 };   // The Long Vigil, then Lantern in the Moor from Dawn's place card
@@ -10534,7 +11007,36 @@ function readRecord(old) {
   const log = readRunLog(old.runLog);  // the Night pass, part D: the playtest's run log (the run log, below), kept by every copy
   if (log) r.runLog = log;
   if (old.saved && typeof old.saved === 'object' && !Array.isArray(old.saved)) r.saved = old.saved;   // part C: checked by settleSaved as the page opens
+  if (old.looks && typeof old.looks === 'object' && !Array.isArray(old.looks)) {   // design system 27: the looks bought (only ever added by a purchase on the Cosmetics page)
+    // the glasses are known by the kit's names, checked where they are used (glassHas, lampNow): here, a few plain names set to true
+    const og = old.looks.glow && typeof old.looks.glow === 'object' ? old.looks.glow : {}, os = old.looks.glass && typeof old.looks.glass === 'object' ? old.looks.glass : {}, L = { glow: {}, glass: {}, lamp: '' };
+    BELT_IDS.forEach((k) => { if ((og[k] === 'on' || og[k] === 'off') && (k === 'scarf' || r.belts[k])) L.glow[k] = og[k]; });
+    Object.keys(os).slice(0, 8).forEach((k) => { if (os[k] === true && /^[A-Za-z]{1,16}$/.test(k)) L.glass[k] = true; });
+    if (typeof old.looks.lamp === 'string' && L.glass[old.looks.lamp] === true) L.lamp = old.looks.lamp;
+    if (Object.keys(L.glow).length || Object.keys(L.glass).length) r.looks = L;
+  }
+  if (old.happy && typeof old.happy === 'object' && !Array.isArray(old.happy)) {   // kit 0.40.0: the happy moments already celebrated (only ever noted by happyOnce)
+    const h = {};
+    HAPPY_IDS.forEach((k) => { if (old.happy[k] === true) h[k] = true; });
+    if (Object.keys(h).length) r.happy = h;
+  }
   return r;
+}
+/* CrazyGames' happy moments (HANDOVER-account-save.md, piece 3; kit 0.40.0; Barney, 21 and 22 November 2026): CrazyGames' own page
+   celebrates, and nothing is drawn here. Three moments: the first time each boss is beaten (in any journey run, either loop; The
+   Gaping Tree's is left to the win that follows it, so the two never fall together: Barney's choice), every win of the journey, and
+   wave 12 of The Endless Rot endured on Agony, once. "Once" is once for a player: noted in the record (happy), which follows the
+   account, and only when CrazyGames was really told (lb.happy() answers true), so a moment missed with the SDK away comes the next
+   time. With the switch off (CG_PIECES.happyMoments), or in the arcade's build, lb.happy() does nothing and nothing is noted. Never in
+   the speed test. */
+const HAPPY_IDS = ['night', 'storm', 'dawn', 'mist', 'rot12'];
+function happyOnce(lb, id) {
+  const rec = lb.progress;
+  if (!rec || (rec.happy && rec.happy[id])) return;
+  if (!lb.happy()) return;
+  if (!rec.happy) rec.happy = {};
+  rec.happy[id] = true;
+  lb.saveProgress();
 }
 const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 // the places' proper names, for "Furthest yet"
@@ -10698,8 +11200,10 @@ function buyUnlock(lb, u) {
   lb.sfx('confirm');
   return true;
 }
-function openShrine(lb, back) { lb.ui.open((ui) => shrinePlaque(lb, ui, back)); }
-function shrinePlaque(lb, ui, back) {
+// design system 27: with the Cosmetics the shrine is two pages (shrinePlaqueTwo, below); without, the one page it has been
+// (in two pages the focus starts on the page's first button, as it always has, not on the tab above it)
+function openShrine(lb, back) { SHRINE_PAGE = 0; if (cosmeticsOn(lb)) lb.ui.open((ui) => shrinePlaqueTwo(lb, ui, back), 1); else lb.ui.open((ui) => shrinePlaqueOne(lb, ui, back)); }
+function shrinePlaqueOne(lb, ui, back) {
   const rec = lb.progress, phone = ui.phone, items = [], again = () => ui.refresh();
   const { panel, face } = ui.plaque('gh-sh', 780, 804, phone ? 'gap:10px;padding:12px 14px 12px' : 'gap:10px;padding:16px 20px 14px');
   const head = ui.el('div', 'lb-header');
@@ -10771,6 +11275,200 @@ function shrinePlaque(lb, ui, back) {
     foot.append(ui.hint('Bought for good. The spell and belt can be changed here before any run.' + (ui.touch ? '' : ' ' + ui.kbd('Backspace') + ' back')), backBtn);
     face.append(head, cols, hy, foot);
   }
+  return { panel, items, opts: { back } };
+}
+
+/* ---------- the Echo Shrine in two pages, with the Cosmetics (design system version 27: EchoShrine, Wanderer; HANDOVER-design-27.md
+   Parts 2 and 3; HANDOVER-account-save.md, piece 4; the plan Barney agreed on 22 November 2026; kits 0.41.0 and 0.42.0) ----------
+   Eight new things to buy: a glow for each of the four belts and lantern glass in the four belt colours. They add no power and show in
+   every run, The Bare Reckoning included. The words are the card's, Barney's. The rules:
+   - a glow needs its belt bought first (the red's can be bought at once); a glass needs no belt and goes with any;
+   - each of the eight is its own purchase; buying a glow switches it on, buying a glass chooses it;
+   - a bought glow is switched on and off with one press, remembered for each belt.
+   Where it shows: in the CrazyGames build when CG_PIECES.cosmetics is on, and in the arcade's own build only through Testing's
+   Cosmetics page row (the test link, for Barney's four named checks). Everywhere else the shrine is the one page it was (shrinePlaqueOne)
+   and the record is untouched. The record keeps the looks in one part, looks, added by the first purchase and never before:
+   { glow: { <belt>: 'on' or 'off' }, glass: { <glass>: true }, lamp: the glass chosen, '' for the one he starts with }. An older save has
+   none: the glass he starts with, no glow.
+   The run's end's "Next" line keeps to the nine things in UNLOCKS (Barney's choice): the looks are found on their page. */
+const LOOK_PRICE = { glow: 450, glass: 300 };          // Barney's starting figures (21 November 2026), to be tuned
+// the glasses' names are the kit's (lb.world.LOOKS.glasses): the first is the one he starts with, the rest are bought. They are named there and
+// not here because two of them are colours' names, which a game never writes (the build's rule)
+const glassIds = (lb) => lb.world.LOOKS.glasses, glass0 = (lb) => glassIds(lb)[0];
+const BELT_IDS = ['scarf'].concat(BELTS);              // scarf: the red belt he starts in
+const cosmeticsOn = (lb) => (lb.portal === 'crazygames' && CG_PIECES.cosmetics) || !!(lb.test && (lb.test.cosmetics === 'on' || lb.test.cosmetics === 'all'));
+const looksAll = (lb) => !!(lb.test && lb.test.cosmetics === 'all');   // Testing: every glow and glass as if bought, to try on; nothing of it is saved
+const TRIAL_LOOKS = { glow: {}, glass: {}, lamp: '' };
+const NO_LOOKS = { glow: {}, glass: {}, lamp: '' };
+const looksNow = (lb) => (looksAll(lb) ? TRIAL_LOOKS : lb.progress.looks || NO_LOOKS);
+function looksToChange(lb) { if (looksAll(lb)) return TRIAL_LOOKS; const rec = lb.progress; if (!rec.looks) rec.looks = { glow: {}, glass: {}, lamp: '' }; return rec.looks; }
+const looksSaved = (lb) => { if (!looksAll(lb)) lb.saveProgress(); };
+const beltOwned = (rec, id) => id === 'scarf' || rec.belts[id] === true;
+const glowNow = (lb, id) => { const s = looksNow(lb).glow[id]; return s === 'on' || s === 'off' ? s : looksAll(lb) ? 'off' : ''; };   // '' not bought; else 'on' or 'off'
+const glassHas = (lb, id) => id === glass0(lb) || looksAll(lb) || (glassIds(lb).indexOf(id) > 0 && looksNow(lb).glass[id] === true);
+const lampNow = (lb) => { const l = looksNow(lb).lamp; return l && glassIds(lb).indexOf(l) > 0 && glassHas(lb, l) ? l : glass0(lb); };   // the glass chosen ('' kept for the one he starts with)
+function buyGlow(lb, id) {
+  const rec = lb.progress;
+  if (looksAll(lb) || !beltOwned(rec, id) || glowNow(lb, id) || rec.echo < LOOK_PRICE.glow) return false;
+  rec.echo -= LOOK_PRICE.glow; looksToChange(lb).glow[id] = 'on';
+  if (rec.streak) rec.streak.n = 0;    // as buyUnlock: something bought starts the count of runs lost again
+  lb.saveProgress(); lb.sfx('confirm');
+  return true;
+}
+function buyGlass(lb, id) {
+  const rec = lb.progress;
+  if (looksAll(lb) || glassIds(lb).indexOf(id) < 1 || glassHas(lb, id) || rec.echo < LOOK_PRICE.glass) return false;
+  rec.echo -= LOOK_PRICE.glass; const L = looksToChange(lb); L.glass[id] = true; L.lamp = id;
+  if (rec.streak) rec.streak.n = 0;
+  lb.saveProgress(); lb.sfx('confirm');
+  return true;
+}
+function turnGlow(lb, id) { const s = glowNow(lb, id); if (!s) return; looksToChange(lb).glow[id] = s === 'on' ? 'off' : 'on'; looksSaved(lb); lb.sfx('confirm'); }
+function chooseGlass(lb, id) { if (!glassHas(lb, id)) return; looksToChange(lb).lamp = id === glass0(lb) ? '' : id; looksSaved(lb); lb.sfx('confirm'); }
+// what the wanderer wears in the run about to start. Without the Cosmetics, his belt alone, as ever; never a look in the speed test
+function wearLook(lb, rec) {
+  if (!cosmeticsOn(lb) || wantCheck(lb)) { if (lb.test) lb.world.look({ belt: rec.belt }); else lb.world.belt(rec.belt); return; }   // with Testing there, a look tried on earlier is taken off
+  lb.world.look({ belt: rec.belt, glow: glowNow(lb, rec.belt) === 'on', glass: lampNow(lb), strength: lb.test && lb.test.glow === 'strong' ? 'strong' : 'soft' });
+}
+let SHRINE_PAGE = 0;                   // 0 Spells and potions, 1 Cosmetics: it opens on the first
+function shrinePlaqueTwo(lb, ui, back) {
+  const rec = lb.progress, phone = ui.phone, items = [], page = SHRINE_PAGE;
+  // built again after every change, the focus kept on the same thing (its place in the list can move as buttons come and go)
+  const again = (key) => { const i = key ? shrinePlaqueTwo(lb, ui, back).items.findIndex((it) => it.key === key) : -1; ui.refresh(i < 0 ? undefined : i); };
+  const { panel, face } = ui.plaque('gh-sh', 780, 804, phone ? 'gap:10px;padding:12px 14px 12px' : 'gap:10px;padding:16px 20px 14px');
+  const head = ui.el('div', 'lb-header');
+  // the two pages: the kit's Segments in two, as tabs. The page's own tab is a stop for the keys: left and right turn the page from it
+  const tabs = ui.el('div', 'lb-segments is-two lb-shrine-tabs'); tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', 'Echo Shrine pages');
+  const turn = (p) => { if (p === SHRINE_PAGE) return; SHRINE_PAGE = p; lb.sfx('select'); again('tab'); };
+  ['Spells and potions', 'Cosmetics'].forEach((name, p) => {
+    const b = ui.txt('button', '', name); b.type = 'button'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', p === page ? 'true' : 'false'); b.setAttribute('aria-pressed', p === page ? 'true' : 'false');
+    tabs.append(b);
+    if (p === page) items.push({ key: 'tab', row: 0, el: b, activate: () => {}, left: () => turn(0), right: () => turn(1) });
+    else b.addEventListener('click', () => turn(p));
+  });
+  const bank = ui.el('div', 'lb-bank', '<span class="lb-bank-label" aria-hidden="true">Stolen echo</span><span class="lb-bank-num" aria-hidden="true">' + rec.echo + '</span>');
+  bank.setAttribute('role', 'status'); bank.setAttribute('aria-label', rec.echo + ' stolen echo');
+  head.append(ui.heading('gh-sh', 'Echo Shrine'), tabs, bank);
+  const backBtn = ui.button('Back'), foot = ui.el('div', 'lb-shrine-foot');
+  const soon = () => { const s = ui.el('p', 'lb-hint lb-shrine-soon', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3 H17 M7 21 H17 M8 3 C8 8 16 9 16 12 C16 15 8 16 8 21 M16 3 C16 8 8 9 8 12 C8 15 16 16 16 21"/></svg><span><b>Hysteria</b> \u00b7 Coming soon \u00b7 500</span>'); s.setAttribute('aria-disabled', 'true'); return s; };
+  const hint = (words) => ui.hint(words + (ui.touch ? '' : ' ' + ui.kbd('Backspace') + ' back'));
+  if (page === 0) {                    // Spells and potions: version 12's two columns, two wide
+    const cols = ui.el('div', 'lb-shrine-cols is-two');
+    const column = (id, title) => { const c = ui.el('div', 'lb-shrine-col'); c.setAttribute('role', 'group'); c.setAttribute('aria-labelledby', id); const t = ui.txt('p', 'lb-shrine-title', title); t.id = id; c.append(t); cols.append(c); return c; };
+    const priceButton = (u, what) => {
+      const ok = canBuy(rec, u), b = ui.txt('button', 'lb-buy' + (ok ? ' is-ready' : ''), ok ? 'Buy ' + u.price : String(u.price));
+      b.type = 'button';
+      b.setAttribute('aria-label', ok ? 'Buy ' + what + ' for ' + u.price + ' echo' : what.charAt(0).toUpperCase() + what.slice(1) + ', ' + u.price + ' echo, ' + (u.price - rec.echo) + ' more needed');
+      if (!ok) b.disabled = true;
+      return b;
+    };
+    const c1 = column('gh-sh1', 'Spell for the next run');
+    SPELLS.forEach((sp) => {
+      const owned = !sp.unlock || unlockOf(sp.unlock).has(rec), chosen = rec.spell === sp.id, key = 'spell:' + sp.id;
+      const row = ui.el('div', 'lb-shrine-row' + (chosen ? ' is-chosen' : ''), ui.spell(sp.id) + '<span class="lb-shrine-text"><span class="lb-shrine-name"></span></span>');
+      row.querySelector('.lb-shrine-name').textContent = sp.name;
+      if (!phone) row.querySelector('.lb-shrine-text').append(ui.txt('span', 'lb-shrine-note', sp.note));
+      if (chosen) row.append(ui.txt('span', 'lb-shrine-state', 'Chosen'));
+      else if (owned) { const b = ui.txt('button', 'lb-buy', 'Choose'); b.type = 'button'; row.append(b); items.push({ key, el: b, activate: () => { rec.spell = sp.id; lb.saveProgress(); lb.sfx('confirm'); again('tab'); } }); }
+      else { const u = unlockOf(sp.unlock), b = priceButton(u, sp.name.toLowerCase()); row.append(b); if (!b.disabled) items.push({ key, el: b, activate: () => { if (buyUnlock(lb, u)) again('tab'); } }); }
+      c1.append(row);
+    });
+    const c2 = column('gh-sh2', 'Potions you can keep');
+    [['health', 'Health potions'], ['mana', 'Mana potions']].forEach(([k, name], i) => {
+      const n = rec.sockets[k], text = ui.el('span', 'lb-shrine-text', '<span class="lb-shrine-name"></span><span class="lb-shrine-note"></span>');
+      text.querySelector('.lb-shrine-name').textContent = name; text.querySelector('.lb-shrine-note').textContent = n + ' of 3 sockets';
+      if (i) text.style.marginTop = phone ? '2px' : '4px';
+      const pots = ui.el('div', 'lb-shrine-pots'), socks = ui.el('span', 'lb-socks', [0, 1, 2].map((j) => ui.potion(k, j < n, phone)).join(''));
+      socks.setAttribute('aria-hidden', 'true'); pots.append(socks);
+      if (n < 3) { const u = unlockOf(k + (n + 1)), b = priceButton(u, u.towards); pots.append(b); if (!b.disabled) items.push({ key: 'pot:' + k, el: b, activate: () => { if (buyUnlock(lb, u)) again('pot:' + k); } }); }
+      c2.append(text, pots);
+    });
+    items.push({ key: 'back', el: backBtn, activate: back });
+    if (phone) { foot.style.paddingTop = '8px'; foot.append(soon(), backBtn); face.append(head, cols, foot); }
+    else {
+      const hy = ui.el('div', 'lb-shrine-row is-soon', ui.spell('hysteria', true) + '<span class="lb-shrine-text is-inline"><span class="lb-shrine-name">Hysteria</span><span class="lb-shrine-note"></span></span><span class="lb-shrine-state">Coming soon \u00b7 500</span>');
+      hy.setAttribute('aria-disabled', 'true'); hy.querySelector('.lb-shrine-note').textContent = HYSTERIA;
+      foot.append(hint('Bought for good. The spell can be changed here before any run.'), backBtn);
+      face.append(head, cols, hy, foot);
+    }
+    return { panel, items, opts: { back } };
+  }
+  // Cosmetics: the four belts, each with its glow as one button under it; then the lantern glass
+  const looks = ui.el('div', 'lb-looks'), cells = [];
+  const group = (id, title, note) => { const g = ui.el('div', 'lb-looks-group'); g.setAttribute('role', 'group'); g.setAttribute('aria-labelledby', id); const t = ui.txt('p', 'lb-shrine-title', title); t.id = id; if (note) t.append(ui.txt('span', 'lb-looks-note', note)); g.append(t); looks.append(g); return g; };
+  const r4 = ui.el('div', 'lb-looks-row is-four'); group('gh-shb', 'Belt', 'A glow needs its belt').append(r4);
+  BELT_ROWS.forEach((row0) => {
+    const id = row0.id, bt = Object.assign({}, row0, ui.belt(id)), u = bt.unlock ? unlockOf(bt.unlock) : null, owned = !u || u.has(rec), worn = rec.belt === id, gs = owned ? glowNow(lb, id) : '', nm = bt.name.toLowerCase();
+    const cell = ui.el('div', 'lb-look'), slot = { belt: null, glow: null };
+    const b = ui.el('button', 'lb-belt' + (worn ? ' is-worn' : ''), '<span class="band' + bt.band + (gs === 'on' ? ' is-glow' : '') + '"></span><span class="row"><span class="nm"></span></span>');
+    b.type = 'button'; b.querySelector('.nm').textContent = bt.name;
+    const row = b.querySelector('.row');
+    if (owned) { b.setAttribute('aria-pressed', worn ? 'true' : 'false'); row.append(ui.txt('span', 'st' + (worn ? '' : ' is-wear'), worn ? 'Worn' : 'Wear')); slot.belt = { key: 'belt:' + id, row: 1, el: b, activate: () => { if (rec.belt !== id) { rec.belt = id; lb.saveProgress(); lb.sfx('confirm'); again('belt:' + id); } } }; }
+    else {
+      const ok = canBuy(rec, u);
+      row.append(ui.txt('span', 'pr' + (ok ? '' : ' is-short'), String(u.price)));
+      b.setAttribute('aria-label', ok ? 'Buy the ' + nm + ' belt for ' + u.price + ' echo' : 'The ' + nm + ' belt, ' + u.price + ' echo, ' + (u.price - rec.echo) + ' more needed');
+      if (ok) slot.belt = { key: 'belt:' + id, row: 1, el: b, activate: () => { if (buyUnlock(lb, u)) again('belt:' + id); } }; else b.setAttribute('aria-disabled', 'true');
+    }
+    let gb;
+    if (gs) {                          // bought: one press switches it
+      const on = gs === 'on';
+      gb = ui.el('button', 'lb-buy lb-glow' + (on ? ' is-on' : ''), '<i class="lb-glow-dot' + (on ? bt.band : ' is-off') + '"></i>' + (on ? 'Glow on' : 'Glow off'));
+      gb.setAttribute('aria-pressed', on ? 'true' : 'false'); gb.setAttribute('aria-label', 'The ' + nm + " belt's glow: " + (on ? 'on' : 'off'));
+      slot.glow = { key: 'glow:' + id, row: 2, el: gb, activate: () => { turnGlow(lb, id); again('glow:' + id); } };
+    } else if (!owned) {
+      gb = ui.txt('button', 'lb-buy lb-glow is-locked', 'Glow ' + LOOK_PRICE.glow); gb.disabled = true;
+      gb.setAttribute('aria-label', 'The ' + nm + " belt's glow, " + LOOK_PRICE.glow + ' echo: needs the belt first');
+    } else if (rec.echo >= LOOK_PRICE.glow) {
+      gb = ui.txt('button', 'lb-buy lb-glow is-ready', 'Buy glow ' + LOOK_PRICE.glow);
+      gb.setAttribute('aria-label', 'Buy the ' + nm + " belt's glow for " + LOOK_PRICE.glow + ' echo');
+      slot.glow = { key: 'glow:' + id, row: 2, el: gb, activate: () => { if (buyGlow(lb, id)) again('glow:' + id); } };
+    } else {
+      gb = ui.txt('button', 'lb-buy lb-glow', 'Glow ' + LOOK_PRICE.glow); gb.disabled = true;
+      gb.setAttribute('aria-label', 'The ' + nm + " belt's glow, " + LOOK_PRICE.glow + ' echo');
+    }
+    gb.type = 'button';
+    cell.append(b, gb); r4.append(cell); cells.push(slot);
+    if (slot.belt) items.push(slot.belt);
+    if (slot.glow) items.push(slot.glow);
+  });
+  const r5 = ui.el('div', 'lb-looks-row is-five'); group('gh-shg', 'Lantern glass').append(r5);
+  glassIds(lb).forEach((id) => {
+    const gl = ui.glass(id), chosen = lampNow(lb) === id, nm = gl.name.toLowerCase();
+    const b = ui.el('button', 'lb-belt lb-glass' + (chosen ? ' is-worn' : ''), '<span class="lb-pane' + gl.pane + '">' + gl.lamp + '</span><span class="row"><span class="nm"></span></span>');
+    b.type = 'button'; b.querySelector('.nm').textContent = gl.name;
+    const row = b.querySelector('.row');
+    if (glassHas(lb, id)) { b.setAttribute('aria-pressed', chosen ? 'true' : 'false'); row.append(ui.txt('span', 'st' + (chosen ? '' : ' is-wear'), chosen ? 'Chosen' : 'Choose')); items.push({ key: 'glass:' + id, row: 3, el: b, activate: () => { if (!chosen) { chooseGlass(lb, id); again('glass:' + id); } } }); }
+    else {
+      const ok = rec.echo >= LOOK_PRICE.glass;
+      row.append(ui.txt('span', 'pr' + (ok ? ' is-buy' : ''), ok ? 'Buy ' + LOOK_PRICE.glass : String(LOOK_PRICE.glass)));
+      b.setAttribute('aria-label', ok ? 'Buy the ' + nm + ' lantern glass for ' + LOOK_PRICE.glass + ' echo' : 'The ' + nm + ' lantern glass, ' + LOOK_PRICE.glass + ' echo');
+      if (ok) items.push({ key: 'glass:' + id, row: 3, el: b, activate: () => { if (buyGlass(lb, id)) again('glass:' + id); } }); else b.setAttribute('aria-disabled', 'true');
+    }
+    r5.append(b);
+  });
+  items.push({ key: 'back', row: 4, el: backBtn, activate: back });
+  /* the keys on this page (Barney's choice, 22 November 2026): a grid, where the kit's plaques move through their items in one line.
+     Left and right along a row; up and down between a belt, its glow and the glass below; up from the belts reaches the page's tab,
+     down from the glass reaches Back. A button that can't be pressed is no stop, so the way leads round it. */
+  const sel = (it) => { if (it) ui.select(items.indexOf(it)); }, inRow = (r) => items.filter((it) => it.row === r);
+  const mid = (el) => { const q = el.getBoundingClientRect(); return q.left + q.width / 2; };
+  const nearest = (list, el) => list.reduce((best, it) => (!best || Math.abs(mid(it.el) - mid(el)) < Math.abs(mid(best.el) - mid(el)) ? it : best), null);
+  items.forEach((it) => {
+    if (it.row == null) return;
+    if (it.row === 0) { it.up = () => {}; it.down = () => sel(inRow(1)[0] || inRow(2)[0] || inRow(3)[0]); return; }
+    const row = inRow(it.row), k = row.indexOf(it), cell = cells.find((c) => c.belt === it || c.glow === it);
+    it.left = () => sel(row[k - 1]); it.right = () => sel(row[k + 1]);
+    if (it.row === 1) { it.up = () => sel(items[0]); it.down = () => sel(cell.glow || nearest(inRow(3), it.el)); }
+    else if (it.row === 2) { it.up = () => sel(cell.belt || items[0]); it.down = () => sel(nearest(inRow(3), it.el)); }
+    else if (it.row === 3) {
+      it.up = () => { const over = cells.reduce((best, c, i) => { const e = r4.children[i]; return !best || Math.abs(mid(e) - mid(it.el)) < Math.abs(mid(best.e) - mid(it.el)) ? { c, e } : best; }, null).c; sel(over.glow || over.belt || nearest(inRow(2).concat(inRow(1)), it.el) || items[0]); };
+      it.down = () => sel(items[items.length - 1]);
+    } else { it.up = () => sel(nearest(inRow(3), it.el)); it.down = () => {}; it.left = () => {}; it.right = () => {}; }
+  });
+  if (phone) { foot.style.paddingTop = '8px'; foot.append(soon(), backBtn); }
+  else foot.append(hint('Bought for good. Belt, glow and glass can be changed here before any run.'), backBtn);
+  face.append(head, looks, foot);
   return { panel, items, opts: { back } };
 }
 
@@ -11242,6 +11940,7 @@ LanternBox.game({
     loop: 'Fell The Wandering Rot to begin anew\u2014walk the cursed path once more against darker terrors.', lifeBonus: LIFE_BONUS },
   music: [{ data: () => window.GLOAM_HALLOW_MUSIC_1 }, { data: () => window.GLOAM_HALLOW_MUSIC_2 }],   // kit 0.28.0: looked up when needed, as the soundtrack comes at the end of the file
   place: 'night',
+  crazygames: { accountSave: CG_PIECES.accountSave, earlyTitle: CG_PIECES.earlyTitle, usernameInitials: CG_PIECES.usernameInitials, happyMoments: CG_PIECES.happyMoments },   // kits 0.37.0 to 0.40.0: the CrazyGames build's pieces (CG_PIECES, at the top)
   // step 5d (kit 0.10.0): saved progress through the kit, its Clear's words, and Credits
   save: { version: SAVE_VERSION, fresh: freshRecord, read: readRecord,
     clear: 'Your stolen echo and everything bought at the Echo Shrine will be gone, and the next run starts as a first run, hints and all. High scores and settings stay.' },
@@ -11303,6 +12002,10 @@ LanternBox.game({
     { id: 'lives', name: 'Lives at the start', choices: [['3', 'Three'], ['4', 'Four'], ['5', 'Five']] },   // part G: to reach five quickly
     { id: 'graces', name: 'Graces held', choices: [['none', 'None'], ['strong', 'The three strong'], ['new', 'The five new commons'], ['ward', 'Lantern Ward']] },   // step 5e-6b
     { id: 'reload', name: 'Pause closes the page', toggle: true, note: 'Pausing reloads the page, as a closed tab would, without ending the run.' },   // part C
+    // design system 27, for Barney's four named checks: the Echo Shrine's Cosmetics page here too (in the CrazyGames build it is CG_PIECES.cosmetics);
+    // all bought: every glow and glass to try on, nothing of it saved; and a glow at the design's two strengths
+    { id: 'cosmetics', name: 'Cosmetics page', choices: [['off', 'Off'], ['on', 'On'], ['all', 'On, all bought']] },
+    { id: 'glow', name: "A belt's glow", choices: [['soft', 'Soft'], ['strong', 'Strong']] },
   ] },
 
   start(lb) {
@@ -11334,7 +12037,7 @@ LanternBox.game({
     g.diff = wantCheck(lb) ? null : diffFor(g.run, g.run === 'bare' ? 'normal' : rec.diffs[g.run]);   // design system 25: the run's remembered setting (the choice of run's picker); The Bare Reckoning always Grim; the play check none
     g.loop = t.loop === '2' ? 2 : 1;               // step 5e-5: the first loop, each place in its own order (Testing can start in the second)
     g.orders = g.loop === 2 ? PLACES.map((p) => shuffledOrder(lb, lb.world.level(p).order)) : null;
-    lb.world.belt(rec.belt);
+    wearLook(lb, rec);              // his belt, and with the Cosmetics its glow and his lantern's glass (design system 27)
     const tg = { strong: ['grave', 'reverb', 'marrow'], new: ['quick', 'draught', 'robber', 'steady', 'thief'], ward: ['ward'] }[t.graces] || [];
     tg.forEach((id) => { g.graces[id] = true; g.bound.push(id); }); heldToKit(g, lb);   // Testing: Graces held from the start
     G = g;
@@ -11509,6 +12212,7 @@ function leavePlace(g, lb) {         // walking on out of the boss's arena: the 
       runEnded(g, lb, 'win');
       Object.assign(o, { words: LOOP_WIN, lifeBonus: each, stolen: { n: b.stolen, daily: b.daily != null, share: shareText(g.run, g.diff) } });
     }
+    if (!g.check) lb.happy();          // kit 0.40.0: a happy moment at every win of the journey
     lb.win(o);
     return;
   }
@@ -11628,6 +12332,7 @@ function rotUpdate(g, lb, dt) {
       if (!W.barGone && W.dt >= ROT.barOut) { W.barGone = true; lb.hud.boss(null); }
       if (!W.paid && W.dt >= ROT.endLine) {
         W.paid = true;
+        if (W.n === 12 && g.diff === 'hard' && !g.check) happyOnce(lb, 'rot12');   // kit 0.40.0: a happy moment, wave 12 endured on Agony, once
         const pay = W.n + 3 + (g.spareDue || 0); g.spareDue = 0;   // step 5: and 2 for each spare armour picked up meanwhile
         lb.addWisps(pay);
         rotSaveNow(g, lb);              // step 5: how far the run has got, for a page closed after a continue
@@ -12608,6 +13313,7 @@ function bossDamage(g, lb, n, src) {   // src: 'sword' for a blow; else an attac
   // beaten: its card pieces and golden wisp, the bar goes, its sure drop, and its crawlers break up with it
   b.st = 'defeat'; b.t = 0; b.move = null;
   lb.sfx('bossDefeated'); lb.hud.boss(null);
+  if (!g.check && b.place !== PLACES[PLACES.length - 1]) happyOnce(lb, b.place);   // kit 0.40.0: a happy moment the first time each boss is beaten (the last boss's is the win's)
   if (b.place === 'night' && !g.check && g.run !== 'rot' && lb.progress && !lb.progress.rotOpen) { lb.progress.rotOpen = true; lb.saveProgress(); }   // design system 23 (NewRun): The Endless Rot opens, free, with one saved flag
   // part G: a life, or at five lives LIFE_ECHO more echo with the boss's own (one count, one echo sound)
   const full = g.lives >= LIVES_MAX, bossEcho = (BOSS_WISPS + (full ? LIFE_ECHO : 0)) * hard(g, 'echo');   // step 5e-5: doubled in the second loop
