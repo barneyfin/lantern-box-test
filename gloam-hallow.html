@@ -1315,7 +1315,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.45.0';
+  const VERSION = '0.45.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -9338,7 +9338,9 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       const endAt = W.finished ? 0 : 3.6;
       if (W.stage === 'offer') {
         const loopLine = at(txt('p', 'lb-win-loop', winWords.loop || ''), 3.6);
-        const again = at(button('Go round again', true, true), 3.6), fin = at(button('Finish'), 3.6);
+        // kit 0.45.1 (design system version 30): the button's words are "Go round again (harder)" (Barney's, the brackets and the
+        // small h his); the line above it, Finish and the computer's hint keep theirs
+        const again = at(button('Go round again (harder)', true, true), 3.6), fin = at(button('Finish'), 3.6);
         again.style.width = '100%'; fin.style.width = '100%';
         items.push({ el: again, activate: winAgain }, { el: fin, activate: winFinish });
         tail.push(loopLine, again, fin);
