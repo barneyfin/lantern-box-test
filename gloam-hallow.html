@@ -11420,17 +11420,22 @@ const LOOK_PRICE = { glow: 450, glass: 300 };          // Barney's starting figu
 // not here because two of them are colours' names, which a game never writes (the build's rule)
 const glassIds = (lb) => lb.world.LOOKS.glasses, glass0 = (lb) => glassIds(lb)[0];
 const BELT_IDS = ['scarf'].concat(BELTS);              // scarf: the red belt he starts in
-const cosmeticsOn = (lb) => (lb.portal === 'crazygames' && CG_PIECES.cosmetics) || !!(lb.test && (lb.test.cosmetics === 'on' || lb.test.cosmetics === 'all'));
+// Barney, 23 November 2026 ("Do it"; "Yes start include the repaint"): the playtest's copy follows the CrazyGames build's switches for
+// three pieces, so friends and family play what CrazyGames players will: the Cosmetics page, a bought look kept at Picture: Fastest, and
+// the pictures painted again after a graphics reset. The playtest has no Testing, so nothing else could show them there. (PLAYTEST is
+// named further down; these three are only asked once the page is set up.) The test link is not the playtest: Testing decides there
+const likeCrazyGames = (lb) => lb.portal === 'crazygames' || PLAYTEST;
+const cosmeticsOn = (lb) => (likeCrazyGames(lb) && CG_PIECES.cosmetics) || !!(lb.test && (lb.test.cosmetics === 'on' || lb.test.cosmetics === 'all'));
 const looksAll = (lb) => !!(lb.test && lb.test.cosmetics === 'all');   // Testing: every glow and glass as if bought, to try on; nothing of it is saved
 // the game's one ask of the kit for a bought look at Picture: Fastest (kit 0.43.0; HANDOVER-design-28.md, part 5), only where the Cosmetics
 // page is on: in the CrazyGames build as CG_PIECES.fastestLook says, in the arcade's own build only through Testing's row (the test
 // link, for Barney's Fire). It answers false, true, or 'over' (the coloured lights laid over the scene)
 // the game's ask that the kit paints its kept pictures again after a graphics reset (kit 0.45.0): in the CrazyGames build as
 // CG_PIECES.repaint says, in the arcade's own build only through Testing's row (the test link)
-const repaintOn = (lb) => (lb.portal === 'crazygames' ? !!CG_PIECES.repaint : !!(lb.test && lb.test.repaint === 'on'));
+const repaintOn = (lb) => (likeCrazyGames(lb) ? !!CG_PIECES.repaint : !!(lb.test && lb.test.repaint === 'on'));
 const fastestLook = (lb) => {
   if (!cosmeticsOn(lb)) return false;
-  const v = lb.portal === 'crazygames' ? CG_PIECES.fastestLook : lb.test ? lb.test.fastest : false;
+  const v = likeCrazyGames(lb) ? CG_PIECES.fastestLook : lb.test ? lb.test.fastest : false;
   return v === 'over' ? 'over' : v === true || v === 'on';
 };
 const TRIAL_LOOKS = { glow: {}, glass: {}, lamp: '' };
