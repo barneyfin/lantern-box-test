@@ -1316,7 +1316,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.47.0';
+  const VERSION = '0.47.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -5235,7 +5235,7 @@ function drawHUD(x,W){
    black card cut-outs like the monsters, blacks graded charcoal to ink inside ink edges, ember eyes, mouths, rim and glow, a few
    lines lit faintly in the level's colour, and the level-coloured glow behind. The helpers just below are round 12's, kept because
    the new bosses use some of them; the bosses themselves follow BOSS_AURA further down. ============================== */
-const BOSS_NAME={night:"The Veiled Ghost",storm:"The Tentacled Skull",dawn:"The Moor Mother",mist:"The Gaping Tree"} /* version 8: names, so capitalised (Barney, 4 November 2026) */; // the witch replaced by the moor mother (version 6)
+const BOSS_NAME={night:"The Veiled Ghost",storm:"The Tentacled Skull",dawn:"The Moor Mother",mist:"The Gaping Tree",yule:"The Sprung Horror"} /* version 8: names, so capitalised (Barney, 4 November 2026) */; // the witch replaced by the moor mother (version 6)
 function fillP(x,col,pts){x.fillStyle=col;x.beginPath();pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();x.fill();}
 function strokeP(x,col,w,pts){x.strokeStyle=col;x.lineWidth=w;x.beginPath();pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.stroke();}
 function cLimb(x,col,ax,ay,segs){x.fillStyle=col;return limb(x,ax,ay,segs);}
@@ -7881,7 +7881,7 @@ function makeTools(env){
       // began), targets (where a slam, roots or crawlers come; the fights' own places round him if left out) }; facing (1 facing left as drawn, -1
       // turned round); hit (seconds since a blow: it jolts back and its rim flares once, 0.13 s). Returns its phase, where it is (x) and which way it
       // faces after the move (the moor mother's leap turns her). Its warnings and its reach are drawn after the fore layer, in world.end().
-      const f=frame("boss"),s=f.s,lv=f.level;
+      const f=frame("boss"),s=f.s,lv=f.level==="yule"?"mist":f.level;   // kit 0.47.1 (design system 31): The Sprung Horror fights the Gaping Tree's fight; until step K2b it is drawn as the tree
       if(o.defeat==null){
         const name=o.arrive!=null?"arrive":o.attack?o.attack.name:null,u=o.arrive!=null?o.arrive:o.attack?(o.attack.t||0):0,fl=o.facing||1;
         const design=name?((BS_DESIGN[lv]&&BS_DESIGN[lv][name])||1):1,mir=fl!==design,X0=o.x,m=x=>mir?2*X0-x:x; // a turned boss: the move mirrored about it
@@ -7924,6 +7924,7 @@ function makeTools(env){
     potion(x,y){const f=frame("potion");drawPotion(f.ctx,x-f.camX,y==null?f.gy(x):y,f.t,f.rm);},
     stringLights(ax,ay,qx,qy,bx,by,seed){ // lights along a curve from (ax, ay) to (bx, by), its string drawn by whatever holds it up
       const f=frame("stringLights");
+      if(f.level==="yule"){drawFairy(f.ctx,[ax-f.camX,ay,qx-f.camX,qy,bx-f.camX,by,seed||0],f.t,"yule");return;}   // kit 0.47.1: the hamlet's coloured bulbs
       drawFairyKit(f.ctx,[ax-f.camX,ay,qx-f.camX,qy,bx-f.camX,by,seed||0],f.t,f.level,f.s);
     },
     // for the test page's readout
