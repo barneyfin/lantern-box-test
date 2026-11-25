@@ -1316,7 +1316,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.47.1';
+  const VERSION = '0.48.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -3991,6 +3991,347 @@ class Scene{
     }
   }
 }
+
+/* ---------- kit 0.48.0 (design system 31, the Cast part; The Wretched Noel, step K2a): the cast's rigs, Cast/common.js and the five rigs word for word ----------
+   The rigs are the spec for how each puppet moves: rig(P) gives a puppet's pose (a rig for drawCastRig) for P, worked out from the game's own
+   monster or boss at that moment (world.monster, world.boss). They sit in one closure so their helpers (ease, rot, place, TAU ...) can't clash with
+   the kit's, and see an empty "window" in it, so the design rounds' review switches (window.TONE, LINEMODE, GLOWCUT, GSINK, GHIDE, LITOPT) all
+   stay at the approved look. Changed from the files: no window.MON; each export line hands out what the kit needs (the crawler's lunge; the
+   gonk's skeleton, scurry, spit, leap and its full rig); the gonk's film tables are worked out only if its film loop is asked for (the kit never does) */
+const CAST_RIG=(function(window){
+// shared by the puppet films: the kit's easing and helpers, and a part's point placed as drawCastRig places it (facing right, lines from the foot)
+const TAU=Math.PI*2,ease=u=>u*u*(3-2*u),clamp01=u=>Math.max(0,Math.min(1,u)),lerpN=(a,b,u)=>a+(b-a)*u;
+const rot=(a,x,y)=>{const c=Math.cos(a),s=Math.sin(a);return[x*c-y*s,x*s+y*c];};
+const place=(k,pt,p)=>{let u=p[0]-pt.pin[0],v=p[1]-pt.pin[1];if(pt.shx)u+=pt.shx*v;   // as drawCastRig places it (shx, pre: see cast_block.js)
+  if(pt.pre){const c0=Math.cos(pt.pre),s0=Math.sin(pt.pre),a=(u*c0+v*s0)*(pt.sx||1)*k,b=(-u*s0+v*c0)*(pt.sy||1)*k;u=a*c0-b*s0;v=a*s0+b*c0;}else{u*=(pt.sx||1)*k;v*=(pt.sy||1)*k;}
+  const r=rot(pt.ang||0,u,v);return[pt.at[0]+r[0],pt.at[1]+r[1]];};
+const WX=336;   // the wanderer's place in the 1200-wide view, as in mock-up 26's films
+
+// the level's colour for the puppets' lit lines (25 November, for Barney to choose): A the hamlet's frost white-lilac, B the string lights' four colours taken in turn
+const LITC=()=>window.LITOPT==='B'?["#fff1c8","#86b877","#7fa6e8","#d98ab8"]:"#d6deff";
+const arcPts=(cx,cy,rx,ry,a0,a1,n)=>{const o=[];for(let i=0;i<=n;i++){const a=a0+(a1-a0)*i/n;o.push(cx+Math.cos(a)*rx,cy+Math.sin(a)*ry);}return o;};
+// The gingerbread man as a cut-out puppet from his parts sheet (24 November 2026, 23:50). Barney, 25 November 01:14: his legs at 0.7 of the sheet's
+// drawn leg, 0.75 as wide; one silhouette, the front arm's line kept, the arms hanging out a little at rest. Moved here from mock-up 26's film tool
+// (motion.mjs, option D, with {legSy:0.7, legSx:0.75, merge:true, armOut:0.3, frontLine:true}); it draws pixel for pixel as that film did.
+// Pieces (gingerParts, units of piece 1's height): 1 the whole figure (for fitting), 2 the body, 3 and 4 the arms, 5 and 6 the legs. Sizes against the
+// sheet, measured: body and arms 0.825 (the body piece is drawn 21% big: eyes 0.143 apart against piece 1's 0.118); legs 0.7 as long and 0.75 as wide.
+// Timings are the ghoul's (lantern-box/games/gloam-hallow and kit/lantern-box.js): its walk, speed 90 x max(0, sin(4.5 t))^2; it swipes from 105 away;
+// the swipe is moSwipeKit (wind-up 0.45 s, the blow in four steps to 0.70 s with a lurch of 30, follow-through to 0.95 s, recovery to 1.35 s), on the
+// kit's own arm angles. No detail lines: his sheet's icing gives him his own.
+const GB=(()=>{
+  const who='gingerParts',STRIKE=105,LURCH=30,w4=4.5,CYC=2*Math.PI/w4,HALF=Math.PI/w4,PERHALF=90*HALF/2,NSTEP=4,TW=NSTEP*CYC,DEND=NSTEP*PERHALF,
+    X0=WX+STRIKE+DEND,HOLD1=0.35,SW=1.35,HOLD2=0.6,LOOP=TW+HOLD1+SW+HOLD2;
+  function walked(t){const full=Math.floor(t/CYC);let r=t-full*CYC;if(r>HALF)r=HALF;return full*PERHALF+90*(r/2-Math.sin(2*w4*r)/(4*w4));}
+  function swipeDx(u){return u<0.45?0:u<0.7?-LURCH*ease(Math.floor((u-0.45)/0.25*4)/4):-LURCH;}            // the kit's moSwipeKit
+  function state(t){
+    if(t<TW){const d=walked(t);return{x:X0-d,walk:d,phase:'walk'};}
+    t-=TW;if(t<HOLD1)return{x:WX+STRIKE,walk:DEND,phase:'stand'};
+    t-=HOLD1;if(t<SW){const dx=swipeDx(t);return{x:WX+STRIKE+dx,walk:DEND-dx,phase:'swipe'};}
+    return{x:WX+STRIKE-LURCH,walk:DEND+LURCH,phase:'stand'};}
+  function moGaitFoot(d,L,beta,lift,off,n){const ph=((d/L+off)%1+1)%1;if(ph<beta)return{ahead:beta*L/2-ph*L,up:0,u:-1};   // the kit's, word for word
+    let u=(ph-beta)/(1-beta);if(n>0)u=Math.min(1,(Math.floor(u*n)+0.5)/n);const e=u*u*(3-2*u);return{ahead:-beta*L/2+e*beta*L,up:Math.sin(Math.PI*u)*lift,u};}
+  const GP={h:94,body:{pose:2,s:0.825,hips:[[-0.181,-1.055],[0.089,-1.074]],sh:[[-0.282,-1.52],[0.244,-1.369]]},
+    arms:[{pose:4,s:0.825,pin:[-0.036,-0.682]},{pose:3,s:0.825,pin:[-0.03,-0.719]}],legs:[{pose:6,sx:0.7,sy:0.5,pin:[-0.011,-0.575]},{pose:5,sx:0.7,sy:0.5,pin:[-0.001,-0.575]}],gaitL:44};
+  function moSwipe(u){const lerp=(a,b,v)=>a+(b-a)*v,rest=[-0.4,-0.08],wind=[2.75,3.1],hitA=[-1.55+TAU,-1.35+TAU],fol=[-0.75+TAU,-0.35+TAU],rest2=[-0.4+TAU,-0.08+TAU];   // the kit's, word for word (arm angles and lean)
+    if(u<0||u>=1.35)return null;
+    if(u<0.45){const v=ease(u/0.45);return{a:[lerp(rest[0],wind[0],v)],lean:0.08*v};}
+    if(u<0.7){const w=(u-0.45)/0.25,stp=Math.floor(w*4)/4,v=ease(stp);return{a:[lerp(wind[0],hitA[0],v)],lean:-0.12*v};}
+    if(u<0.95){const v=ease((u-0.7)/0.25);return{a:[lerp(hitA[0],fol[0],v)],lean:-0.12*(1-v)};}
+    const v=ease((u-0.95)/0.4);return{a:[lerp(fol[0],rest2[0],v)],lean:0};}
+  // the settings Barney approved (01:14): legs 0.7 long and 0.75 wide against the sheet, one silhouette, the front arm's line kept, arms out 0.3 at rest
+  const O={legSy:0.7,legSx:0.75,merge:true,armOut:0.3,frontLine:true,jointR:10};
+  // P: {walk (lines walked, for the legs), swipe (seconds into the swipe)}
+  function rig(P){P=P||{};const walk=P.walk,S=P.swipe!=null?moSwipe(P.swipe):null,H=GP.h,B=GP.body,Ll=O.legSy*0.575*H,hm=[(B.hips[0][0]+B.hips[1][0])/2,(B.hips[0][1]+B.hips[1][1])/2];
+    const th=[0,0],sw=[0,0],pl=[true,true];
+    if(walk!=null)[0,0.5].forEach((off,i)=>{const f=moGaitFoot(walk,GP.gaitL,0.5,0,off,0);th[i]=Math.asin(Math.max(-0.9,Math.min(0.9,f.ahead/Ll)));pl[i]=f.u<0;sw[i]=f.u<0?0:Math.sin(Math.PI*f.u);});
+    else{th[0]=Math.asin(-5/Ll);th[1]=Math.asin(5/Ll);}
+    let hip=0;for(let i=0;i<2;i++)if(pl[i])hip=Math.max(hip,Ll*Math.cos(th[i]));if(!hip)hip=Ll;
+    const s1=walk!=null?Math.sin(walk/GP.gaitL*Math.PI*2):0,bang=0.03*s1-(S?S.lean:0),at=[0,-hip];
+    const wp=pin=>{const r=rot(bang,(pin[0]-hm[0])*B.s*H,(pin[1]-hm[1])*B.s*H);return[at[0]+r[0],at[1]+r[1]];};
+    const leg=i=>({who,pose:GP.legs[i].pose,sx:O.legSx,sy:O.legSy*(1-0.12*sw[i]),pin:GP.legs[i].pin,at:wp(B.hips[i]),ang:-th[i]});
+    const arm=(i,ang)=>({who,pose:GP.arms[i].pose,sx:GP.arms[i].s,sy:GP.arms[i].s,pin:GP.arms[i].pin,at:wp(B.sh[i]),ang});
+    return{rig:{h:H,merge:O.merge,frontLine:O.frontLine,jointR:O.jointR,parts:[arm(0,O.armOut+0.25*s1),leg(0),leg(1),{who,pose:B.pose,sx:B.s,sy:B.s,pin:hm,at,ang:bang},
+      arm(1,(S?S.a[0]+0.4:-0.25*s1)-O.armOut)]}};}
+  function frame(t){const s=state(t),u=s.phase==='swipe'?t-TW-HOLD1:null;return{cast:[{who,pose:1,x:s.x,rig:rig({walk:s.walk,swipe:u}).rig}],tag:s.phase};}
+  return{rig,frame,LOOP,moSwipe,name:'gingerbread man'};
+})();
+// the present crawler as a cut-out puppet from his parts sheet (round 2, 25 November 2026). Pieces (crawlerParts, units of piece 1's height):
+// 1 the whole figure (for fitting), 2 the box (its black bow made cream on a copy of the sheet, to match piece 1), 3 and 5 legs (each used twice, mirrored for the back pair),
+// 4 two crossed legs (not used): six legs as his design has (three pairs: front, middle, back), legs 3 and 5 each used three times. The box is drawn at 0.92 (its eyes and width against piece 1), the legs at 0.6 (so the box rides as high as in piece 1).
+// The lid (with the eyes and bow) is cut from the box and lifts at its back corner as the mouth opens (the kit's jaw).
+// Timings are the game's: bursts at 140 lines a second (moving while walkT % 0.7 < 0.35); from 125 away, moLunge: crouch 0.35 s, the lunge to 0.68 s, recovery to 0.88 s.
+const CR=(()=>{
+  const k=36.575,who='crawlerParts',SB=0.92,SL=0.6,F=[0.2639,-0.13],BK=[-0.2175,-0.2055],M=[(F[0]+BK[0])/2,(F[1]+BK[1])/2];
+  const LID=[-0.6206,-1.0093,0.6294,-1.0093,0.6294,-0.5663,0.4079,-0.5608,-0.3516,-0.4524,-0.6206,-0.4524],HINGE=[-0.335,-0.452];
+  const LEG={3:{pin:[-0.2271,-0.5144],foot:[0.116,0]},5:{pin:[-0.2333,-0.5008],foot:[0.3,-0.003]}};
+  // the legs: [piece, hip (F front, MD middle, BK back), mirrored, gait group (two tripods), far, turned (radians, the middle pair more upright)]
+  const MD=[(F[0]+BK[0])/2+0.02,(F[1]+BK[1])/2+0.02];
+  const LEGS=[[5,BK,true,1,1,0],[5,MD,true,0,1,-0.25],[5,F,false,1,1,0],[3,BK,true,0,0,0],[3,MD,false,1,0,0.3],[3,F,false,0,0,0]];
+  const STEP=28,AMP=0.35,PIV=[0,-12];
+  // P: {walked (lines, for the legs' scuttle), legs: 'tuck' | 'leap' | null, sx, sy, tilt, jaw, hot}
+  function rig(P){P=P||{};
+    const ph=(P.walked||0)/STEP*TAU,legAng=g=>P.legs==='leap'?(g?0.35:-0.45):P.legs==='tuck'?(g?-0.15:0.1):AMP*Math.sin(ph+g*Math.PI)*(P.walked!=null?1:0);
+    const legRot=L=>{const lg=LEG[L[0]],sx=(L[2]?-1:1)*SL,a=(L[2]?-1:1)*legAng(L[3])+(L[5]||0),f=rot(a,(lg.foot[0]-lg.pin[0])*sx*k,(lg.foot[1]-lg.pin[1])*SL*k);return{a,sx,f};};
+    const R=LEGS.map(legRot);
+    // the box rides so the lowest foot meets the ground: each hip's height under the box's middle, plus how far its foot reaches down
+    const hipOff=h=>[(h[0]-M[0])*SB*k,(h[1]-M[1])*SB*k];let hipH=0;LEGS.forEach((L,i)=>{hipH=Math.max(hipH,R[i].f[1]+hipOff(L[1])[1]);});
+    const sx=P.sx||1,sy=P.sy||1,tl=-(P.tilt||0),G=p=>{const r=rot(tl,(p[0]-PIV[0])*sx,(p[1]-PIV[1])*sy);return[PIV[0]+r[0],PIV[1]+r[1]];};
+    const B={who,pose:2,sx:SB*sx,sy:SB*sy,pin:M,at:G([0,-hipH]),ang:tl,clip:[{out:LID}]};
+    const bw=p=>place(k,{pin:M,at:[0,-hipH],ang:0,sx:SB,sy:SB},p);
+    const lid={who,pose:2,sx:SB*sx,sy:SB*sy,pin:HINGE,at:G(bw(HINGE)),ang:tl-(P.jaw||0)*0.45,clip:[{in:LID}]};
+    const legs=LEGS.map((L,i)=>{const lg=LEG[L[0]],off=L[4]?[-1.2,-0.8]:[0,0],h=bw(L[1]);return{who,pose:L[0],sx:R[i].sx*sx,sy:SL*sy,pin:lg.pin,at:G([h[0]+off[0],h[1]+off[1]]),ang:R[i].a+tl};});
+    return{rig:{h:k,merge:true,frontLine:false,hot:P.hot||0,parts:legs.concat([B,lid])}};}
+  // the loop: three bursts in (147 lines), then from 125 away the lunge; it ends past the wanderer, as the game's lunge carries it
+  const RANGE=125,NB=3,CYC=0.7,MOV=0.35,SPEED=140,TB=NB*CYC,DIST=NB*MOV*SPEED,TCR=0.35,TLU=0.68,TRE=0.88,HOLD=0.7,LOOP=TB+TRE+HOLD,X0=WX+RANGE+DIST;
+  const moved=t=>{const n=Math.floor(t/CYC),r=t-n*CYC;return(n*MOV+Math.min(r,MOV))*SPEED;};
+  // the game's moLunge, s seconds in: the offsets (dx, dy) are in its own frame, after its squash and tilt (_pivot), so they are turned and stretched too
+  function lunge(s){let o;if(s<TCR){const e=ease(s/TCR);o={sy:1-0.14*e,sx:1+0.06*e,tilt:0.08*e,dx:5*e,dy:0,jaw:0.35*(s/TCR),hot:e,legs:'tuck'};}
+    else if(s<TLU){const v=(s-TCR)/(TLU-TCR);o={sx:1.14,sy:0.9,tilt:-0.12+0.2*v,dx:lerpN(5,-162,v),dy:-16*4*v*(1-v),jaw:1,hot:1-v*0.4,legs:'leap'};}
+    else{const u=clamp01((s-TLU)/(TRE-TLU));o={sx:1,sy:1-0.08*(1-u),tilt:0,dx:lerpN(-162,-170,ease(u)),dy:0,jaw:0.3*(1-u),hot:0.2*(1-u)};}
+    const c=Math.cos(o.tilt),sn=Math.sin(o.tilt),wx=c*o.sx*o.dx-sn*o.sy*o.dy,wy=sn*o.sx*o.dx+c*o.sy*o.dy;o.wx=wx;o.wy=wy;return o;}
+  function frame(t){let P={},x=X0,tag='scuttle';
+    if(t<TB){const d=moved(t);x=X0-d;P={walked:d};}
+    else if(t<TB+TRE){const o=lunge(t-TB);x=WX+RANGE+o.wx;P=o;tag=t-TB<TCR?'crouch':t-TB<TLU?'lunge':'recover';}
+    else{const o=lunge(TRE);x=WX+RANGE+o.wx;P={};tag='stand';}
+    const r=rig(P).rig;if(P.wy)r.parts.forEach(p=>{p.at=[p.at[0],p.at[1]+P.wy];});
+    return{cast:[{who,pose:1,x,rig:r}],tag};}
+  return{rig,frame,LOOP,k,lunge,name:'present crawler'};   // kit: and its lunge
+})();
+// the wind-up toy, second puppet (his parts sheet try 2, 25 November 2026, 07:37: knees and a key that turns). Pieces (windupParts2, units of piece 1's height):
+// 1 the whole figure (for fitting), 2 the body (head, hat, glowing chest; pins at both shoulders and both hips), 3 the key (pin at its stem's end), 4 the upper arm,
+// 5 the forearm with its claws (the short upper arm drawn with it is left out by the tracer), 6 the thigh, 7 the lower leg and boot (the thigh drawn with it, likewise).
+// Every piece is drawn at the sheet's own size (the pieces share one size, 1.32 times the whole figure's: eyes 0.102 apart against 0.077), and the whole stands
+// 194 lines, its settled height (its body is longer than the whole figure's, so at that height its head is 13% smaller than on the whole figure).
+// It walks on the kit's own stepping legs (MO_GAIT.walker, moGaitFoot, moIK), the walker's stride and timing, sized to its legs; the crouch and stoop bend its knees
+// to the walker's depths scaled to its legs (0.68), the stoop a third of the walker's. The key turns about its stem, half a turn a second: it squashes across the stem and flips, as a flat key does.
+const WU2=(()=>{
+  const k=128.3,who='windupParts2',HIPS=[[0.017,-0.1051],[-0.1217,-0.1]],HIPMID=[-0.05235,-0.10255],SH=[[0.1445,-0.3872],[-0.1641,-0.4684]],KEY_AT=[-0.12,-0.55];
+  const UA={pin:[-0.0478,-0.5942],el:[0.0648,-0.339],a0:0.416},FA={pin:[-0.17,-0.3918],a0:0.923,tip:[0.258,-0.119]},KEY={pin:[0.1586,-0.346],pre:-2.132};
+  const TH={pin:[-0.057,-0.4526],knee:[0.075,-0.244],a0:0.564},SN={pin:[-0.005,-0.3627],a0:0};
+  // the lines, in each piece's own units: short, staggered and along the piece (vertical on the hat and coat), as on the kit's bosses; lit ones in the level's colour, creases in ink (c 0).
+  // A third fewer at 10:35 (Barney): 16 drawn, from 24. Placed on a measured sheet of each piece, then fitted by tools/linefit.py so each sits inside its piece, clear of its edges, holes and glow (25 November, 09:30)
+  const CH5=["#060508","#17141b","#27232d","#3a3544","#504a5c"];
+  const BODYL=[{c:"lit",pts:[0.075,-0.975,0.085,-0.875],w:1.3},{c:"lit",pts:[-0.0111,-0.9372,-0.0011,-0.8272],w:1.3},{c:"lit",pts:[-0.1401,-0.4583,-0.1456,-0.3923],w:1.3},{c:"lit",pts:[0.1131,-0.424,0.1054,-0.362],w:1.3},{c:"lit",pts:[-0.0496,-0.1383,-0.053,-0.0843],w:1.3}];
+  const UAL=[{c:"lit",pts:[-0.0062,-0.5646,0.0388,-0.4446],w:1.3}],FAL=[{c:"lit",pts:[-0.1682,-0.3913,-0.0682,-0.3313],w:1.3}],THL=[{c:"lit",pts:[-0.0011,-0.4486,0.0639,-0.3286],w:1.3},{c:0,pts:[-0.055,-0.42,-0.025,-0.355],w:1.6}];
+  const SNL=[{c:"lit",pts:[-0.0009,-0.2908,-0.005,-0.2],w:1.3}],KEYL=[{c:"lit",pts:[0.07,-0.45,0.14,-0.38],w:1.3}];
+  // the high sweep stoops a third as far as the walker's (Barney, 25 November 13:11, "sweep as recommended"): the kit's full stoop put its claws 18 lines
+  // into the ground at the blow, where the game's high sweep leaves 51 above the ground for a roll under it; at 0.3 they stay 53 above (tools/size.mjs --scan)
+  const STOOP=0.3;
+  const L1=0.2469*k,L2=0.3627*k,SC=0.68,G={L:64,beta:0.62,lift:13*SC,hip:0.97*(L1+L2),drop:5*SC,sink:1,stand:[7,-7]},HK=HIPS.map(h=>-h[0]*k);
+  function moIK(ax,ay,tx,ty,l1,l2){let dx=tx-ax,dy=ty-ay,d=Math.hypot(dx,dy);const mx=(l1+l2)*0.998,mn=Math.abs(l1-l2)+0.5,q=d>mx?mx/d:d<mn?mn/d:1;dx*=q;dy*=q;d*=q;
+    const base=Math.atan2(dx,dy),A=Math.acos(Math.max(-1,Math.min(1,(l1*l1+d*d-l2*l2)/(2*l1*d)))),a1=base-A,kx=ax+Math.sin(a1)*l1,ky=ay+Math.cos(a1)*l1;return[a1,Math.atan2(ax+dx-kx,ay+dy-ky)];}
+  function moGaitFoot(d,L,beta,lift,off){const ph=((d/L+off)%1+1)%1;if(ph<beta)return{ahead:beta*L/2-ph*L,up:0,u:-1};
+    const u=(ph-beta)/(1-beta),e=u*u*(3-2*u);return{ahead:-beta*L/2+e*beta*L,up:Math.sin(Math.PI*u)*lift,u};}
+  // the kit's moLegs, on level ground, in the kit's frame (facing left): where each foot goes and how far the hips sink
+  function legs(walk,lowMin){const feet=[0,0.5].map((off,i)=>{const f=walk!=null?moGaitFoot(walk,G.L,G.beta,G.lift,off):{ahead:G.stand[i],up:0,u:-1};return{i,ax:-f.ahead+HK[i],ay:G.sink-f.up,planted:f.u<0};});
+    const R=(L1+L2)*0.975;let low=Math.max(lowMin,G.drop);for(const f of feet)if(f.planted){const dx=f.ax-HK[f.i];low=Math.max(low,f.ay-Math.sqrt(Math.max(0,R*R-dx*dx))+G.hip);}return{low,feet};}
+  const kitRest=i=>i?[0.5,0.12,-0.3]:[-0.5,-0.12,0.3],swing=(i,s1)=>i?[0.5+0.2*s1,0.12-0.2*s1,-0.3]:[-0.5-0.2*s1,-0.12+0.2*s1,0.3];
+  // P: {walk, arms, crouch, stoop, hot, trail, slashA, key (radians turned)}
+  function rig(P){P=P||{};const st=(P.stoop||0)*STOOP,Lg=legs(P.walk,SC*Math.max((P.crouch||0)*46,st*32)),bang=st*0.75;
+    const B={who,pose:2,pin:HIPMID,at:[-HIPMID[0]*0+HIPMID[0]*k,-G.hip+Lg.low],ang:bang},bw=p=>place(k,B,p);
+    const s1=P.walk!=null?Math.sin(P.walk/64*TAU)*0.8:0,arms=P.arms||[swing(0,s1),swing(1,s1)];
+    const limb=i=>{const an=arms[i],up={who,pose:4,pin:UA.pin,at:bw(SH[i]),ang:bang+UA.a0+an[0]},
+        fo={who,pose:5,pin:FA.pin,at:place(k,up,UA.el),ang:bang+FA.a0+0.75*an[1]+0.25*an[2]};return{up,fo,hand:place(k,fo,FA.tip)};};
+    const leg=i=>{const f=Lg.feet[i],h=bw(HIPS[i]),ik=moIK(-h[0],h[1],f.ax,f.ay,L1,L2),th={who,pose:6,pin:TH.pin,at:h,ang:TH.a0+ik[0]};
+      return[th,{who,pose:7,pin:SN.pin,at:place(k,th,TH.knee),ang:SN.a0+ik[1]}];};
+    const ph=P.key||0,key={who,pose:3,pin:KEY.pin,at:bw(KEY_AT),ang:bang,pre:KEY.pre,sx:1,sy:Math.cos(ph)};
+    const A0=limb(0),A1=limb(1),G0=leg(0),G1=leg(1);
+    const r={h:k,merge:true,frontLine:true,front:2,jointR:9,hot:P.hot||0,trail:P.trail?{pts:P.trail,w:5,a:P.slashA==null?1:P.slashA}:null,
+      parts:[A0.fo,A0.up,G0[0],G0[1],G1[0],G1[1],key,B,A1.up,A1.fo]};
+    if(window.TONE!==false){ // a bit of detail to break up its black (25 November): each piece graded on its own inside the one silhouette, ink bleeding in from the outline, a few lines
+      r.tone={lit:LITC(),edge:4,edgeA:0.65,litA:0.5,stops:[[0,CH5[4]],[0.55,CH5[3]],[1,CH5[1]]]};B.lines=BODYL;key.lines=KEYL;r.tone.lineMode=window.LINEMODE||'groove';  /* the detail lines: ink with a faint pale edge, Barney's choice, 25 November 10:07 */
+      [A0,A1].forEach(a=>{a.up.lines=UAL;a.fo.lines=FAL;});[G0,G1].forEach(g=>{g[0].lines=THL;g[1].lines=SNL;});}
+    return{rig:r,hand:A0.hand};}
+  // the kit's two sweeps, word for word (MO_DUEL.walker's low sweep, MO_STOOP's high one)
+  const back=i=>i?[1.1,1.3,1.6]:[0.9,1.2,1.5],lo=i=>i?[-1.0,-1.25,-1.45]:[-1.1,-1.35,-1.5],up=i=>i?[2.75,2.7,2.45]:[2.4,2.55,2.35],
+    dn=i=>i?[-1.45+TAU,-1.3+TAU,-1.15+TAU]:[-1.55+TAU,-1.37+TAU,-1.2+TAU],rest2=i=>kitRest(i).map(a=>a+TAU),
+    mix=(A,B,v)=>[0,1].map(i=>A(i).map((a,q)=>lerpN(a,B(i)[q],v)));
+  const handAt=(arms,P)=>rig(Object.assign({},P,{arms,trail:null})).hand;
+  function low(s){if(s<0.5){const v=ease(s/0.5);return{arms:mix(kitRest,back,v),crouch:0.75*v,hot:v};}
+    if(s<0.8){const u=(s-0.5)/0.3,stp=Math.floor(u*4)/4,v=ease(stp),tr=[];for(let q=0;q<=8;q++){const w=ease(Math.min(stp,q/8));tr.push(handAt(mix(back,lo,w),{crouch:0.75}));}
+      return{arms:mix(back,lo,v),crouch:0.75,hot:1,trail:tr.slice(Math.max(0,Math.round(stp*8)-5),Math.round(stp*8)+1)};}
+    const v=ease(clamp01((s-0.8)/0.45));return{arms:mix(lo,kitRest,v),crouch:0.75*(1-v),hot:0.3*(1-v),slashA:Math.max(0,1-v*2),trail:[0.6,0.8,1].map(q=>handAt(mix(back,lo,q),{crouch:0.75}))};}
+  function high(s){if(s<0.5){const v=ease(s/0.5);return{arms:mix(kitRest,up,v),hot:v};}
+    if(s<0.8){const stp=Math.min(1,Math.floor((s-0.5)/0.3*4)/3),v=ease(stp),tr=[];for(let q=0;q<=8;q++){const w=ease(Math.min(stp,q/8));tr.push(handAt(mix(up,dn,w),{stoop:w}));}
+      return{arms:mix(up,dn,v),stoop:v,hot:1,trail:tr.slice(Math.max(0,Math.round(stp*8)-5),Math.round(stp*8)+1)};}
+    const u=(s-0.8)/0.5,w=ease(clamp01((u-0.16)/0.84));return{arms:mix(dn,rest2,w),stoop:1-w,hot:0.3*(1-w),slashA:1-clamp01(u/0.4),trail:[0.6,0.8,1].map(q=>handAt(mix(up,dn,q),{stoop:q}))};}
+  const RANGE=100,WALK=96,TW=WALK/32,H1=0.35,TL=1.25,H2=0.5,TH2=1.3,H3=0.7,LOOP=TW+H1+TL+H2+TH2+H3;
+  function frame(t){let P={},x=WX+RANGE,tag='walk';
+    if(t<TW){P={walk:t*32};x=WX+RANGE+WALK-t*32;}
+    else if(t<TW+H1){P={};tag='stand';}
+    else if(t<TW+H1+TL){P=low(t-TW-H1);tag='low sweep';}
+    else if(t<TW+H1+TL+H2){P={};tag='stand';}
+    else if(t<TW+H1+TL+H2+TH2){P=high(t-TW-H1-TL-H2);tag='high sweep';}
+    else{P={};tag='stand';}
+    P.key=t*Math.PI;
+    return{cast:[{who,pose:1,x,rig:rig(P).rig}],tag};}
+  return{rig,frame,LOOP,k,low,high,name:'wind-up toy'};
+})();
+// the gonk, second puppet (his parts sheet try 3, 25 November 2026, 07:36). Pieces (gonkParts2, units of piece 1's height; pieces 1 and 2 line up exactly):
+// 1 the whole figure (for fitting), 2 the body with its whole hat (curl and all), beard and cloak, a pin at the shoulder, 3 the arm (shoulder to wrist; its open hand
+// cut off at the wrist pin), 4 the staff with its own gripping fist and cuff (pinned at the cuff to the arm's wrist), 5 the lantern (drawn at 0.8: glass 0.133 tall against 0.108),
+// 6 a small boot (at 0.75; two of them, flicking out under the hem). 5 and 6 were traced straight from the sheet: the tracer dropped them, as they float above their bars.
+// It scurries (07:30, Barney): the mouth-hat's own start-stop (moving while sin(5.72 t) > 0, at 110), a quick patter, the cloak trailing as it moves and swinging past
+// upright when it stops (the lower cloak slid sideways in three bands from the mouth down, so no seam shows); the lob on the spit's clock, the staff blow on the bite's.
+const GK=(()=>{
+  const k=74,who='gonkParts2',SH=[-0.0525,-0.5119],ARM={pin:[-0.0079,-0.6663],wrist:[0.0096,-0.2851]},ARMCLIP=[-0.3,-1,0.3,-1,0.3,-0.272,-0.3,-0.272];
+  const ST={cuff:[-0.1637,-0.3276],fist:[-0.0217,-0.371],hook:[0.1246,-0.6765]},LS=0.8,LPIN=[0.0003,-0.6236],LMID=[0,-0.3],FS=0.75,FPIN=[-0.0493,-0.168];
+  const a0=Math.atan2(ARM.wrist[0]-ARM.pin[0],ARM.wrist[1]-ARM.pin[1]),LL=(0.6236-0.3)*LS*k,GRAV=600;
+  // the cloak's bands: [top, bottom] in the body's units, and how far each line has slid (a share of the hem's slide)
+  const CUT=[-0.42,-0.28,-0.14,0.02],SHARE=[0,0.1,0.4,1.0],BAND=(a,b)=>[-1,a-0.004,1,a-0.004,1,b,-1,b];
+  // the arm and staff, as world directions: arm (radians from hanging, forward positive), staff (radians from upright, forward positive)
+  const REST={arm:1.087,staff:0};
+  const SINK=window.GSINK!=null?window.GSINK:8; // lines the gonk stands below the usual foot line, so its flat hem reaches into the black path and no snow shows under it,
+  // even at the top of its scurry's bob with the cloak trailing (Barney, 25 November 10:35; 8 measured by tools/gapcheck.py over 100 stills of the scurry: 7 still left slivers)
+  const CH6=["#060508","#17141b","#27232d","#3a3544","#504a5c"];
+  const GBODYL=[{c:"lit",pts:[0.15,-0.88,0.17,-0.78],w:1.3},{c:0,pts:[0.03,-0.935,0.04,-0.845],w:1.6},{c:"lit",pts:[-0.12,-0.4,-0.13,-0.26],w:1.3},{c:0,pts:[-0.06,-0.3,-0.065,-0.15],w:1.6},{c:"lit",pts:[-0.1641,-0.2186,-0.1741,-0.1086],w:1.3},{c:0,pts:[0.12,-0.17,0.125,-0.07],w:1.6}];
+  function xform(P){const sx=P.sx||1,sy=P.sy||1,tl=-(P.tilt||0)+(P.lean||0),r=P.rear||0,piv=[0,-10],pr=r>0?[-22,-5]:[22,-5],ra=-r*0.26,rsx=r>0?1-0.05*r:1,rsy=r>0?1+0.12*r:1,dy=P.dy||0;
+    const G=p=>{let q=rot(tl,(p[0]-piv[0])*sx,(p[1]-piv[1])*sy);q=[piv[0]+q[0],piv[1]+q[1]+dy];const w=rot(ra,(q[0]-pr[0])*rsx,(q[1]-pr[1])*rsy);return[pr[0]+w[0],pr[1]+w[1]];};
+    return{G,ang:tl+ra,sx:sx*rsx,sy:sy*rsy};}
+  function skeleton(P){const X=xform(P),B={who,pose:2,pin:[0,0],at:[0,0],ang:0},bw=p=>X.G(place(k,B,p));
+    const arm=P.arm==null?REST.arm:P.arm,stf=P.staff==null?REST.staff:P.staff;
+    const ap={who,pose:3,pin:ARM.pin,at:bw(SH),ang:X.ang+a0-arm,sx:X.sx,sy:X.sy,clip:[{in:ARMCLIP}]};
+    const sp={who,pose:4,pin:ST.cuff,at:place(k,ap,ARM.wrist),ang:X.ang+stf,sx:X.sx,sy:X.sy};
+    return{X,bw,ap,sp,hook:place(k,sp,ST.hook)};}
+  function rig(P,phL,cloak,feet){P=P||{};const S=skeleton(P),X=S.X,hem=(cloak||0);
+    const bands=[];for(let i=0;i<4;i++){const top=i?CUT[i-1]:-1.2,bot=i?CUT[i]:CUT[0],off=i?SHARE[i-1]*hem:0,sh=i?(SHARE[i]-SHARE[i-1])*hem/(CUT[i]-CUT[i-1]):0;
+      bands.push({who,pose:2,pin:[0,i?top:0],at:X.G(place(k,{who,pose:2,pin:[0,0],at:[0,0]},[off,i?top:0])),ang:X.ang,sx:X.sx,sy:X.sy,shx:sh,clip:[{in:BAND(i?top:-1.2,bot)}]});}
+    const fp=(f,i)=>({who,pose:6,pin:FPIN,at:X.G([(0.1+f.dx)*k,(-0.126+f.up)*k]),ang:X.ang,sx:FS*X.sx,sy:FS*X.sy});
+    const F=feet||[{dx:-0.03,up:0},{dx:0.03,up:0}];
+    const lan={who,pose:5,pin:LPIN,at:S.hook,ang:-(phL||0),sx:LS,sy:LS};
+    const r={h:k,merge:true,frontLine:true,front:1,jointR:5,hot:P.hot||0,parts:[fp(F[0]),fp(F[1]),S.ap,S.sp].concat(bands,[lan])};
+    if(window.TONE!==false){r.tone={lit:LITC(),edge:3.5,edgeA:0.6,litA:0.5,stops:[[0,CH6[4]],[0.55,CH6[2]],[1,CH6[0]]]};bands.forEach(b=>b.lines=GBODYL);r.tone.lineMode=window.LINEMODE||'groove';  /* the detail lines: ink with a faint pale edge, Barney's choice, 25 November 10:07 */}  // a little detail (25 November)
+    // no rim or glow along the body's underside where it is sunk into the path (Barney, 25 November 11:08): cut below the ground line, under the hem and a little past its ends,
+    // but the arm, staff and lantern (and the gob) keep their own glow there
+    if(window.GLOWCUT!==false){const hb=bands[3],hx=[-0.52,0.3].map(x=>place(k,hb,[x,0])[0]),x0=Math.min(...hx)-12,x1=Math.max(...hx)+12,yT=-(3+SINK);
+      r.glowCut={poly:[x0,yT,x1,yT,x1,yT+80,x0,yT+80],keep:[2,3,r.parts.length-1]};}
+    if(P.gob){r.parts.push({disk:P.gob.at,r:P.gob.r});if(r.glowCut)r.glowCut.keep.push(r.parts.length-1);r.sparks=[{at:P.gob.at,r:P.gob.r*0.62,a:P.gob.a}];if(P.gob.trail)r.trail={pts:P.gob.trail,w:4,a:0.8};}
+    return{rig:r,lanternAt:place(k,lan,LMID)};}
+  // the clock: scurry in (two runs), the lob from 235, hold, scurry in to 135 (two runs), the staff blow (a leap of 100), hold
+  const HOPW=5.72,CYC=TAU/HOPW,RUN=Math.PI/HOPW,SPEED=110,LOB={signal:0.45,leave:0.5,len:1.1,fly:0.7,rise:110};
+  const D1=2*RUN*SPEED,X0=WX+235+D1,T1=2*CYC,T2=LOB.len,T3=0.3,T4=2*CYC,T5=1.0,T6=0.7,LOOP=T1+T2+T3+T4+T5+T6;
+  const ran=(tau,limit)=>{const n=Math.floor(tau/CYC),r=tau-n*CYC;return Math.min(limit,(n*RUN+Math.min(r,RUN))*SPEED);};
+  const runningAt=tau=>Math.sin(tau*HOPW)>0;
+  // the scurry: a patter of eight small bobs a second while running, leaning into it; the feet flick out in turn
+  function scurry(tau,moving){if(!moving)return{P:{},feet:null};const ph=tau*8*Math.PI,bob=Math.abs(Math.sin(ph));
+    return{P:{dy:-2.5*bob,lean:0.06},feet:[{dx:0.05*Math.sin(ph/2),up:-0.025*Math.max(0,Math.cos(ph/2))},{dx:-0.05*Math.sin(ph/2),up:-0.025*Math.max(0,-Math.cos(ph/2))}]};}
+  function spit(u){if(u<LOB.signal){const v=ease(u/LOB.signal);return{rear:v,hot:v,dx:3*v,arm:lerpN(REST.arm,2.8,v),staff:lerpN(0,-0.9,v)};}
+    if(u<0.55){const v=ease((u-LOB.signal)/0.1);return{rear:lerpN(1,-0.45,v),hot:1,dx:lerpN(3,-2,v),arm:lerpN(2.8,1.5,v),staff:lerpN(-0.9,0.9,v)};}
+    const v=ease((u-0.55)/0.55),w=ease(clamp01((u-0.55)/0.45));return{rear:-0.45*(1-v),sy:1-0.06*Math.sin(Math.PI*Math.min(1,v*1.6)),hot:0.5*(1-v),dx:-2*(1-v),arm:lerpN(1.5,REST.arm,w),staff:lerpN(0.9,0,w)};}
+  function leap(u){if(u<0.4){const v=ease(u/0.4);return{sy:1-0.16*v,sx:1+0.1*v,hot:v,dx:4*v,dy:0,arm:lerpN(REST.arm,2.9,v),staff:lerpN(0,-0.5,v),tuck:v};}
+    if(u<0.75){const w=(u-0.4)/0.35,s=Math.sin(w*Math.PI),e=ease(clamp01(w/0.45));return{sy:1+0.12*s,sx:1-0.06*s,tilt:-0.12*s,hot:1-w*0.5,dx:lerpN(4,-100,w),dy:-34*4*w*(1-w),arm:lerpN(2.9,0.9,e),staff:lerpN(-0.5,1.5,e),tuck:1};}
+    const v=clamp01((u-0.75)/0.25);return{sy:1-0.1*(1-v)*(1-v),sx:1+0.06*(1-v),hot:0.2*(1-v),dx:-100,dy:0,arm:lerpN(0.9,REST.arm,ease(v)),staff:lerpN(1.5,0,ease(v)),tuck:1-v};}
+  function pose(t){let X,P,tag,feet=null;
+    if(t<T1){const mv=runningAt(t),s=scurry(t,mv);X=X0-ran(t,D1);P=s.P;feet=s.feet;tag=mv?'scurry':'stop';}
+    else if(t<T1+T2){const q=spit(t-T1);X=WX+235+q.dx;P=q;tag='lob';}
+    else if(t<T1+T2+T3){X=WX+235;P={};tag='stand';}
+    else if(t<T1+T2+T3+T4){const tau=t-T1-T2-T3,mv=runningAt(tau)&&ran(tau,1e9)<100,s=scurry(tau,mv);X=WX+235-ran(tau,100);P=s.P;feet=s.feet;tag=mv?'scurry':'stop';}
+    else if(t<T1+T2+T3+T4+T5){const q=leap(t-T1-T2-T3-T4);X=WX+135+q.dx;P=q;tag='staff blow';if(q.tuck)feet=[{dx:-0.03,up:-0.06*q.tuck},{dx:0.03,up:-0.06*q.tuck}];}
+    else{X=WX+35;P={};tag='stand';}
+    return{X,P,tag,feet};}
+  // the lantern (a pendulum on the hook) and the cloak (a springy slide that trails the speed and overshoots when it stops), worked out over two loops so the loop joins
+  const DT=1/240,N=Math.round(LOOP/DT),tabL=new Float32Array(N+1),tabC=new Float32Array(N+1);
+  let tabsDone=false;const tabsOnce=()=>{if(tabsDone)return;tabsDone=true;   // kit: only for the film's loop, so worked out when it is first asked for
+  (()=>{let pL=0,vL=0,c=0,vc=0,prev=null,prev2=null,px=null;
+    for(let i=0;i<=2*N;i++){const t=i*DT,p=pose(t%LOOP),S=skeleton(p.P),a=[S.hook[0]+(X0-p.X),S.hook[1]],fx=X0-p.X;
+      if(prev2){const ax=(a[0]-2*prev[0]+prev2[0])/(DT*DT),ay=(a[1]-2*prev[1]+prev2[1])/(DT*DT);
+        const acc=-((GRAV+ay)*Math.sin(pL)+ax*Math.cos(pL))/LL-2.2*vL;vL+=acc*DT;pL+=vL*DT;
+        const v=(fx-px)/DT,target=-0.11*Math.max(-2.5,Math.min(2.5,v/SPEED));const ac=-196*(c-target)-7*vc;vc+=ac*DT;c+=vc*DT;}
+      prev2=prev;prev=a;px=fx;if(i>=N){tabL[i-N]=pL;tabC[i-N]=c;}}})();};
+  const swingAt=t=>{tabsOnce();const i=Math.min(N,Math.max(0,Math.round((t%LOOP)/DT)));return[tabL[i],tabC[i]];};
+  const relT=T1+LOB.leave;let relK=null;const relOf=()=>relK||(relK=(()=>{const p=pose(relT),sw=swingAt(relT),R=rig(p.P,sw[0],sw[1],p.feet);return{x:p.X-R.lanternAt[0],y:R.lanternAt[1]};})());   // kit: the same, worked out when first asked for
+  const gobAt=t=>{const rel=relOf(),T=LOB.fly,g=8*LOB.rise/(T*T),x1=WX,y1=-2,vx=(x1-rel.x)/T,vy=(y1-rel.y-0.5*g*T*T)/T;return[rel.x+vx*t,rel.y+vy*t+0.5*g*t*t];};
+  function frame(t){const p=pose(t),sw=swingAt(t),P=Object.assign({},p.P),u=t-relT;
+    if(u>=0&&u<LOB.fly+0.15){const toRig=q=>[p.X-q[0],q[1]];
+      if(u<LOB.fly){const tr=[];for(let j=6;j>=0;j--){const uu=u-j*0.035;if(uu>=0)tr.push(toRig(gobAt(uu)));}P.gob={at:toRig(gobAt(u)),r:7,a:1,trail:tr.length>1?tr:null};}
+      else{const v=(u-LOB.fly)/0.15;P.gob={at:toRig(gobAt(LOB.fly)),r:7+8*v,a:1-v};}}
+    return{cast:window.GHIDE?[]:[{who,pose:1,x:p.X,dy:2+SINK,rig:rig(P,sw[0],sw[1],p.feet).rig}],tag:p.tag};}
+  return{rig:P=>rig(P,0,0,null),rigFull:rig,skeleton,scurry,spit,leap,frame,LOOP,k,SINK,REST,HOPW,SPEED,LL,GRAV,name:'gonk'};   // kit: and its parts
+})();
+// The Sprung Horror as a cut-out puppet from his parts sheet (try 2, 25 November 2026). Pieces (bossParts, units of the box's height; the whole figure, piece 1 of
+// the sheet, was taken off a copy and kept for fitting, as its bar sits lower than the rest): 1 the box with its crank, feet and flames, 2 the lid (hinge pins),
+// 3 the figure (head, hat, horns and shaggy body; pins at the shoulders and where the spring joins), 4 and 5 the arms, 6 one coil (traced from the sheet directly: the tracer dropped it).
+// Fitted to the whole figure: box 1, figure 0.55, arms 0.5, coil 0.655 across and 0.33 high; the spring is built from coils along a curve, as many as its length needs,
+// 0.09 of a box height apart (25 November, 07:14: Barney chose closer coils, so it reads as one spring; it was 0.2).
+// Its moves borrow the Gaping Tree's fight, as the PRD says, on the tree's own clock (BS_FIGHT.mist): the claws (warning 0.75 s, through the ground 0.7 s), the head at head
+// height (the branch's clock: signal 0.55 s, out 0.35 s, back 0.45 s), the fan from its mouth (signal 0.5 s, the fan 0.7 s, 470 lines a second); then the knock-back (KB: tell 0.7 s,
+// it lands 0.08 s later, the burst's light 0.35 s, settling 0.45 s) and the mend (MD: gathering 0.9 s, then three steps of 0.8 s, the bottom of the climb's).
+const CHX=["#060508","#17141b","#27232d","#3a3544","#504a5c"]; // the kit's card blacks (CH): ink, then paler blacks to charcoal
+const BOSS=(()=>{
+  const k=105,who='bossParts',FS=0.55,AS=0.5,CSX=0.655,CSY=0.33,PITCH=0.09,L0=0.6,BASE=[0.05,-0.80],HINGE_AT=[-0.25,-0.88],LIDPIN=[0.0475,-0.791];
+  const FIGPIN=[0.007,-0.206],SH=[[-0.3885,-0.8964],[0.4039,-0.8931]],ARMPIN=[[0.0036,-1.4304],[0.0113,-1.4313]],MOUTH=[0.027,-0.95],COILPIN=[0,-0.2366];
+  const BX=WX+330,REACH=150,CR=[WX-40,WX-5,WX+30],MANA='#5fdcca',HEAD=[BX-(WX+30),-76];
+  // the lines (in each piece's own units, measured on the sheet): lit ones in the level's colour, tone ones in the two paler charcoals (3, 4)
+  const BOXSHADE=[{poly:[-0.42,-0.95,-0.07,-0.81,-0.04,-0.22,-0.42,-0.36],from:[-0.4,-0.9],to:[-0.1,-0.3],stops:[[0,CHX[3]],[1,CHX[1]]]},
+                  {poly:[-0.07,-0.81,0.5,-0.9,0.5,-0.35,-0.04,-0.22],from:[0,-0.82],to:[0.35,-0.25],stops:[[0,"#5e5869"],[0.45,CHX[4]],[1,CHX[2]]]}];
+  // the lines: a third fewer at 10:35 (Barney): 18 drawn, from 27
+  const BOXLINES=[{c:"lit",pts:[-0.36,-0.84,-0.355,-0.68],w:1.3},{c:"lit",pts:[-0.286,-0.7195,-0.281,-0.5495],w:1.3},{c:"lit",pts:[-0.13,-0.66,-0.125,-0.48],w:1.3},{c:0,pts:[-0.24,-0.47,-0.235,-0.36],w:1.6}];
+  const LIDLINES=[{c:"lit",pts:[-0.412,-1.073,-0.313,-0.93],w:1.3},{c:0,pts:[-0.228,-1.022,-0.123,-0.871],w:1.6},{c:"lit",pts:[-0.165,-1.149,-0.072,-1.014],w:1.3}];
+  const FIGLINES=[{c:"lit",pts:[0.005,-1.7127,0.0122,-1.6402],w:1.3},{c:"lit",pts:[-0.1724,-1.721,-0.1636,-1.651],w:1.3},{c:"lit",pts:[-0.3,-0.95,-0.29,-0.78],w:1.3},{c:"lit",pts:[-0.05,-0.8,-0.045,-0.58],w:1.3},{c:0,pts:[0.17,-0.66,0.165,-0.48],w:1.6},{c:"lit",pts:[0.3,-0.96,0.29,-0.83],w:1.3},{c:"lit",pts:[-0.1,-0.5,-0.095,-0.33],w:1.3}];
+  const ARMLINES=[{c:"lit",pts:[0.0,-1.38,0.01,-1.18],w:1.3},{c:0,w:1.6,pts:[-0.09,-1.12,-0.095,-0.93]}];
+  const COILLINE=[{c:'lit',pts:arcPts(0,-0.24,0.26,0.2,Math.PI*1.12,Math.PI*1.88,10),w:1.1}];
+  const bez=(a,c,b,t)=>[(1-t)*(1-t)*a[0]+2*(1-t)*t*c[0]+t*t*b[0],(1-t)*(1-t)*a[1]+2*(1-t)*t*c[1]+t*t*b[1]];
+  const bezD=(a,c,b,t)=>[2*(1-t)*(c[0]-a[0])+2*t*(b[0]-c[0]),2*(1-t)*(c[1]-a[1])+2*t*(b[1]-c[1])];
+  // P: {L (spring length, units), top:[dx,dy] (where its top is pushed, lines), bend (lines the curve bows forward), C (a control point, lines, replacing the bow), lean (the figure, radians),
+  //     arms:[far, near] (radians from hanging, out positive), lid (radians open further), bsx, bsy, bdy (the box's squash and hop), hot}
+  function rig(P){P=P||{};const bsx=P.bsx||1,bsy=P.bsy||1,bdy=P.bdy||0;
+    const box={who,pose:1,pin:[0,0],at:[0,bdy],ang:0,sx:bsx,sy:bsy};
+    const B0=[BASE[0]*k*bsx,BASE[1]*k*bsy+bdy],top=P.top||[0,0],L=(P.L==null?L0:P.L)*k,T=[B0[0]+top[0],B0[1]-L+top[1]];
+    const C=P.C||[(B0[0]+T[0])/2+(P.bend||0),(B0[1]+T[1])/2];
+    let len=0,prev=B0;for(let i=1;i<=24;i++){const q=bez(B0,C,T,i/24);len+=Math.hypot(q[0]-prev[0],q[1]-prev[1]);prev=q;}
+    const N=Math.max(4,Math.ceil(len/(PITCH*k))),coils=[];
+    for(let i=0;i<N;i++){const t=(i+0.5)/N,q=bez(B0,C,T,t),d=bezD(B0,C,T,t);coils.push({who,pose:6,sx:CSX,sy:CSY,pin:COILPIN,at:q,ang:Math.atan2(d[0],-d[1])});}
+    const dT=bezD(B0,C,T,1),th=Math.max(-1.15,Math.min(1.15,Math.atan2(dT[0],-dT[1])));
+    const fig={who,pose:3,sx:FS,sy:FS,pin:FIGPIN,at:T,ang:th+(P.lean||0)};
+    const arms=P.arms||[0.45,0.45],arm=i=>({who,pose:4+i,sx:AS,sy:AS,pin:ARMPIN[i],at:place(k,fig,SH[i]),ang:fig.ang+(i?-arms[1]:arms[0])});
+    const lid={who,pose:2,pin:LIDPIN,at:[HINGE_AT[0]*k*bsx,HINGE_AT[1]*k*bsy+bdy],ang:0.45-(P.lid||0)};
+    if(window.TONE!==false){ // the bosses' look (2 November): every card graded on its own from charcoal to ink at its edge, with its own ink edge, and lit lines (25 November)
+      box.shades=BOXSHADE;box.lines=BOXLINES;lid.lines=LIDLINES;fig.lines=FIGLINES;coils.forEach(c=>{c.noEdgeShade=true;c.inkW=1.1;c.lines=COILLINE;});}
+    const A0=arm(0),A1=arm(1);if(window.TONE!==false){A0.lines=ARMLINES;A1.lines=ARMLINES;}
+    const r={h:k,merge:window.TONE===false,frontLine:true,front:1,jointR:9,hot:P.hot||0,parts:[lid,box].concat(coils,[A0,fig,A1])};
+    if(window.TONE!==false)r.tone={lit:LITC(),edge:3.5,edgeA:0.6,ink:2.4,litA:0.5,stops:[[0,"#5e5869"],[0.5,CHX[4]],[1,CHX[2]]]};if(r.tone)r.tone.lineMode=window.LINEMODE||'groove';  /* the detail lines: ink with a faint pale edge, Barney's choice, 25 November 10:07 */
+    return{rig:r,mouth:place(k,fig,MOUTH),fig};}
+  const W=(t,a,b)=>t>=a&&t<b?(t-a)/(b-a):null,sway=t=>Math.sin(t*1.7);
+  const idle=t=>({top:[0.07*k*sway(t),2*Math.sin(t*3.4)],bend:-0.05*k*sway(t),arms:[0.45+0.1*Math.sin(t*2.3),0.45-0.1*Math.sin(t*2.3+0.6)],lean:-0.04*sway(t)});
+  const mixP=(A,B,v)=>{const o={};for(const key of new Set(Object.keys(A).concat(Object.keys(B)))){const a=A[key],b=B[key];
+    if(Array.isArray(a)||Array.isArray(b)){const aa=a||b.map(()=>0),bb=b||a.map(()=>0);o[key]=aa.map((x,i)=>lerpN(x,bb[i],v));}else o[key]=lerpN(a==null?(key==='L'?L0:key.startsWith('bs')?1:0):a,b==null?(key==='L'?L0:key.startsWith('bs')?1:0):b,v);}return o;};
+  // the clock (seconds): idle, claws, head, fan, knock-back, mend, hold
+  const TC=1.5,TH=3.25,TF=4.9,TK=6.4,TM=TK+0.7+0.08+0.35+0.45+0.3,LOOP=TM+0.9+3*0.8+0.4+0.6;
+  function frame(t){let P=idle(t),tag='sway',extra=[],trail=null,sparks=[],trails=[],glows=[],u;
+    // the claws: the arms rise as the ground glows where they will burst, then plunge as the spring drops; clawed hands rise through the ground there
+    if((u=W(t,TC,TC+0.75))!=null){const v=ease(u);P=mixP(P,{arms:[2.3,2.3],lean:-0.08,L:0.7,hot:0.5},v);tag='claws: warning';
+      for(const p of CR)extra.push({who,pose:1,x:p,rig:{h:k,parts:[],glows:[{at:[0,0],rx:26*v,ry:6*v,a:0.75*v*(0.8+0.2*Math.sin(t*14))}]}});}
+    else if((u=W(t,TC+0.75,TC+1.45))!=null){const dn=ease(Math.min(1,u/0.2)),up=u<0.3?ease(u/0.3):u<0.65?1:1-ease((u-0.65)/0.35);
+      P=mixP(mixP(P,{arms:[2.3,2.3],lean:-0.08,L:0.7,hot:0.5},1),{arms:[-0.12,-0.12],lean:0.12,L:0.22,bsy:0.96,bsx:1.03,hot:1},dn);tag='claws: through the ground';
+      CR.forEach((p,i)=>{extra.push({who:'claws',pose:i===1?8:3,x:p,by:76*(1-up),groundY:2,dy:2});extra.push({who,pose:1,x:p,rig:{h:k,parts:[],glows:[{at:[0,0],rx:30,ry:7,a:0.6*(1-u)}]}});});}
+    else if((u=W(t,TC+1.45,TH))!=null){const v=ease(u);P=mixP({arms:[-0.12,-0.12],lean:0.12,L:0.22,bsy:0.96,bsx:1.03,hot:1},idle(t),v);tag='sway';}
+    // the head at head height: coiling back, then out along an arc to his head, then drawn back
+    const OUT={top:[HEAD[0],0],C:null,lean:0.25,arms:[0.9,0.9],hot:1};
+    const outAt=v=>{const B0=[BASE[0]*k,BASE[1]*k],T=[B0[0]+HEAD[0]*v,lerpN(B0[1]-L0*k,HEAD[1],v)];return{L:0,top:[T[0]-B0[0],T[1]-B0[1]],C:[B0[0]+HEAD[0]*0.35*v,B0[1]-L0*k*(1+0.9*v)],lean:0.25*v,arms:[0.45+0.6*v,0.45+0.6*v],hot:1};};
+    if((u=W(t,TH,TH+0.55))!=null){const v=ease(u);P=mixP(idle(t),{L:0.42,top:[-0.12*k,0],lean:-0.15,arms:[0.2,0.2],hot:0.6},v);tag='head: signal';}
+    else if((u=W(t,TH+0.55,TH+0.9))!=null){const v=ease(u),o=outAt(v);P=o;tag='head: out';const tr=[];for(let j=6;j>=0;j--){const vv=ease(Math.max(0,u-j*0.08));tr.push(rig(outAt(vv)).mouth);}trail=tr;}
+    else if((u=W(t,TH+0.9,TH+1.35))!=null){const v=ease(u),o=outAt(1-v);P=o;tag='head: back';}
+    // the fan from its mouth: a glow gathers, then five ember splinters fan out at 470 lines a second
+    if((u=W(t,TF,TF+0.5))!=null){const v=ease(u);P=mixP(idle(t),{lean:-0.1,top:[-0.05*k,0],hot:v},v);tag='fan: signal';sparks.push({at:rig(P).mouth,r:2+5*v,a:v});}
+    else if((u=W(t,TF+0.5,TF+1.2))!=null){P=mixP(idle(t),{lean:0.12,top:[0.06*k,0],hot:1-u},1-ease(clamp01((u-0.3)/0.7)));tag='fan';}
+    if(t>=TF+0.5&&t<TF+1.2+0.6){const O=rig(mixP(idle(TF+0.5),{lean:-0.1,top:[-0.05*k,0]},1)).mouth,d=(t-TF-0.5)*470;
+      if(d<600)for(let q=0;q<5;q++){const a=(q-2)*0.11,dir=[Math.cos(a),-Math.sin(a)],pt=dd=>[O[0]+dir[0]*dd,O[1]+dir[1]*dd];sparks.push({at:pt(d),r:3.5});trails.push({pts:[pt(Math.max(0,d-40)),pt(Math.max(0,d-20)),pt(d)],w:3,a:0.9});}}
+    // the knock-back: it gathers (the spring coils, the box squats) as the ground glows out to its reach; it lands 0.08 s after; the burst's light; settling
+    if((u=W(t,TK,TK+0.7))!=null){const v=ease(u);P=mixP(idle(t),{L:0.28,bsy:0.93,bsx:1.04,arms:[1.2,1.2],lean:0.05,hot:v},v);tag='knock-back: tell';glows.push({at:[0,0],rx:REACH*v,ry:16*v,a:0.5*v});}
+    else if((u=W(t,TK+0.7,TK+0.78))!=null){P={L:lerpN(0.28,0.95,ease(u)),bsy:lerpN(0.93,1.04,u),bsx:1,arms:[1.6,1.6],lean:-0.06,lid:0.5*u,hot:1,bdy:-6*u};tag='knock-back';glows.push({at:[0,0],rx:REACH,ry:16,a:0.5});}
+    else if((u=W(t,TK+0.78,TK+1.13))!=null){P=mixP({L:0.95,bsy:1.04,arms:[1.6,1.6],lean:-0.06,lid:0.5,hot:1,bdy:-6},{L:0.75,bsy:1,arms:[1.0,1.0],lid:0.2,hot:0.6,bdy:0},ease(u));tag='knock-back: burst';
+      glows.push({at:[0,0],rx:REACH*(1+0.3*u),ry:18*(1+0.3*u),a:1-u,ring:5},{at:[0,0],rx:REACH*1.1,ry:22,a:0.9*(1-u)});}
+    else if((u=W(t,TK+1.13,TK+1.58))!=null){P=mixP({L:0.75,arms:[1.0,1.0],lid:0.2,hot:0.6},idle(t),ease(u));tag='knock-back: settling';}
+    // the mend: it goes still and bows as the light gathers; then three steps, a ring of light rising up it with each
+    if((u=W(t,TM,TM+0.9))!=null){const v=ease(u);P=mixP(idle(t),{lean:0.18,top:[0.08*k,0.04*k],L:0.5,arms:[0.15,0.15],hot:0},v);tag='mend: gathering';glows.push({at:[0,-110],rx:150*v,ry:150*v,col:MANA,a:0.22*v});}
+    else if((u=W(t,TM+0.9,TM+0.9+2.4))!=null){const st=Math.floor(u*3),w=u*3-st;P={lean:0.18,top:[0.08*k,0.04*k],L:0.5,arms:[0.15,0.15],hot:0};tag='mend: step '+(st+1)+' of 3';
+      glows.push({at:[0,-110],rx:150,ry:150,col:MANA,a:0.22},{at:[0,-245*ease(w)],rx:85-30*w,ry:16,col:MANA,a:1-w,ring:4},{at:[0,0],rx:90,ry:12,col:MANA,a:0.5*(1-w)});}
+    else if((u=W(t,TM+3.3,TM+3.7))!=null){P=mixP({lean:0.18,top:[0.08*k,0.04*k],L:0.5,arms:[0.15,0.15]},idle(t),ease(u));tag='sway';glows.push({at:[0,-110],rx:150,ry:150,col:MANA,a:0.22*(1-u)});}
+    const R=rig(P).rig;if(trail)R.trail={pts:trail,w:6,a:1};if(sparks.length)R.sparks=sparks;if(trails.length)R.trails=trails;if(glows.length)R.glows=glows;
+    return{cast:extra.filter(e=>e.who==='claws').concat([{who,pose:1,x:BX,rig:R}],extra.filter(e=>e.who!=='claws')),tag};}
+  return{rig:P=>rig(P),frame,LOOP,k,name:'The Sprung Horror'};
+})();
+return{ghoul2:GB,crawler:CR,walker:WU2,hatmaw:GK,boss:BOSS};})({});
 
 /* ============================== the kit way: draw once, slide every frame ==============================
    The mock-up rebuilds every backdrop layer, shape by shape, on every frame. The kit way draws each layer once,
@@ -7514,6 +7855,52 @@ function mvDrawKitRot(x,s,X,Y,P,tq,f,edge,k,o,rot){const F=mvFigure(s,P,tq,k,edg
   if(pl>0){const lx=f*G.hook[0]*k,ly=(G.hook[1]+12)*k,g=x.createRadialGradient(lx,ly,2,lx,ly,74*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.42*pl)+")");g.addColorStop(1,"rgba("+MV_POOL+",0)");x.save();if(pop)x.globalCompositeOperation=pop;x.fillStyle=g;x.fillRect(lx-80*k,ly-80*k,160*k,160*k);x.restore();}   // kit 0.41.0: his light follows the glass
   const put=cv=>x.drawImage(cv,-F.ox/s,-F.oy/s,F.w/s,F.h/s);if(eA>0){x.globalAlpha=eA;put(F.E);x.globalAlpha=1;}put(F.I);x.restore();return G;}
 
+// kit 0.48.0 (design system 31, step K2a): a puppet's pose painted once by drawCastRig into a kept picture, the kit's way: drawn in a working canvas,
+// then only the box it reached (and room for its rim and glow) kept. The most recently used are kept, CAST_KEEP_N of them, the oldest going first
+const CAST_KEPT=new Map(),CAST_KEEP_N=60;let CAST_SCR=null;
+function castPainted(rig,key,s){let E=CAST_KEPT.get(key);if(E){CAST_KEPT.delete(key);CAST_KEPT.set(key,E);return E;}
+  const W0=620,H0=560,OX=310,OY=460;if(!CAST_SCR||CAST_SCR.s!==s)CAST_SCR={s,cv:mk(W0*s,H0*s)};
+  const sc=CAST_SCR.cv,x=sc.getContext("2d");x.setTransform(1,0,0,1,0,0);x.globalCompositeOperation="source-over";x.globalAlpha=1;x.shadowBlur=0;x.shadowColor="transparent";x.clearRect(0,0,sc.width,sc.height);x.setTransform(s,0,0,s,OX*s,OY*s);
+  const b=drawCastRig(x,0,0,{rig})||[-OX,-OY,W0-OX,H0-OY],P=26,x0=Math.max(-OX,Math.floor(b[0]-P)),y0=Math.max(-OY,Math.floor(b[1]-P)),x1=Math.min(W0-OX,Math.ceil(b[2]+P)),y1=Math.min(H0-OY,Math.ceil(b[3]+P));
+  const cv=mk(Math.max(1,Math.ceil((x1-x0)*s)),Math.max(1,Math.ceil((y1-y0)*s)));cv.getContext("2d").drawImage(sc,Math.round((x0+OX)*s),Math.round((y0+OY)*s),cv.width,cv.height,0,0,cv.width,cv.height);
+  E={cv,x0,y0,x1,y1};KIT.poses++;CAST_KEPT.set(key,E);if(CAST_KEPT.size>CAST_KEEP_N)CAST_KEPT.delete(CAST_KEPT.keys().next().value);return E;}
+// the gonk's lantern (a pendulum on the staff's hook) and cloak (a springy slide that trails its speed), as its rig works them out (gonk.js), but for
+// each gonk in play from its own movement, frame by frame (its id names it); CAST_GK forgets one not seen for a while
+const CAST_GK=new Map();
+function castGonkSwing(id,P,fwd,t){const R=CAST_RIG.hatmaw;let g=CAST_GK.get(id);const S=R.skeleton(P),a=[S.hook[0]+fwd,S.hook[1]];
+  if(!g||t<g.t||t-g.t>0.5){g={t,pL:0,vL:0,c:0,vc:0,prev:a,prev2:a,px:fwd};CAST_GK.set(id,g);}
+  const DT=1/240,n=Math.min(48,Math.round((t-g.t)/DT));
+  for(let i=1;i<=n;i++){const u=i/n,q=[g.prev[0]+(a[0]-g.prev[0])*u,g.prev[1]+(a[1]-g.prev[1])*u],qx=g.px+(fwd-g.px)*u,p1=i===1?g.prev:null;
+    const P1=p1||g._q,P2=i===1?g.prev2:g._q2,ax=(q[0]-2*P1[0]+P2[0])/(DT*DT),ay=(q[1]-2*P1[1]+P2[1])/(DT*DT);
+    const acc=-((R.GRAV+ay)*Math.sin(g.pL)+ax*Math.cos(g.pL))/R.LL-2.2*g.vL;g.vL+=acc*DT;g.pL+=g.vL*DT;
+    const v=(qx-(g._qx!=null?g._qx:g.px))/DT,target=-0.11*Math.max(-2.5,Math.min(2.5,v/R.SPEED)),ac=-196*(g.c-target)-7*g.vc;g.vc+=ac*DT;g.c+=g.vc*DT;
+    g._q2=P1;g._q=q;g._qx=qx;}
+  if(n>0){g.prev2=g._q2||g.prev;g.prev=a;g.px=fwd;g.t=t;}g.seen=KIT.frame;
+  if(CAST_GK.size>40)for(const [k,e] of CAST_GK)if(e.seen<KIT.frame-300)CAST_GK.delete(k);
+  return[Math.round(g.pL*25)/25,Math.round(g.c*100)/100];}
+// a puppet's pose from the game's monster at this moment (the rigs' P), and the key of its kept picture. Its time is stepped to 12 a second
+// (MV_RATE, the puppets' own rate) and its walk to 8 poses a stride, so a pose is painted once and shared
+function castPose(kind,o,m,t){const R=CAST_RIG[kind],a=o.attack,st=u=>Math.floor((u||0)*MV_RATE+1e-9)/MV_RATE,hot=o.hit!=null&&o.hit>=0&&o.hit<0.13;
+  const L=(MO_GAIT_P[MON_P[kind]]||{}).L||56,wq=w=>w==null?null:Math.round(w/(L/8))*(L/8);
+  let P,key,rig;
+  if(kind==="crawler"){ // the present crawler: the crawler's lunge, or its six legs scuttling with the ground it covers (the game gives a crawler no walk: its x serves)
+    if(a){const u=st(a.t),q=R.lunge(u);P={sx:q.sx,sy:q.sy,tilt:q.tilt,jaw:q.jaw,hot:q.hot,legs:q.legs||null};key="c|L"+u;}
+    else{const w=Math.round(Math.abs(o.walk!=null?o.walk:o.x)/3.5)*3.5%28;P={walked:w};key="c|w"+w;}
+    rig=R.rig(P).rig;}
+  else if(kind==="ghoul2"){ // the gingerbread man: the ghoul's walk and swipe
+    const w=wq(m.walk),u=a?st(a.t):null;P={walk:w,swipe:u};key="g|"+w+"|"+u;rig=R.rig(P).rig;}
+  else if(kind==="walker"){ // the wind-up toy: the walker's walk and its low and high sweeps; its key turns half a turn a second, in eighths
+    const w=wq(m.walk),u=a?st(a.t):null,kq=Math.floor(t*8)/8;P=Object.assign({walk:w,key:kq*Math.PI},a?(a.name==="low"?R.low(u):R.high(u)):{});key="w|"+w+"|"+(a?a.name+u:"")+"|"+kq%2;rig=R.rig(P).rig;}
+  else{ // the gonk: the mouth-hat's hop drawn as a scurry (moving while its hop is up), its spit as the lob and its bite as the staff blow
+    let feet=null;
+    if(a&&a.name==="hop"){const u=st(a.t),mv=Math.sin(u*R.HOPW)>0,q=R.scurry(u,mv);P=q.P;feet=q.feet;key="h|"+(mv?u%0.6:"s");}
+    else if(a&&a.name==="spit"){const u=st(a.t),q=R.spit(u);P=Object.assign({},q);delete P.dx;key="h|S"+u;}
+    else if(a&&a.name==="bite"){const u=st(a.t),q=R.leap(u);P=Object.assign({},q);delete P.dx;delete P.dy;if(q.tuck)feet=[{dx:-0.03,up:-0.06*q.tuck},{dx:0.03,up:-0.06*q.tuck}];key="h|B"+u;}
+    else{P={};key="h|s";}
+    const fwd=(o.facing===1?1:-1)*-o.x,sw=castGonkSwing(o.id||"gonk",P,fwd,t);key+="|"+sw[0]+"|"+sw[1];
+    rig=R.rigFull(P,sw[0],sw[1],feet).rig;}
+  if(hot){rig.hot=1;key+="|hit";}
+  return{rig,key:kind+"|"+(FX?1:0)+"|"+key};}
 /* ============================== the tools: what a game calls, as lb.world ==============================
    The tools draw; games decide what happens. A frame is world.begin(ctx, { place, camX, rise }), then the things on the path
    in the order they should overlap, then world.end(). Things on the path are placed by x, along the path, and y, in picture
@@ -7526,7 +7913,7 @@ function poseKey(P){return JSON.stringify(P,(k,v)=>typeof v==="number"?Math.roun
 // kit 0.45.0: every store of kept pictures that is not the scene's own (the scene is made again in makeTools). Each is filled again the
 // next time its picture is wanted. Not here: MD_PROF and CP_HOOK (figures read from a picture once, not pictures), HXC (colours)
 function forgetKept(){
-  TILE_POOL.clear();RIM_E.clear();MV_LIT.clear();MVC.length=0;CV_LOST.clear();
+  TILE_POOL.clear();RIM_E.clear();MV_LIT.clear();MVC.length=0;CV_LOST.clear();CAST_KEPT.clear();CAST_SCR=null;   // kit 0.48.0: and the puppets' pictures
   KIT.fc=null;KIT.fs=null;KIT.th=null;
   for(const o of[BOSS_CACHE,SH,MV_SH,CPK,BSK,MDK,_lvP,_hamP,YULE_KEPT])for(const k of Object.keys(o))delete o[k];   // kit 0.46.0: and the hamlet's props
   _bossCache=new WeakMap();RESETS++;
@@ -7847,6 +8234,15 @@ function makeTools(env){
       if(at&&!hit&&o.rise==null&&env.quick&&env.quick()){const aq=moAttack(o.kind,Object.assign({},o.attack,{t:Math.floor((o.attack.t||0)*MV_RATE)/MV_RATE}));
         m.P=aq.pose?aq.pose(m):aq.P;m.pk=poseKey(m.P)+(m.qs||"");}
       const out=at?{phase:at.phase,dx,dy}:{phase:null,dx,dy};
+      if(f.level==="yule"&&CAST_RIG[o.kind]&&o.rise==null){ // kit 0.48.0 (design system 31, step K2a): in the hamlet, its puppet, drawn where the kit puts the monster, its foot
+        // at the cast's foot line (2 lines below the ground; the gonk 8 more, its hem in the path); a mouth-hat's hop is the gonk's scurry, so the hop's lift is left out
+        const cp=castPose(o.kind,o,m,f.t),E=castPainted(cp.rig,cp.key,s),hy=at&&o.attack.name==="hop"?at.dy:0,Yc=(o.y==null?f.gy(x):o.y)+(o.kind==="hatmaw"?2+CAST_RIG.hatmaw.SINK:2)+dy-hy;
+        const c=f.ctx,Xs=Math.round(X*s)/s;if(fc===1){c.save();c.translate(Xs,0);c.scale(-1,1);c.translate(-Xs,0);}
+        if(o.defeat==null)c.drawImage(E.cv,Math.round((Xs+E.x0)*s)/s,Math.round((Yc+E.y0)*s)/s,E.cv.width/s,E.cv.height/s);
+        else{const d=defeatCanvas("M",260,250,s);d.c.drawImage(E.cv,Math.round((130+E.x0)*s),Math.round((230+E.y0)*s));   // its picture broken up as a monster's is
+          drawDefeat(c,d.M,s,X,Yc,[Math.max(-130,E.x0),Math.max(-230,E.y0),Math.min(130,E.x1),Math.min(20,E.y1)],clamp(o.defeat,0,1),"cardwisp",o.seed||0);}
+        if(fc===1)c.restore();
+        return out;}
       const c=f.ctx,Xs=Math.round(X*s)/s;   // mirrored about a whole device pixel, so its painted picture stays sharp
       if(fc===1){c.save();c.translate(Xs,0);c.scale(-1,1);c.translate(-Xs,0);}
       if(o.rise!=null&&o.riseLen!=null&&o.rise<o.riseLen){ // kit 0.32.0 (version 23, loopWave): The Endless Rot's rise through a warning: riseLen s
