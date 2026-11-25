@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.50.0';
+  const VERSION = '0.50.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -8665,7 +8665,7 @@ function set(hud,st){const q=s=>hq(hud,s);
   const bb=q(".lb-bossbar");if(bb){const on=!!(st.boss&&st.boss.a>0&&ha>0);if(bb.hidden===on)bb.hidden=!on;
     if(on){setOnce(bb,"n",st.boss.name,v=>{figText(bb.querySelector(".lb-bossbar-name"),v);bb.setAttribute("aria-label",v);});bb.style.opacity=String(st.boss.a*ha);
       const tr=bb.querySelector(".lb-bossbar-track");tr.style.setProperty("--v",st.boss.hp.toFixed(3));tr.style.setProperty("--trace",Math.max(st.boss.hp,st.boss.trace).toFixed(3));hudMend(tr,st.boss.mend);setOnce(bb,"vn",Math.round(st.boss.hp*100),v=>bb.setAttribute("aria-valuenow",String(v)));}}}
-const CARDS={night:["Night","The Graveyard"],storm:["Blood Red Rain","The Old Town"],dawn:["Dawn","The Open Moor"],mist:["Mist","The Wind Bent Forest"]}; // from mv10.js: the places' names (Barney, 4 November 2026)
+const CARDS={night:["Night","The Graveyard"],storm:["Blood Red Rain","The Old Town"],dawn:["Dawn","The Open Moor"],mist:["Mist","The Wind Bent Forest"],yule:["Noel","The Snowbound Hamlet"]};   /* kit 0.50.1 (design system 32, PlaceCard): the hamlet's card, "Noel" over "The Snowbound Hamlet" */ // from mv10.js: the places' names (Barney, 4 November 2026)
 // kit 0.26.0 (design system 21, play.js 1.9.0): the pull-down roll's zone, the one place it is kept, so the roll (the shell's stickMove)
 // and the arrowheads (stickShow) always agree (starting figures from Barney's test build): the knob at least 70% of its 31 px travel,
 // 30 to 75 degrees below level
@@ -12892,6 +12892,7 @@ const LOCK_SVG = '<svg viewBox="0 0 14 16" aria-hidden="true"><rect x="1.5" y="7
 function chooseRun(lb, start) {
   if (wantCheck(lb)) return start('bare');   // step 5f-1: the play check needs no choice
   if (lb.test && lb.test.rot) return start('rot');   // design system 23: Testing's straight way into The Endless Rot
+  if (NOEL && lb.test && lb.test.noel) return start('noel');   // The Wretched Noel, step G1: Testing's way in, until the choice of run has it (step G4)
   const rec = lb.progress, bought = anyBought(rec), open = !!rec.rotOpen || PLAYTEST;
   if (!bought && !open) return start('bare');
   const runs = bought ? RUNS.slice() : [RUNS[0]];
@@ -13005,6 +13006,18 @@ const PLAYTEST = /\/gloam-hallow-playtest\//.test(location.pathname) || /[?&]pla
 // Barney, 14 November 2026: the run log on his own test link too (its address only), to measure how far he gets as The Endless Rot's
 // difficulty is tuned; never in the arcade's build elsewhere or the CrazyGames build. Its menu's "Your runs" opens ?runs, as the playtest's
 const TEST_LINK = /\/lantern-box-test\//.test(location.pathname);
+// The Wretched Noel, Gloam Hallow's Christmas level (BRIEF-wretched-noel.md; PLAN-wretched-noel.md, step G1; kit 0.46.0 to 0.50.1). NOEL is its one
+// switch: on only on the test link, or with ?noel in the address, so the CrazyGames build and the playtest copy play exactly as before until Barney says.
+// Its run is g.run 'noel' on the kit's place 'yule' (The Snowbound Hamlet): PLACES stays the four, and g.p is The Old Town's index, so the
+// per-place tables pitch it at The Old Town's step and Night's own extras stay out. Its boss fights on the Gaping Tree's tables ('mist')
+const NOEL = TEST_LINK || /[?&]noel\b/.test(location.search);
+const NOEL_RUN = { id: 'noel', name: 'The Wretched Noel' };
+const NOEL_P = 1;                      // The Old Town's place in PLACES: the brief's "pitched at The Old Town's step of the climb"
+const NOEL_MIX = { M: ['hatmaw', 'ghoul2'], big: [0.15, 0.35], extra: [0, 2] };   // starting figures: The Old Town's mix, with walkers (the wind-up toy); no flyers
+const NOEL_BOSS = Object.assign({}, BOSS.mist, { hp: 45 });   // the Gaping Tree's fight at The Tentacled Skull's health, 45 blows (the brief, starting)
+const NOEL_LANTERN = ['the first lantern', 'the second lantern', 'the third lantern', 'Boss'];   // its four lanterns' words under Continue (the plan's question 5: provisional)
+const NOEL_WIN = { heading: 'The Frostbitten Triumph', lead: '', line: 'The toys lie shattered, and the winter dark yields nothing more.' };   // the brief's words; the win card itself is step G2
+const placeKey = (g, p) => (g.run === 'noel' ? 'yule' : PLACES[p == null ? g.p : p]);   // the kit's place for a run's level
 const RUN_LOG = PLAYTEST || TEST_LINK;
 const CHECK_LINK = /[?&]check\b/.test(location.search);
 const wantCheck = (lb) => CHECK_LINK || !!(lb.test && lb.test.check);
@@ -13242,7 +13255,7 @@ function readSaved(o, lb) {            // a saved run read back, every value che
   const ids = (v, ok) => Array.isArray(v) && v.every((x) => typeof x === 'string' && ok(x)) && new Set(v).size === v.length;
   if (!obj(o) || o.v !== RUN_V) return null;
   if (o.run === 'rot') return readRotSaved(o);   // step 5: The Endless Rot's own
-  if ((o.run !== 'bare' && o.run !== 'infusion') || !int(o.loop, 1, 2) || !int(o.p, 0, PLACES.length - 1) || !int(o.cp, 0, 2) || !int(o.lives, 0, SAVED_LIVES)) return null;
+  if ((o.run !== 'bare' && o.run !== 'infusion' && !(NOEL && o.run === 'noel')) || !int(o.loop, 1, 2) || !int(o.p, 0, PLACES.length - 1) || !int(o.cp, 0, o.run === 'noel' ? 3 : 2) || !int(o.lives, 0, SAVED_LIVES)) return null;   // (The Wretched Noel: with its switch on; four lanterns)
   if (o.slots != null && !int(o.slots, LIVES, LIVES_MAX)) return null;   // part G: the row's lanterns (a run saved before part G has none)
   if (!unit(o.health) || !unit(o.mana) || !int(o.armour, 0, 3) || !obj(o.sword) || !int(o.sword.reach, 0, 2) || !int(o.sword.bite, 0, 2)) return null;
   if (['fire', 'bolt', 'acid'].indexOf(o.attack) < 0 || !obj(o.spells) || !int(o.spells.heal, 0, 3) || !int(o.spells.atk, 0, 3)) return null;
@@ -13357,7 +13370,7 @@ LanternBox.game({
       const sv = savedWaiting(lb);
       if (sv && sv.run === 'rot') return { where: PLACE_SHORT[arenaOfWave(sv.wave)] + ' \u00b7 Wave ' + sv.wave, run: ROT_NAME, lives: sv.lives, echo: sv.now.echo,
         again: sv.wave >= 13, score: sv.felled + ' felled', button: 'Return to the wave', tag: tagOf('rot', sv.diff) };   // step 5 (TitleArch, Relight): "Dawn · Wave 7", "3 lives left · 54 felled"
-      return sv ? { where: PLACE_SHORT[sv.p] + ' \u00b7 ' + LANTERN[sv.cp], run: RUNS.find((r) => r.id === sv.run).name, lives: sv.lives, echo: sv.echo, again: sv.loop === 2, tag: tagOf(sv.run, sv.diff) } : null;   // design system 25 (Relight): its setting's tag
+      return sv ? { where: sv.run === 'noel' ? 'Noel \u00b7 ' + NOEL_LANTERN[sv.cp] : PLACE_SHORT[sv.p] + ' \u00b7 ' + LANTERN[sv.cp], run: sv.run === 'noel' ? NOEL_RUN.name : RUNS.find((r) => r.id === sv.run).name, lives: sv.lives, echo: sv.echo, again: sv.loop === 2, tag: tagOf(sv.run, sv.diff) } : null;   // design system 25 (Relight): its setting's tag
     },
     back(lb, start) { const sv = savedWaiting(lb); if (sv) { RESUME = sv; start(sv.run); } },
     abandon(lb) { const sv = lb.progress && lb.progress.saved; if (sv) endSaved(lb, sv, 'abandon'); },
@@ -13391,6 +13404,7 @@ LanternBox.game({
   test: PLAYTEST ? undefined : { options: [
     { id: 'check', name: 'Play check', toggle: true, note: 'Start game plays by itself for about two minutes and times each place and its boss (with The Endless Rot on too, each arena\'s waves). Switch it off to play.' },   // step 5f-1
     { id: 'rot', name: 'The Endless Rot', toggle: true, note: "Start game plays The Endless Rot as far as it is built, in Start at's arena. Switch it off for the journey." },   // design system 23, until its way in is built (step 6)
+    ...(NOEL ? [{ id: 'noel', name: 'The Wretched Noel', toggle: true, note: 'Start game plays the Christmas level as far as it is built: The Snowbound Hamlet and The Sprung Horror (From picks its lantern). Switch it off for the journey.' }] : []),   // step G1, until the choice of run has it (step G4)
     { id: 'teach', name: 'Teaching in play', choices: [['saved', 'First run only'], ['always', 'Always']] },   // step 5e-4
     { id: 'spell', name: 'Attack spell', choices: [['shrine', 'As chosen'], ['fire', 'Fireball'], ['bolt', 'Lightning bolt'], ['acid', 'Acid spray']] },   // step 5e-2
     { id: 'place', name: 'Start at', choices: [['night', 'Night'], ['storm', 'Blood Red Rain'], ['dawn', 'Dawn'], ['mist', 'Mist']] },
@@ -13420,7 +13434,7 @@ LanternBox.game({
       spells: { heal: t.all ? 3 : 0, fire: t.all ? 3 : 0 }, spellList: t.all ? ['heal', 'fire'] : [], sel: 0, castBuf: 0, cast: null, healT: 9,
       manaShown: 1, loot: [], shots: [], chest: null, hand: null,
       pots: { health: 0, mana: 0 }, potLine: {}, drinkT: 9, drinkKind: 'health', fills: [],   // version 11: the potions kept (5e-1: how many)
-      run: lb.run === 'infusion' || lb.run === 'rot' ? lb.run : 'bare', echoDue: 0, banked: null, won: false,   // step 5d: the run played, echo still rising, banked (design system 23: or The Endless Rot)
+      run: lb.run === 'infusion' || lb.run === 'rot' || (NOEL && lb.run === 'noel') ? lb.run : 'bare', echoDue: 0, banked: null, won: false,   // step 5d: the run played, echo still rising, banked (design system 23: or The Endless Rot)
       took: { scroll: false, sword: false }, usedSave: false, t0: 0, ret: null,
       slots: LIVES };                                // part G: the lives row's lanterns, the most lives held this run (3 to 5)
     if (t.lives) { g.lives = Math.max(1, Math.min(LIVES_MAX, +t.lives || LIVES)); g.slots = Math.max(LIVES, g.lives); }   // Testing: lives at the start   // part C: Night's path loot taken, the saved run used, time played before a continue
@@ -13430,6 +13444,7 @@ LanternBox.game({
     g.potCap = g.run !== 'bare' ? { health: rec.sockets.health, mana: rec.sockets.mana } : { health: 1, mana: 1 };   // The Endless Rot: everything bought, as The Echo Infusion
     g.attack = ['fire', 'bolt', 'acid'].indexOf(t.spell) >= 0 ? t.spell : rec.spell;   // Testing can try any (step 5e-2)
     g.spells = { heal: t.all ? 3 : 0 }; g.spells[g.attack] = t.all ? 3 : 0; g.spellList = t.all ? ['heal', g.attack] : [];
+    if (g.run === 'noel') { g.p = NOEL_P; if (!t.all) { g.spells = { heal: 1 }; g.spells[g.attack] = 1; g.spellList = ['heal', g.attack]; } }   // The Wretched Noel: heal and the attack spell from the start
     g.zaps = []; g.sprays = []; g.patches = [];   // step 5e-2: the bolts, the sprays and the patches on the ground
     g.strikes = []; g.flareT = 9; g.riseHp = null;   // step 5e-7: the bolt's strikes on cover; The Grave Refuses' flare and health stepping up
     g.gobs = []; g.splats = [];                     // step 5e-8: the mouth-hats' gobs in flight, and their splashes
@@ -13437,7 +13452,7 @@ LanternBox.game({
     g.graces = {}; g.warded = false;              // step 5e-3: the Graces held this run, and Lantern Ward used in this place
     g.bound = []; g.justBound = null; g.graveSpent = false; g.wardT = 9;   // step 5e-6b: the order bound, The Grave Refuses spent, the ward's flare
     g.teach = t.teach === 'always' || (!rec.played && !rec.hintsHidden); g.taught = {};   // step 5e-4: teaching in play on a first run
-    g.diff = wantCheck(lb) ? null : diffFor(g.run, g.run === 'bare' ? 'normal' : rec.diffs[g.run]);   // design system 25: the run's remembered setting (the choice of run's picker); The Bare Reckoning always Grim; the play check none
+    g.diff = wantCheck(lb) ? null : diffFor(g.run, g.run === 'bare' ? 'normal' : g.run === 'noel' ? rec.diffs.noel || 'normal' : rec.diffs[g.run]);   // (The Wretched Noel: Grim until its picker, step G4)   // design system 25: the run's remembered setting (the choice of run's picker); The Bare Reckoning always Grim; the play check none
     g.loop = t.loop === '2' ? 2 : 1;               // step 5e-5: the first loop, each place in its own order (Testing can start in the second)
     g.orders = g.loop === 2 ? PLACES.map((p) => shuffledOrder(lb, lb.world.level(p).order)) : null;
     wearLook(lb, rec);              // his belt, and with the Cosmetics its glow and his lantern's glass (design system 27)
@@ -13453,12 +13468,12 @@ LanternBox.game({
     if (sv) return sv.run === 'rot' ? resumeRot(g, lb, sv) : resumeRun(g, lb, sv);   // part C: Return to the lantern (step 5: or to the wave)
     if (g.run === 'rot') { startRot(g, lb, t); runBegin(g, lb); return g; }   // design system 23: The Endless Rot, in its arenas (its run logged on the test link)
     runBegin(g, lb);                              // the Night pass, part D: the playtest's run log (the play check is no run)
-    loadPlace(g, lb, g.p, { start: 0, half: 1, boss: 2 }[t.where] || 0);
+    loadPlace(g, lb, g.p, { start: 0, half: 1, boss: g.run === 'noel' ? 3 : 2 }[t.where] || 0);   // (The Wretched Noel: four lanterns, the boss's door the fourth)
     lb.hud.health(1); lb.hud.mana(1); lb.hud.armour(g.armour); lb.hud.lives(g.lives, { slots: g.slots }); hudSpells(g, lb); lb.hud.potCap(g.potCap.health, g.potCap.mana); lb.hud.potions(0, 0);
     lb.fade(1);   // black until the first place card lifts
     // design system 18 (PlaceCard): Night's card at the start of the run that will double carries the day's ×2
     const cardOpts = g.loop === 2 ? { again: true } : g.p === 0 && dailyDue(lb, g.run) ? { daily: DAILY } : undefined;
-    lb.placeCard(PLACES[g.p], () => { lb.fade(0); enterPlace(g, lb); }, () => { g.mode = 'ground'; if (g.teach) startTeaching(g, lb); }, cardOpts);   // step 5e-6b: the second loop's cards say "Again, harder".
+    lb.placeCard(placeKey(g), () => { lb.fade(0); enterPlace(g, lb); }, () => { g.mode = 'ground'; if (g.teach) startTeaching(g, lb); }, cardOpts);   // step 5e-6b: the second loop's cards say "Again, harder".
     return g;
   },
 
@@ -13560,7 +13575,7 @@ function moveUpdate(g, lb, dt) {
 /* ---------- places ---------- */
 function loadPlace(g, lb, p, ci, back) {   // the place's level and its checkpoints; ci: start at its first, second or third checkpoint (Testing); back (part C): a run continued, at that lantern, lit
   g.p = p;
-  g.L = g.orders ? lb.world.level(PLACES[p], g.orders[p]) : lb.world.level(PLACES[p]);   // step 5e-5: the second loop's shuffled sections
+  g.L = g.orders ? lb.world.level(PLACES[p], g.orders[p]) : lb.world.level(placeKey(g, p));   // step 5e-5: the second loop's shuffled sections (The Wretched Noel: the hamlet's)
   g.pieces = g.L.pieces();
   g.cps = g.L.checkpoints.map((c, k) => ({ x: c.x, lit: k < ci || ((ci > 0 || back) && k === ci) ? true : null }));
   g.lastCp = ci;
@@ -13595,13 +13610,19 @@ function enterPlace(g, lb) {         // once the place card's black is down: the
   g.out = false;
   g.warded = false;                    // step 5e-3: Lantern Ward, once in each place
   if (g.graces.iron) { g.armour = 3; lb.hud.armour(3); }   // Iron Skin: every place begins with full armour
-  lb.ambient(PLACES[g.p]);
-  lb.music(TRACK[PLACES[g.p]]);
+  lb.ambient(g.run === 'noel' ? 'mist' : PLACES[g.p]);   // The Wretched Noel: the Mist's wind for now (the hamlet has no sound of its own designed)
+  lb.music(g.run === 'noel' ? 0 : TRACK[PLACES[g.p]]);    // and The Long Vigil until Iron Solstice is in
   runNote(g, lb, true);                // the Night pass, part D: the run log's place reached
   runSave(g, lb, { fresh: true });     // part C: the run saved as each place begins, as its first lantern
 }
 function leavePlace(g, lb) {         // walking on out of the boss's arena: the next place's card, or after the Mist the win
   if (g.run === 'rot' || g.x < g.L.length + 30 || g.out) return;   // design system 23: an arena is never walked out of
+  if (g.run === 'noel') {             // The Wretched Noel, step G1: its one place, then the win (no Graces, no second loop, no score); the present and its screens are step G2
+    g.mode = 'over'; g.won = true; streakReset(lb);
+    const b = bankRun(g, lb, true); runEnded(g, lb, 'win');
+    lb.win({ scored: false, shrine: { bank: lb.progress.echo }, words: NOEL_WIN, lifeBonus: 0, stolen: { n: b.stolen, daily: b.daily != null, share: shareText(g.run, g.diff) } });
+    return;
+  }
   if (g.p === PLACES.length - 1) {   // the win (step 5e-5): after the first loop it offers the second, and Finish banks the run; after the second, banked now
     g.mode = 'over'; g.won = true;
     const o = { scored: g.run === 'bare', shrine: { bank: lb.progress.echo } };
@@ -13973,8 +13994,8 @@ function enterArena(g, lb) {         // as enterPlace: Lantern Ward and Iron Ski
   g.out = false;
   g.warded = false;
   if (g.graces.iron) { g.armour = 3; lb.hud.armour(3); }
-  lb.ambient(PLACES[g.p]);
-  lb.music(TRACK[PLACES[g.p]]);
+  lb.ambient(g.run === 'noel' ? 'mist' : PLACES[g.p]);   // The Wretched Noel: the Mist's wind for now (the hamlet has no sound of its own designed)
+  lb.music(g.run === 'noel' ? 0 : TRACK[PLACES[g.p]]);    // and The Long Vigil until Iron Solstice is in
 }
 function holdArena(g) {              // between the ends, as bossUpdate holds him in a boss's arena (its ends are flat, so his feet stay on the ground)
   const l = ARENA_HOLD, r = g.L.length - ARENA_HOLD;
@@ -14272,6 +14293,7 @@ function damage(g, lb, m, n, dir) {    // a blow or a fireball: it flares and jo
 function defeat(g, lb, m) {            // card pieces and its wisp rising to the score (the kit's, 1.6 s); the echo counts as it arrives
   m.st = 'defeat'; m.t = 0; m.atk = null; m.wdx = 0; m.ody = 0; m.beatenAt = lb.time;
   if (g.run === 'rot') { const sure = rotFelled(g, lb, m); feast(g, lb, false); if (sure) sureDrop(g, lb, m); else dropLoot(g, lb, m); return; }   // The Endless Rot: felled, not echo (step 2); the sure drop (step 3)
+  if (g.run === 'noel') { lb.sfx('defeat', 0); feast(g, lb, false); dropLoot(g, lb, m); return; }   // The Wretched Noel: monsters bank no echo (and, until Barney answers the wisps question, none rises)
   const n = MON[m.kind].wisps * hard(g, 'echo');   // step 5e-5: doubled in the second loop
   lb.sfx('defeat', n);                 // step 5d: the card tearing, then its wisp's echo, louder the more echo it gives
   g.echoDue += n;
@@ -14448,9 +14470,9 @@ function drawPatches(g, lb, w) { for (const p of g.patches) if (p.t >= 0) w.acid
 // A life lost in the fight brings him back at the boss's door, the boss whole again.
 const ease3 = (v) => (v <= 0 ? 0 : v >= 1 ? 1 : v * v * (3 - 2 * v)), lerp3 = (a, b, v) => a + (b - a) * v, win3 = (u, a, b) => (u >= a && u < b ? (u - a) / (b - a) : null);
 function newBoss(g) {
-  const P = PLACES[g.p], B = BOSS[P];
+  const P = g.run === 'noel' ? 'mist' : PLACES[g.p], B = g.run === 'noel' ? NOEL_BOSS : BOSS[P];   // The Wretched Noel: The Sprung Horror on the Gaping Tree's fight
   const C = climbFor(g, P);   // design system 26: its step of the climb, its marks whole (so whole again after a life lost)
-  return { st: 'wait', place: P, name: '', hp: B.hp * hard(g, 'boss'), max: B.hp * hard(g, 'boss'), bx: g.L.length - B.at, f: 1, move: null, rest: 1.2, t: 0, hitT: null,
+  return { st: 'wait', place: P, nameOf: g.run === 'noel' ? 'yule' : P, name: '', hp: B.hp * hard(g, 'boss'), max: B.hp * hard(g, 'boss'), bx: g.L.length - B.at, f: 1, move: null, rest: 1.2, t: 0, hitT: null,
     last: null, lock: false, climb: C, marks: C ? C.marks.map((at) => ({ at, spent: false })) : null, close: 0, mendDue: null, glances: [], after: null };
 }
 // design system 26: the boss's bar, with its marks, and the mend's parts when given
@@ -14461,7 +14483,7 @@ function bossUpdate(g, lb, dt) {
   if (b.hitT != null) b.hitT += dt;
   if (b.st === 'wait') {               // he walks in as far as the camera's stop at the arena's end, on his feet: it begins
     if (g.x >= g.L.length - lb.W * 0.68 && g.mode === 'ground' && !g.out) {
-      b.st = 'arrive'; b.t = 0; b.lock = true; b.name = lb.world.bossNames[b.place];
+      b.st = 'arrive'; b.t = 0; b.lock = true; b.name = lb.world.bossNames[b.nameOf || b.place];
       lb.hud.bossName(b.name); bossBar(lb, b); lb.sfx('bossArrives');
     }
     return;
@@ -14717,9 +14739,10 @@ function bossDamage(g, lb, n, src) {   // src: 'sword' for a blow; else an attac
   // beaten: its card pieces and golden wisp, the bar goes, its sure drop, and its crawlers break up with it
   b.st = 'defeat'; b.t = 0; b.move = null;
   lb.sfx('bossDefeated'); lb.hud.boss(null);
-  if (!g.check && b.place !== PLACES[PLACES.length - 1]) happyOnce(lb, b.place);   // kit 0.40.0: a happy moment the first time each boss is beaten (the last boss's is the win's)
+  if (!g.check && g.run !== 'noel' && b.place !== PLACES[PLACES.length - 1]) happyOnce(lb, b.place);   // kit 0.40.0: a happy moment the first time each boss is beaten (the last boss's is the win's)
   if (b.place === 'night' && !g.check && g.run !== 'rot' && lb.progress && !lb.progress.rotOpen) { lb.progress.rotOpen = true; lb.saveProgress(); }   // design system 23 (NewRun): The Endless Rot opens, free, with one saved flag
   // part G: a life, or at five lives LIFE_ECHO more echo with the boss's own (one count, one echo sound)
+  if (g.run === 'noel') return;        // The Wretched Noel: no echo or life from its boss (its present comes in step G2)
   const full = g.lives >= LIVES_MAX, bossEcho = (BOSS_WISPS + (full ? LIFE_ECHO : 0)) * hard(g, 'echo');   // step 5e-5: doubled in the second loop
   g.echoDue += bossEcho;
   lb.after(1.2, () => {                // step 5d: its golden wisp's echo
@@ -15070,9 +15093,9 @@ function spawnMonsters(g, lb) {
   g.mons = [];
   g.walls = g.L.pits.concat(g.L.banks.filter((b) => Math.abs(bankRise(g, b)) >= BANK_MIN), g.pieces.map((p) => [p.x0, p.x1]));
   if (g.monsTest === 'none') return;
-  const mix = MIX[PLACES[g.p]];
+  const mix = g.run === 'noel' ? NOEL_MIX : MIX[PLACES[g.p]];
   let n = 0, h = 0;                    // h: the climb's half, 0 before the halfway lantern, 1 after
-  const kindOf = (role) => g.monsTest === 'hatmaw' ? 'hatmaw' : role === 'S' ? 'crawler' : role === 'F' ? 'bat2' : lb.rand() < mix.big[h] ? 'walker' : lb.pick(mix.M);
+  const kindOf = (role) => g.monsTest === 'hatmaw' ? 'hatmaw' : role === 'S' ? 'crawler' : role === 'F' ? (g.run === 'noel' ? 'crawler' : 'bat2') : lb.rand() < mix.big[h] ? 'walker' : lb.pick(mix.M);   // The Wretched Noel: no flyers
   g.L.sections.forEach((s, i) => {
     h = i < HALF ? 0 : 1;              // the climb: stretches numbered along the path, 1 to 10
     const pats = PATTERNS[s.id], pat = pats[Math.floor(lb.rand() * pats.length)].slice();

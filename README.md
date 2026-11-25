@@ -15,3 +15,5 @@ Open https://barneyfin.github.io/lantern-box-test/ and choose:
 On an iPhone, for full screen: open Gloam Hallow, then Share, then Add to Home Screen, and play it from its icon.
 
 Both files are built single-file pages (made by `python lantern-box/kit/build.py` in Barney's arcade). The fonts embedded in them, IM Fell English and Alegreya Sans, are under the SIL Open Font License 1.1; their licences are in `licences/`. The music was made with Google Gemini.
+
+Since kit 0.50.1 Gloam Hallow here has The Wretched Noel, the Christmas level, as far as it is built (Settings, Testing, "The Wretched Noel"). It is switched on only on this link.

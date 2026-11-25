@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.50.0';
+  const VERSION = '0.50.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -8665,7 +8665,7 @@ function set(hud,st){const q=s=>hq(hud,s);
   const bb=q(".lb-bossbar");if(bb){const on=!!(st.boss&&st.boss.a>0&&ha>0);if(bb.hidden===on)bb.hidden=!on;
     if(on){setOnce(bb,"n",st.boss.name,v=>{figText(bb.querySelector(".lb-bossbar-name"),v);bb.setAttribute("aria-label",v);});bb.style.opacity=String(st.boss.a*ha);
       const tr=bb.querySelector(".lb-bossbar-track");tr.style.setProperty("--v",st.boss.hp.toFixed(3));tr.style.setProperty("--trace",Math.max(st.boss.hp,st.boss.trace).toFixed(3));hudMend(tr,st.boss.mend);setOnce(bb,"vn",Math.round(st.boss.hp*100),v=>bb.setAttribute("aria-valuenow",String(v)));}}}
-const CARDS={night:["Night","The Graveyard"],storm:["Blood Red Rain","The Old Town"],dawn:["Dawn","The Open Moor"],mist:["Mist","The Wind Bent Forest"]}; // from mv10.js: the places' names (Barney, 4 November 2026)
+const CARDS={night:["Night","The Graveyard"],storm:["Blood Red Rain","The Old Town"],dawn:["Dawn","The Open Moor"],mist:["Mist","The Wind Bent Forest"],yule:["Noel","The Snowbound Hamlet"]};   /* kit 0.50.1 (design system 32, PlaceCard): the hamlet's card, "Noel" over "The Snowbound Hamlet" */ // from mv10.js: the places' names (Barney, 4 November 2026)
 // kit 0.26.0 (design system 21, play.js 1.9.0): the pull-down roll's zone, the one place it is kept, so the roll (the shell's stickMove)
 // and the arrowheads (stickShow) always agree (starting figures from Barney's test build): the knob at least 70% of its 31 px travel,
 // 30 to 75 degrees below level
