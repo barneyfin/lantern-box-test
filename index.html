@@ -35,6 +35,7 @@
   <a class="card" href="gloam-hallow.html?check=rot"><b>Play check: The Endless Rot</b><span>The same for the new mode: Gloam Hallow plays itself for about two minutes in the four arenas, each at its busiest wave the first time round and again, harder (up to 8 monsters at once), then gives a result to copy.</span></a>
   <a class="card" href="gloam-hallow.html?runs"><b>Your runs</b><span>Every run played from this page on this device (the last 20): for The Endless Rot, the waves reached and when, each life lost and what took it, Graces, lives and upgrades. Send it by Email or WhatsApp, or copy it.</span></a>
   <a class="card" href="lb-sampler.html"><b>Test page</b><span>Every drawing part and screen, and the speed check. Since kit 0.46.0: tap Start game, then Hamlet in the row of buttons along the bottom for The Snowbound Hamlet, Gloam Hallow's Christmas place, and Walk to walk it. Since kit 0.48.0 its monsters there are the Christmas cast: the present crawler, the gingerbread man, the wind-up toy and the gonk (Parts shows each move). Since kit 0.49.0 its boss is The Sprung Horror (Parts: the boss). Since kit 0.41.0 its last three parts show the wanderer's looks: each belt plain, glowing softly and glowing strongly; the five lantern glasses; a glowing belt with the glass of its own colour. Since kit 0.43.0, with Picture at Fastest, those three parts show the look kept: the belt's two lines and his light.</span></a>
+  <a class="card" href="lb-sampler.html?hamletcheck"><b>Hamlet check</b><span>For the Fire and the Pixel. The Snowbound Hamlet, Gloam Hallow's Christmas place, times itself part by part for about a minute: the place alone, its bulbs at 3, its cast, the whole scene and The Sprung Horror, then The Old Town and the Gaping Tree to compare. Tap Start game and leave it be; at the end, copy the line it gives you. Leave Picture on Automatic.</span></a>
   <h2>Timing the look at Picture: Fastest</h2>
   <p>For the Fire. Run them in this order: T0, T1, T2, then T0 again. Run T3 only if T2 turns out too slow. Each plays itself for about two minutes at Picture: Fastest, whatever Settings says, and saves nothing. Tap a card, then Start game, and leave it be. When it finishes, copy the result, then come back to this page for the next.</p>
   <a class="card trial" href="gloam-hallow.html?check&amp;trial=fl0"><b>T0: Fastest as it is</b><span>Picture: Fastest as kit 0.42.0 draws it: no lines and no light. A plain belt and the gold glass. Run it first, and again last.</span></a>
@@ -80,7 +81,7 @@
   // the version on the server, never a kept copy; the links carry it, so a phone opens the new files at once
   // this page's own version (kept the same as version.txt with every push): a phone may show a kept copy of this page for up to
   // 10 minutes, so when the server's version is newer the page loads itself afresh at a new address, once for each version
-  const PAGE = '0.49.0';
+  const PAGE = '0.49.1';
   fetch('version.txt', { cache: 'no-store' }).then((r) => (r.ok ? r.text() : Promise.reject())).then((t) => {
     const v = t.trim(), tried = (/[?&]fresh=([^&]*)/.exec(location.search) || [])[1];
     if (v !== PAGE && tried !== encodeURIComponent(v)) { location.replace(location.pathname + '?fresh=' + encodeURIComponent(v)); return; }

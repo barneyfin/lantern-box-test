@@ -1316,7 +1316,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.49.0';
+  const VERSION = '0.49.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -11845,10 +11845,25 @@ const PARTS_LEGS = [
   { place: 1, part: 1, label: 'Blood Red Rain alone, moving', short: 'Rain moving' },
   { place: 1, label: 'Blood Red Rain, the whole scene', short: 'Rain whole' },
 ];
+// kit 0.49.1, the hamlet check (Barney, 25 November 2026: "a proper auto test for it that records the needed checks and info"): The Snowbound
+// Hamlet's costs one at a time, as the parts check takes Night apart, with The Old Town and the Gaping Tree on the same device to compare. The
+// costs design system 31 asks to time on the Fire HD 8 are in it: the place (its moonlight on the clouds, snowfields, falling snow, the
+// snowmen's eyes), the bulbs at 3, the cast and The Sprung Horror
+const HAMLET_LEGS = [
+  { place: 1, blank: true, label: 'Nothing drawn (the browser alone)', short: 'Blank' },
+  { place: 1, hamlet: true, part: 1, label: 'The hamlet alone, moving (snow, moonlight, sleigh, eyes)', short: 'Hamlet moving' },
+  { place: 1, hamlet: true, part: 1, bulbs: 3, label: 'The hamlet alone, its bulbs at 3', short: 'Bulbs at 3' },
+  { place: 1, hamlet: true, part: 2, label: 'The hamlet with its cast, each move in turn', short: 'Cast' },
+  { place: 1, hamlet: true, label: 'The hamlet, the whole scene (the cast and the boss)', short: 'Hamlet whole' },
+  { place: 1, hamlet: true, boss: true, label: 'The hamlet at The Sprung Horror, its moves in turn', short: 'Sprung Horror' },
+  { place: 1, label: 'The Old Town, the whole scene (to compare)', short: 'Old Town whole' },
+  { place: 3, boss: true, label: 'The Mist at the Gaping Tree (to compare)', short: 'Gaping Tree' },
+];
 const checkLeg = (g) => (g.check ? g.check.legs[Math.min(g.check.i, g.check.legs.length - 1)] : null);
 function hudShown(on) { const h = document.querySelector('.lb-hud-left'); if (h && h.parentElement) h.parentElement.style.visibility = on ? '' : 'hidden'; }
 function applyLeg(lb, leg) { lb.world._thruCloud(leg.thru == null ? true : leg.thru); hudShown(leg.hud !== false); }
-function legStart(lb, leg) { return leg.boss ? lb.world.level(PLACE_NAMES[leg.place]).arena + 120 : checkStart(lb, leg.place); }
+function legStart(lb, leg) { if (leg.hamlet) { const L = lb.world.level('yule'); return leg.boss ? L.arena + 120 : L.sections.find((q) => q.id === 'E').x0 - 120; }   // kit 0.49.1: the hamlet's big hill, or its boss
+  return leg.boss ? lb.world.level(PLACE_NAMES[leg.place]).arena + 120 : checkStart(lb, leg.place); }
 function onLevel(g, lb, x) { // the camera on a level, and where the stand-in wanderer stands (on a piece's top when he is over one)
   const L = levelOf(g, lb), camX = Math.max(0, Math.min(L.length - lb.W, x - lb.W * HOLD));
   let y = L.ground(x);
@@ -12191,12 +12206,13 @@ function device() { // the browser, the system and the graphics chip, as far as 
   return br + (os ? ' on ' + os : '') + (gpu ? ' · ' + gpu : '');
 }
 const pct = (a, p) => { if (!a.length) return 0; const b = a.slice().sort((x, y) => x - y); return b[Math.min(b.length - 1, Math.floor(p * b.length))]; };
-function startCheck(g, lb, kind) {   // kind: nothing for the speed check, true for the cloud check, 'parts' for the parts check
+function startCheck(g, lb, kind) {   // kind: nothing for the speed check, true for the cloud check, 'parts' for the parts check, 'hamlet' for the hamlet check (kit 0.49.1)
   closePanel();
   Object.assign(g, { part: 0, crowd: true, autoWalk: false, rising: false, monsterAt: null, bossAt: null, ground: true, arena: false });
-  const parts = kind === 'parts', legs = parts ? PARTS_LEGS : kind ? CLOUD_LEGS : LEGS;
-  g.check = { i: 0, phase: 'warm', t0: performance.now(), res: [], cur: null, legs, cloud: kind === true, parts, lvl: lb.picture.level, redone: 0 };
+  const parts = kind === 'parts', hamlet = kind === 'hamlet', legs = hamlet ? HAMLET_LEGS : parts ? PARTS_LEGS : kind ? CLOUD_LEGS : LEGS;
+  g.check = { i: 0, phase: 'warm', t0: performance.now(), res: [], cur: null, legs, cloud: kind === true, parts, hamlet, wasHamlet: !!g.hamlet, lvl: lb.picture.level, redone: 0 };
   g.place = legs[0].place;
+  g.hamlet = !!legs[0].hamlet;
   g.x = legStart(lb, legs[0]);
   applyLeg(lb, legs[0]);
 }
@@ -12235,14 +12251,16 @@ function checkFrame(g, lb, now, gapMs, cpu) { // called once a frame
       T.phase = 'warm';
       T.t0 = now;
       g.place = LEGS[T.i].place;
+      g.hamlet = !!LEGS[T.i].hamlet;   // kit 0.49.1: the hamlet check's legs
       g.x = legStart(lb, LEGS[T.i]);
       applyLeg(lb, LEGS[T.i]);
-      if (LEGS[T.i].boss) lb.hud.boss({ name: BOSS_NAMES[PLACE_NAMES[g.place]], hp: 0.6 });   // at the boss, its bar shows too
+      if (LEGS[T.i].boss) lb.hud.boss({ name: g.hamlet ? 'The Sprung Horror' : BOSS_NAMES[PLACE_NAMES[g.place]], hp: 0.6 });   // at the boss, its bar shows too
       else lb.hud.boss(null);
     }
   }
 }
 function finishCheck(g, lb) {
+  if (g.check.hamlet) { finishHamlet(g, lb); return; }   // kit 0.49.1
   if (g.check.parts) { finishParts(g, lb); return; }
   const R = g.check.res, p = lb.picture, cloud = g.check.cloud;
   g.check = null;
@@ -12283,6 +12301,37 @@ function finishCheck(g, lb) {
   window.__lastCheck = line;
 }
 
+// kit 0.49.1: the hamlet check's results: each leg's frames a second, a frame drawn in, the page's own work, its slowest 5% and longest frame,
+// the phone target for the hamlet's own legs, and a line to copy
+function finishHamlet(g, lb) {
+  const R = g.check.res, p = lb.picture;
+  g.hamlet = g.check.wasHamlet; g.check = null;
+  const ms = (c) => (c.keptUp ? 'under ' : '') + c.drawn.toFixed(1) + ' ms', own = R.filter((r) => /^(Hamlet|Bulbs|Cast|Sprung)/.test(r.short));
+  const phone = own.every((r) => r.fps >= 29.5 && r.drawn <= 25), computer = own.every((r) => r.fps >= 58);
+  const line = 'Lantern Box hamlet check, kit ' + lb.version + ' (test page ' + TEST_PAGE + ') \u00b7 ' + device() + ' \u00b7 ' + p.width + ' \u00d7 ' + p.height + ' at ' + p.sharpness.toFixed(2) + '\u00d7 \u00b7 Picture ' + lb.settings.picture + ' (' + p.level + ')' +
+    (lb.settings.reduceMotion ? ' \u00b7 reduce motion' : '') + (lb.settings.effects ? '' : ' \u00b7 effects off') + ' \u00b7 ' +
+    R.map((r) => r.short + ' ' + Math.round(r.fps) + ' fps / ' + ms(r) + ' / work ' + r.proc.toFixed(1) + ' ms / slowest 5% ' + Math.round(r.slow) + ' / longest ' + Math.round(r.max) + (r.level && r.level !== p.level ? ' (' + r.level + ')' : '')).join(' \u00b7 ') +
+    ' \u00b7 phone target ' + (phone ? 'passes' : 'does not pass') + ' \u00b7 layers ' + Math.round(lb.world.stats.tileBytes / 1048576) + ' MB \u00b7 pictures kept ' + lb.world.stats.poses;
+  openPanel((face, close) => {
+    const h = document.createElement('h2'); h.className = 'lb-heading'; h.textContent = 'Hamlet check'; h.style.fontSize = '26px';
+    const t = document.createElement('table'); t.className = 'lb-scores ls-table'; t.style.fontSize = '13px';
+    t.innerHTML = '<thead><tr><th scope="col">Part</th><th scope="col">Frames a second</th><th scope="col">A frame drawn in</th><th scope="col">The page\u2019s work</th><th scope="col">Slowest 5%</th><th scope="col">Longest</th></tr></thead><tbody>' +
+      R.map((r) => '<tr><td>' + r.label + '</td><td>' + Math.round(r.fps) + '</td><td>' + ms(r) + '</td><td>' + r.proc.toFixed(1) + ' ms</td><td>' + Math.round(r.slow) + ' ms</td><td>' + Math.round(r.max) + ' ms</td></tr>').join('') + '</tbody>';
+    const v = document.createElement('p'); v.className = 'ls-line';
+    v.textContent = 'The hamlet\u2019s own parts. Phone target (30 fps, drawn in 25 ms): ' + (phone ? 'passes' : 'does not pass') + '. Computer target (60 fps): ' + (computer ? 'passes' : 'does not pass') + '.';
+    const l = document.createElement('p'); l.className = 'ls-line'; l.textContent = line;
+    const row = document.createElement('div'); row.className = 'lb-btns';
+    const copy = button('Copy the line', false, () => {
+      const done = () => { copy.textContent = 'Copied'; };
+      const pick = () => { const r = document.createRange(); r.selectNodeContents(l); const s = getSelection(); s.removeAllRanges(); s.addRange(r); copy.textContent = 'Selected: copy it'; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(line).then(done, pick); else pick();
+    });
+    row.append(copy, button('Close', true, close));
+    face.style.gap = '8px'; face.style.padding = '12px 16px';
+    face.append(h, t, v, l, row);
+  }, Math.min(700, innerWidth - 12));
+  window.__lastCheck = line;
+}
 // the parts check's results: each leg's frames a second, a frame drawn in and the page's own work a frame, and a line to copy
 function finishParts(g, lb) {
   const R = g.check.res, p = lb.picture;
@@ -12738,7 +12787,8 @@ function buildPieces(g, lb) {
     ['Screens', () => screensPanel(g, lb)],
     ['Speed check', () => startCheck(g, lb)],
     ['Cloud check', () => startCheck(g, lb, true)],
-    ['Parts check', () => startCheck(g, lb, 'parts')],   // after the Amazon Fire HD 8's speed check (8 November 2026)
+    ['Parts check', () => startCheck(g, lb, 'parts')],
+    ['Hamlet check', () => startCheck(g, lb, 'hamlet')],   // kit 0.49.1   // after the Amazon Fire HD 8's speed check (8 November 2026)
   ].concat([['Hide', () => { g.barHidden = true; }]])   // the whole picture: for the thumbs on a touch device, and to see the ground (since 4c-8, on computers too)
     .forEach(([label, fn]) => bar.append(button(label, false, fn)));
   showBar = button('Test buttons', false, () => { g.barHidden = false; });
@@ -12793,6 +12843,7 @@ LanternBox.game({
 
   start(lb) {
     LB = lb;
+    if (/[?&]hamletcheck\b/.test(location.search)) setTimeout(() => { if (G && !G.check) startCheck(G, lb, 'hamlet'); }, 600);   // kit 0.49.1: the test link's Hamlet check card
     const g = { place: 0, x: 600, facing: 1, walking: false, autoWalk: false, rise: 0, rising: false, ground: true, arena: false, crowd: true, part: 0, monsterAt: null, bossAt: null, health: 1, check: null,
       pips: 1, lives: 3, spells: ['heal', 'fire'], sel: 0, mana: 1, lineN: 0,   // the HUD's state (4c-6a)
       move: null, lastPress: null,   // the move the controls asked for, and the last control pressed (4c-6b)
@@ -12895,7 +12946,7 @@ function drawScene(ctx, g, lb, t, x) {
   if (m) x = moveX(g, lb, m);   // mid-move, he and the camera are where the move has taken him at this frame's time
   const fx = part.focus && g.ground && !g.arena && !g.check ? part.focus(g, lb) : x;   // a part may hold the camera on its own spot
   const lv = g.ground ? onLevel(g, lb, fx) : null, camX = lv ? lv.camX : x - lb.W * 0.28;
-  if (lb.test) { w.hamlet.tones(lb.test.hamletTones || 'forest'); w.hamlet.bulbs(+(lb.test.hamletBulbs || 1)); }   // design system 31: the hamlet's two Testing switches
+  { const ck = checkLeg(g); if (lb.test) w.hamlet.tones(lb.test.hamletTones || 'forest'); w.hamlet.bulbs(ck && ck.bulbs ? ck.bulbs : +((lb.test && lb.test.hamletBulbs) || 1)); }   // design system 31: the hamlet's two Testing switches (kit 0.49.1: a check's leg may set the bulbs)
   if (lv) w.begin(ctx, { level: lv.L, camX, t }); else w.begin(ctx, { place: g.hamlet ? 'yule' : PLACE_NAMES[g.place], camX, rise: g.rise, t });
   if (g.mdHud && !part.mdHud) { lb.hud.boss(null); lb.hud.call(false); g.mdHud = false; }   // kit 0.36.0: the mending part's bar and call, gone with it
   if (part.mdHud) g.mdHud = true;
@@ -12937,7 +12988,7 @@ function showReadout(g, lb) {
   lines[0].innerHTML = '<b>' + Math.round(g.fps) + ' fps</b> · processor ' + g.cpu.toFixed(1) + ' ms a frame';
   lines[1].textContent = p.width + ' × ' + p.height + ' · ' + p.sharpness.toFixed(2) + '× · ' + p.level + (lb.settings.picture === 'auto' ? ' (automatic)' : '') + ' · layers ' + Math.round(lb.world.stats.tileBytes / 1048576) + ' MB';
   lines[2].textContent = g.check
-    ? (g.check.cloud ? 'Cloud check: ' : 'Speed check: ') + g.check.legs[Math.min(g.check.i, g.check.legs.length - 1)].label + ', ' + (g.check.i + 1) + ' of ' + g.check.legs.length + '. Please wait.'
+    ? (g.check.hamlet ? 'Hamlet check: ' : g.check.parts ? 'Parts check: ' : g.check.cloud ? 'Cloud check: ' : 'Speed check: ') + g.check.legs[Math.min(g.check.i, g.check.legs.length - 1)].label + ', ' + (g.check.i + 1) + ' of ' + g.check.legs.length + '. Please wait.'
     : PLACE_LABEL[PLACE_NAMES[g.place]] + ' · ' + PARTS[g.part].name + (g.ground ? ' · ' + whereOnLevel(g, lb) : ' · the flat strip') + (g.lastPress ? ' · pressed: ' + g.lastPress : '');
 }
 function whereOnLevel(g, lb) {
