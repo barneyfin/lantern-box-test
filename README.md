@@ -17,3 +17,5 @@ On an iPhone, for full screen: open Gloam Hallow, then Share, then Add to Home S
 Both files are built single-file pages (made by `python lantern-box/kit/build.py` in Barney's arcade). The fonts embedded in them, IM Fell English and Alegreya Sans, are under the SIL Open Font License 1.1; their licences are in `licences/`. The music was made with Google Gemini.
 
 Since kit 0.50.1 Gloam Hallow here has The Wretched Noel, the Christmas level, as far as it is built (Settings, Testing, "The Wretched Noel"). It is switched on only on this link.
+
+Since kit 0.50.2 the menu's Hamlet breakdown card times The Snowbound Hamlet at Picture: Fastest with each of its costs left out in turn, for the Fire.

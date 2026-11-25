@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.50.1';
+  const VERSION = '0.50.2';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2276,7 +2276,7 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // strong glow and the red glass, its light added to the scene; fl3, the same with its light laid over the scene (part 4's fallback).
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
+  return{fast:w.includes("fastest"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
 const TRIAL_FL=["look timing T0: Fastest as it is, a plain belt and the gold glass","look timing T1: his light kept, a plain belt and the gold glass","look timing T2: the strong glow and the red glass, its light added","look timing T3: the strong glow and the red glass, its light laid over"];   // kit 0.43.0
 const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
   const World = (function () {
@@ -3651,7 +3651,7 @@ class Scene{
     at(0.34);
     if(L.fly==="bats"){drawSwarm(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],tn[1]*0.9));{const M=ctx.getTransform();thr(v=>{v.setTransform(M);drawSwarm(v,W,t,camX*f(0.34),rm,INK);},tn[1]*0.9*THRU_CLOUD);}} /* version 10 */
     else if(L.fly==="crows")drawCrowFlocks(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],0.25)); /* version 9: a quarter towards the air, was tn[1]*0.9 */else drawCrowsAlone(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],tn[1]*0.9),3,false);if(lv==="mist")drawLeaves(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],tn[1]*0.9),0); /* version 8 */
-    if(L.sleigh){const span=W+760,v=rm?26:68,cx=W+380-posmod(t*v+camX*f(0.34),span),cy=205+Math.sin(t*0.45)*18;drawSleigh(ctx,cx-165,cy-2,0.95,mixc(INK,AIR[lv],tn[1]*0.9),t,rm);}
+    if(L.sleigh&&!HAM_OFF.sleigh){const span=W+760,v=rm?26:68,cx=W+380-posmod(t*v+camX*f(0.34),span),cy=205+Math.sin(t*0.45)*18;drawSleigh(ctx,cx-165,cy-2,0.95,mixc(INK,AIR[lv],tn[1]*0.9),t,rm);}
     at(0.5);this.layer(ctx,off,s,W,t,camX*f(0.5),3,tn[2],o);mb(3);
     at(0.62);
     if(L.fly==="bats")drawBigBats(ctx,W,t,camX*f(0.62),rm,mixc(INK,AIR[lv],tn[2]*0.7));
@@ -4520,7 +4520,7 @@ Object.assign(Scene.prototype,{
     for(const tl of tiles){
       for(const f of tl.fairies)drawFairyKit(ctx,f,t,o.level,s,-lx);   // kit 0.20.0: moved by -lx as they're drawn, not copied every frame
       if(tl.eyes.length)drawTreeEyes(ctx,tl.eyes,t,L,o.rm,-lx);
-      if(tl.decos)for(const d of tl.decos)drawFirDeco(ctx,d[0],d[1]-lx,d[2],d[3],d[4],t,d[6]||0,d[5],"eyes");   // design system 31: a snowman's eyes blink
+      if(tl.decos&&!HAM_OFF.eyes)for(const d of tl.decos)drawFirDeco(ctx,d[0],d[1]-lx,d[2],d[3],d[4],t,d[6]||0,d[5],"eyes");   // design system 31: a snowman's eyes blink
     }
     return tiles;
   },
@@ -4606,7 +4606,7 @@ Object.assign(Scene.prototype,{
     const mb=after=>{if(!L.mist)return;L.mist.bands.forEach((b,i)=>{if(b[0]!==after)return;const cv=this.cache.mist[i],k=[0.03,0.12,0.28,0.5][after]*(rm?0.4:1),ox=posmod(t*b[3]*(rm?0.4:1)+camX*k,W2);
       at(k,[0.03,0.12,0.28,0.5][after]);ctx.save();ctx.globalAlpha=b[2];ctx.drawImage(cv,-ox,b[1]-100,W2,200);ctx.drawImage(cv,-ox+W2,b[1]-100,W2,200);ctx.restore();});};
     for(const [cv,ox,k] of clp){at(k);ctx.drawImage(cv,-ox,0,W2,LH);ctx.drawImage(cv,-ox+W2,0,W2,LH);}
-    if(L.snow&&clp.length&&this.cache.clB){ // design system 31: the moonlight on the snow clouds, as Scene.render lays it: a warm light round the moon, kept only where a
+    if(L.snow&&clp.length&&this.cache.clB&&!HAM_OFF.moon){ // design system 31: the moonlight on the snow clouds, as Scene.render lays it: a warm light round the moon, kept only where a
       // cloud is (the clouds' blurred copies, twice, as version 11's band), added to the picture. Every frame: one of the costs to time on the Fire HD 8
       const bH=Math.min(ctx.canvas.height,Math.ceil((this.cache.clB+CLOUD_SOFT*2)*s)+2),MB=this._mb=fitCanvas(this._mb,ctx.canvas.width,bH),mb2=MB.getContext("2d");
       mb2.setTransform(1,0,0,1,0,0);mb2.globalCompositeOperation="source-over";mb2.globalAlpha=1;mb2.clearRect(0,0,MB.width,MB.height);
@@ -4625,14 +4625,14 @@ Object.assign(Scene.prototype,{
     if(L.light==="sun"){at(f(0.05),0.05);drawFarRanges(ctx,W,camX,rm,lv);}
     this.kitLayer(ctx,s,W,t,L1x,1,tn[0],o,L1y);layOn(lit.L1,FAR_THRU); /* version 10; version 11: at 0.55 */mb(1);
     if(lv==="storm"){at(0,1);drawRain(ctx,W,t,0,rm);}   // the rain stays put
-    if(L.snow){at(0,1);drawSnow(ctx,W,t,0,rm,SNOW.white.flakeFar);}   // design system 31: the far snow, the same
+    if(L.snow&&!HAM_OFF.snow){at(0,1);drawSnow(ctx,W,t,0,rm,SNOW.white.flakeFar);}   // design system 31: the far snow, the same
     this.kitLayer(ctx,s,W,t,L2x,2,tn[1],o,L2y);layOn(lit.L2,FAR_THRU); /* version 10; version 11: at 0.55 */mb(2);
     if(L.light==="sun"){at(0);drawRays(ctx,W,t,rm);}
     at(f(0.34),0.34);KIT.fly=s;
     if(L.fly==="bats"){drawSwarm(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],tn[1]*0.9));   // version 10: the far swarm too, when it is on screen
       layOn(lit.sw);}
     else if(L.fly==="crows")drawCrowFlocks(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],0.25)); /* version 9: a quarter towards the air, was tn[1]*0.9 */else drawCrowsAlone(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],tn[1]*0.9),3,false);if(lv==="mist")drawLeaves(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],tn[1]*0.9),0); // version 8
-    if(L.sleigh){const span=W+760,v=rm?26:68,cx=W+380-posmod(t*v+camX*f(0.34),span),cy=205+Math.sin(t*0.45)*18;drawSleigh(ctx,cx-165,cy-2,0.95,mixc(INK,AIR[lv],tn[1]*0.9),t,rm);}   // design system 31: the sleigh, ahead of the swarm
+    if(L.sleigh&&!HAM_OFF.sleigh){const span=W+760,v=rm?26:68,cx=W+380-posmod(t*v+camX*f(0.34),span),cy=205+Math.sin(t*0.45)*18;drawSleigh(ctx,cx-165,cy-2,0.95,mixc(INK,AIR[lv],tn[1]*0.9),t,rm);}   // design system 31: the sleigh, ahead of the swarm
     KIT.fly=null;this.kitLayer(ctx,s,W,t,camX*f(0.5),3,tn[2],o,off(f(0.5),0.5));mb(3);KIT.fly=s;
     at(f(0.62),0.62);
     if(L.fly==="bats")drawBigBats(ctx,W,t,camX*f(0.62),rm,mixc(INK,AIR[lv],tn[2]*0.7));
@@ -4648,7 +4648,7 @@ Object.assign(Scene.prototype,{
   kitEnd(ctx,s,W,t,camX,camY,o){ // everything in front of them
     const lv=o.level,rm=o.rm,off=k=>Math.round(camY*k*s),at=k=>ctx.setTransform(s,0,0,s,0,off(k));
     if(lv==="storm"){at(0);drawRain(ctx,W,t,1,rm);}
-    if(LV[lv].snow){at(0);drawSnow(ctx,W,t,1,rm,SNOW.white.flake);}   // design system 31: the near snow
+    if(LV[lv].snow&&!HAM_OFF.snow){at(0);drawSnow(ctx,W,t,1,rm,SNOW.white.flake);}   // design system 31: the near snow
     const fk=rm?1.08:1.35;
     // version 8 (Barney, 4 November 2026): the plants along the bottom edge stay where they are as the camera rises, as play.js draws them
     this.drawTiles(ctx,this.kitTiles("fore",camX*fk,W,s,i=>this.buildForeTile(i,s,t,o,"g")),camX*fk,s,0);
@@ -7952,7 +7952,9 @@ const CAST_KEPT=new Map(),CAST_KEEP_N=120;let CAST_SCR=null;   // kit 0.49.2: 12
 // kit 0.49.2 (Barney's Pixel, 25 November 2026: the hamlet's whole scene 19 fps at Fastest, its page work 10.8 ms, slowest frames 75 to 150 ms):
 // at Fastest a frame paints at most CAST_BUDGET new puppet pictures; a puppet whose new pose isn't painted yet shows its own last picture (CAST_LAST,
 // by its id) for the frame or two until its turn, so when a pose is drawn changes, never what it looks like. At Best and Faster every pose at once
-const CAST_BUDGET=1,CAST_LAST=new Map(),CAST_STATS={};   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
+const CAST_BUDGET=1,CAST_LAST=new Map(),CAST_STATS={};
+// kit 0.50.2, test only (the test page's Hamlet breakdown, after the Fire's Hamlet check): each of the hamlet's costs can be left out, one at a time
+const HAM_OFF={moon:false,snow:false,sleigh:false,eyes:false,cast:false};   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
 let CAST_PAINTS={frame:-1,n:0};
 function castPainted(rig,key,s,M,N,last){M=M||CAST_KEPT;N=N||CAST_KEEP_N;let E=M.get(key);if(E){M.delete(key);M.set(key,E);return E;}
   if(QUICK){if(CAST_PAINTS.frame!==KIT.frame)CAST_PAINTS={frame:KIT.frame,n:0};if(CAST_PAINTS.n>=CAST_BUDGET&&last)return last;CAST_PAINTS.n++;}   // kit 0.49.2: the budget, at Fastest
@@ -8376,7 +8378,7 @@ function makeTools(env){
       if(at&&!hit&&o.rise==null&&env.quick&&env.quick()){const aq=moAttack(o.kind,Object.assign({},o.attack,{t:Math.floor((o.attack.t||0)*MV_RATE)/MV_RATE}));
         m.P=aq.pose?aq.pose(m):aq.P;m.pk=poseKey(m.P)+(m.qs||"");}
       const out=at?{phase:at.phase,dx,dy}:{phase:null,dx,dy};
-      if(f.level==="yule"&&CAST_RIG[o.kind]&&o.rise==null){ // kit 0.48.0 (design system 31, step K2a): in the hamlet, its puppet, drawn where the kit puts the monster, its foot
+      if(f.level==="yule"&&CAST_RIG[o.kind]&&o.rise==null&&!HAM_OFF.cast){ // kit 0.48.0 (design system 31, step K2a): in the hamlet, its puppet, drawn where the kit puts the monster, its foot
         // at the cast's foot line (2 lines below the ground; the gonk 8 more, its hem in the path); a mouth-hat's hop is the gonk's scurry, so the hop's lift is left out
         const cid=o.id!=null?o.kind+"|"+o.id:o.kind,cp=castPose(o.kind,o,m,f.t),E=castPainted(cp.rig,cp.key,s,null,null,CAST_LAST.get(cid));CAST_LAST.set(cid,E);if(CAST_LAST.size>200)CAST_LAST.clear();const hy=at&&o.attack.name==="hop"?at.dy:0,Yc=(o.y==null?f.gy(x):o.y)+(o.kind==="hatmaw"?2+CAST_RIG.hatmaw.SINK:2)+dy-hy;
         const c=f.ctx,Xs=Math.round(X*s)/s;if(fc===1){c.save();c.translate(Xs,0);c.scale(-1,1);c.translate(-Xs,0);}
@@ -8437,7 +8439,7 @@ function makeTools(env){
         // kit 0.36.0 (version 26): o.mend { t, steps, d, end, broken } and o.glance [{ t, x, y }] (see mdKit); its light behind and over the boss
         const md=o.mend&&name!=="knock"?mdKit(lv,o.mend,(o.glance||[]).map(g=>({t:g.t,x:m(g.x),y:g.y})),{bx:X0,G:f.gy,t:f.t,st:r.st,rm:f.rm}):null;
         c.save();place(c);if(md)md.pre.forEach(fn=>fn(c));
-        if(f.level==="yule"){ // kit 0.49.0 (design system 31, step K2b): The Sprung Horror in the tree's place, its foot at the cast's foot line; the tree's branch and signals not drawn
+        if(f.level==="yule"&&!HAM_OFF.cast){ // kit 0.49.0 (design system 31, step K2b): The Sprung Horror in the tree's place, its foot at the cast's foot line; the tree's branch and signals not drawn
           const hp=shPoseKit(name,u,f.t,!!md,!!r.st.flare),E=castPainted(hp.rig,hp.key,s,CAST_BOSS,CAST_BOSS_N,CAST_LAST.get("boss"));CAST_LAST.set("boss",E);const X1=r.X+(r.st.dx||0),Y1=f.gy(X0)+2+(r.st.dy||0);
           if(r.st.clipY!=null){c.save();c.beginPath();c.rect(X1-400,-2000,800,2000+r.st.clipY);c.clip();}   // rising out of the ground as it arrives, as the tree does
           c.drawImage(E.cv,X1+E.x0,Y1+E.y0,E.cv.width/s,E.cv.height/s);
@@ -8480,7 +8482,8 @@ function makeTools(env){
     },
     // for the test page's readout
     get stats(){return{cast:Object.assign({},CAST_STATS),tileBytes:KIT.bytes,poses:KIT.poses,builds:KIT.builds,thru:KIT.thruN,tints:KIT.tints||0,mdReads:KIT.mdReads||0};},   // kit 0.36.0: tints, mana's colour laid on (a fill, not a repaint); mdReads, a boss's outline read
-    _thruCloud(on){KIT.thru=on!==false;},   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
+    _thruCloud(on){KIT.thru=on!==false;},
+    _hamletOff(o){Object.assign(HAM_OFF,{moon:false,snow:false,sleigh:false,eyes:false,cast:false},o||{});},   // kit 0.50.2, test only: the Hamlet breakdown's switches (cast: the old monsters and the tree)   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
     get _looks(){return{sil:mvSil,det:mvDet,draw:mvDraw,move:mvMove,rm(v){MV_RM=!!v;},state(){return{red:MV_RED,glass:MV_GLASS,pool:MV_POOL,op:MV_POOLOP,x:MV_POOLX,glow:MV_GLOW,halo:MV_GLOWC,blur:MV_GLOWB,n:MV_GLOWN,strength:GLOW_STRENGTH,lightX:LIGHT_X,ask:LOOK_ASK,pic:LOOK_PIC,fx:LOOK_FX,laid:FAST_LAID,laidX:FAST_LAID_X,lines:MV_GLOWL,kept:MV_LIT.size};}};},   // test only (kit 0.41.0): the wanderer's painting, to set beside the design system's own
     get _legs(){return{legs:moLegs,gait:MO_GAIT,stoop:MO_STOOP,hand:moWalkerHandAt,room:MON_ROOM,box:MON_BOX,scene};},   // test only (kit 0.34.0): the walker's and the ghoul's legs, the stoop and the painter, for measuring where their feet and the stooped arm are and how far each reaches
   };
@@ -8940,7 +8943,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
     const AUTO_LIMIT = 0.025, AUTO_SPAN = 4;
     const auto = { level: 0, phase: 'wait', t: 0, n: 0, sum: 0, skip: false };   // phase: wait (for play), settle, time, watch, done
     // kit 0.43.0: a timing trial (?trial=fl0 to fl3) holds the picture at Fastest for the visit; what is saved is not touched
-    const pictureLevel = () => (TRIAL.fl != null ? 'fastest' : own.picture === 'auto' ? LEVELS[auto.level] : own.picture);
+    const pictureLevel = () => (TRIAL.fl != null || TRIAL.fast ? 'fastest' : own.picture === 'auto' ? LEVELS[auto.level] : own.picture);
     // gap: seconds since the last frame, so the time the last frame took
     function timePicture(gap) {
       const skip = auto.skip;
@@ -11971,9 +11974,22 @@ const HAMLET_LEGS = [
   { place: 1, label: 'The Old Town, the whole scene (to compare)', short: 'Old Town whole' },
   { place: 3, boss: true, label: 'The Mist at the Gaping Tree (to compare)', short: 'Gaping Tree' },
 ];
+// kit 0.50.2, the hamlet breakdown (after the Fire HD 8's Hamlet check, 25 November 2026: the whole scene 15 fps against The Old Town's 24):
+// at Fastest (its card holds Picture there for the visit), the hamlet with each of its costs left out in turn, so one run shows what each costs
+const HAMLET_PARTS_LEGS = [
+  { place: 1, blank: true, label: 'Nothing drawn (the browser alone)', short: 'Blank' },
+  { place: 1, hamlet: true, part: 1, label: 'The hamlet alone, moving, everything', short: 'Hamlet moving' },
+  { place: 1, hamlet: true, part: 1, off: { moon: true }, label: 'The same, without the moonlight on the clouds', short: 'No moonlight' },
+  { place: 1, hamlet: true, part: 1, off: { snow: true }, label: 'The same, without the falling snow', short: 'No falling snow' },
+  { place: 1, hamlet: true, part: 1, off: { sleigh: true }, label: 'The same, without the sleigh', short: 'No sleigh' },
+  { place: 1, hamlet: true, part: 1, off: { eyes: true }, label: "The same, without the snowmen's eyes", short: 'No eyes' },
+  { place: 1, hamlet: true, label: 'The hamlet, the whole scene, as built', short: 'Hamlet whole' },
+  { place: 1, hamlet: true, off: { cast: true }, label: 'The whole scene with the old monsters and the Gaping Tree in place of the puppets', short: 'No puppets' },
+  { place: 1, label: 'The Old Town, the whole scene (to compare)', short: 'Old Town whole' },
+];
 const checkLeg = (g) => (g.check ? g.check.legs[Math.min(g.check.i, g.check.legs.length - 1)] : null);
 function hudShown(on) { const h = document.querySelector('.lb-hud-left'); if (h && h.parentElement) h.parentElement.style.visibility = on ? '' : 'hidden'; }
-function applyLeg(lb, leg) { lb.world._thruCloud(leg.thru == null ? true : leg.thru); hudShown(leg.hud !== false); }
+function applyLeg(lb, leg) { lb.world._thruCloud(leg.thru == null ? true : leg.thru); hudShown(leg.hud !== false); lb.world._hamletOff(leg.off); }   // kit 0.50.2: and the hamlet breakdown's switches
 function legStart(lb, leg) { if (leg.hamlet) { const L = lb.world.level('yule'); return leg.boss ? L.arena + 120 : L.sections.find((q) => q.id === 'E').x0 - 120; }   // kit 0.49.1: the hamlet's big hill, or its boss
   return leg.boss ? lb.world.level(PLACE_NAMES[leg.place]).arena + 120 : checkStart(lb, leg.place); }
 function onLevel(g, lb, x) { // the camera on a level, and where the stand-in wanderer stands (on a piece's top when he is over one)
@@ -12336,8 +12352,8 @@ const pct = (a, p) => { if (!a.length) return 0; const b = a.slice().sort((x, y)
 function startCheck(g, lb, kind) {   // kind: nothing for the speed check, true for the cloud check, 'parts' for the parts check, 'hamlet' for the hamlet check (kit 0.49.1)
   closePanel();
   Object.assign(g, { part: 0, crowd: true, autoWalk: false, rising: false, monsterAt: null, bossAt: null, ground: true, arena: false });
-  const parts = kind === 'parts', hamlet = kind === 'hamlet', legs = hamlet ? HAMLET_LEGS : parts ? PARTS_LEGS : kind ? CLOUD_LEGS : LEGS;
-  g.check = { i: 0, phase: 'warm', t0: performance.now(), res: [], cur: null, legs, cloud: kind === true, parts, hamlet, wasHamlet: !!g.hamlet, lvl: lb.picture.level, redone: 0 };
+  const parts = kind === 'parts', breakdown = kind === 'hamletparts', hamlet = kind === 'hamlet' || breakdown, legs = breakdown ? HAMLET_PARTS_LEGS : kind === 'hamlet' ? HAMLET_LEGS : parts ? PARTS_LEGS : kind ? CLOUD_LEGS : LEGS;
+  g.check = { i: 0, phase: 'warm', t0: performance.now(), res: [], cur: null, legs, cloud: kind === true, parts, hamlet, breakdown, wasHamlet: !!g.hamlet, lvl: lb.picture.level, redone: 0 };
   g.place = legs[0].place;
   g.hamlet = !!legs[0].hamlet;
   g.x = legStart(lb, legs[0]);
@@ -12374,7 +12390,7 @@ function checkFrame(g, lb, now, gapMs, cpu) { // called once a frame
       c.level = T.lvl;                 // kit 0.20.1: Automatic may step down partway through the check
       T.res.push(c);
       T.i++;
-      if (T.i >= LEGS.length) { lb.hud.boss(null); lb.world._thruCloud(true); hudShown(true); finishCheck(g, lb); return; }
+      if (T.i >= LEGS.length) { lb.hud.boss(null); lb.world._thruCloud(true); lb.world._hamletOff(); hudShown(true); finishCheck(g, lb); return; }
       T.phase = 'warm';
       T.t0 = now;
       g.place = LEGS[T.i].place;
@@ -12431,16 +12447,16 @@ function finishCheck(g, lb) {
 // kit 0.49.1: the hamlet check's results: each leg's frames a second, a frame drawn in, the page's own work, its slowest 5% and longest frame,
 // the phone target for the hamlet's own legs, and a line to copy
 function finishHamlet(g, lb) {
-  const R = g.check.res, p = lb.picture;
+  const R = g.check.res, p = lb.picture, bd = g.check.breakdown;
   g.hamlet = g.check.wasHamlet; g.check = null;
   const ms = (c) => (c.keptUp ? 'under ' : '') + c.drawn.toFixed(1) + ' ms', own = R.filter((r) => /^(Hamlet|Bulbs|Cast|Sprung)/.test(r.short));
   const phone = own.every((r) => r.fps >= 29.5 && r.drawn <= 25), computer = own.every((r) => r.fps >= 58);
-  const line = 'Lantern Box hamlet check, kit ' + lb.version + ' (test page ' + TEST_PAGE + ') \u00b7 ' + device() + ' \u00b7 ' + p.width + ' \u00d7 ' + p.height + ' at ' + p.sharpness.toFixed(2) + '\u00d7 \u00b7 Picture ' + lb.settings.picture + ' (' + p.level + ')' +
+  const line = 'Lantern Box hamlet ' + (bd ? 'breakdown' : 'check') + ', kit ' + lb.version + ' (test page ' + TEST_PAGE + ') \u00b7 ' + device() + ' \u00b7 ' + p.width + ' \u00d7 ' + p.height + ' at ' + p.sharpness.toFixed(2) + '\u00d7 \u00b7 Picture ' + lb.settings.picture + ' (' + p.level + ')' +
     (lb.settings.reduceMotion ? ' \u00b7 reduce motion' : '') + (lb.settings.effects ? '' : ' \u00b7 effects off') + ' \u00b7 ' +
     R.map((r) => r.short + ' ' + Math.round(r.fps) + ' fps / ' + ms(r) + ' / work ' + r.proc.toFixed(1) + ' ms / slowest 5% ' + Math.round(r.slow) + ' / longest ' + Math.round(r.max) + (r.level && r.level !== p.level ? ' (' + r.level + ')' : '')).join(' \u00b7 ') +
     ' \u00b7 phone target ' + (phone ? 'passes' : 'does not pass') + ' \u00b7 layers ' + Math.round(lb.world.stats.tileBytes / 1048576) + ' MB \u00b7 pictures kept ' + lb.world.stats.poses;
   openPanel((face, close) => {
-    const h = document.createElement('h2'); h.className = 'lb-heading'; h.textContent = 'Hamlet check'; h.style.fontSize = '26px';
+    const h = document.createElement('h2'); h.className = 'lb-heading'; h.textContent = bd ? 'Hamlet breakdown' : 'Hamlet check'; h.style.fontSize = '26px';
     const t = document.createElement('table'); t.className = 'lb-scores ls-table'; t.style.fontSize = '13px';
     t.innerHTML = '<thead><tr><th scope="col">Part</th><th scope="col">Frames a second</th><th scope="col">A frame drawn in</th><th scope="col">The page\u2019s work</th><th scope="col">Slowest 5%</th><th scope="col">Longest</th></tr></thead><tbody>' +
       R.map((r) => '<tr><td>' + r.label + '</td><td>' + Math.round(r.fps) + '</td><td>' + ms(r) + '</td><td>' + r.proc.toFixed(1) + ' ms</td><td>' + Math.round(r.slow) + ' ms</td><td>' + Math.round(r.max) + ' ms</td></tr>').join('') + '</tbody>';
@@ -12915,7 +12931,8 @@ function buildPieces(g, lb) {
     ['Speed check', () => startCheck(g, lb)],
     ['Cloud check', () => startCheck(g, lb, true)],
     ['Parts check', () => startCheck(g, lb, 'parts')],
-    ['Hamlet check', () => startCheck(g, lb, 'hamlet')],   // kit 0.49.1   // after the Amazon Fire HD 8's speed check (8 November 2026)
+    ['Hamlet check', () => startCheck(g, lb, 'hamlet')],   // kit 0.49.1
+    ['Hamlet breakdown', () => startCheck(g, lb, 'hamletparts')],   // kit 0.50.2   // after the Amazon Fire HD 8's speed check (8 November 2026)
   ].concat([['Hide', () => { g.barHidden = true; }]])   // the whole picture: for the thumbs on a touch device, and to see the ground (since 4c-8, on computers too)
     .forEach(([label, fn]) => bar.append(button(label, false, fn)));
   showBar = button('Test buttons', false, () => { g.barHidden = false; });
@@ -12970,7 +12987,8 @@ LanternBox.game({
 
   start(lb) {
     LB = lb;
-    if (/[?&]hamletcheck\b/.test(location.search)) setTimeout(() => { if (G && !G.check) startCheck(G, lb, 'hamlet'); }, 600);   // kit 0.49.1: the test link's Hamlet check card
+    if (/[?&]hamletcheck\b/.test(location.search)) setTimeout(() => { if (G && !G.check) startCheck(G, lb, 'hamlet'); }, 600);
+    if (/[?&]hamletparts\b/.test(location.search)) setTimeout(() => { if (G && !G.check) startCheck(G, lb, 'hamletparts'); }, 600);   // kit 0.50.2: the test link's Hamlet breakdown card   // kit 0.49.1: the test link's Hamlet check card
     const g = { place: 0, x: 600, facing: 1, walking: false, autoWalk: false, rise: 0, rising: false, ground: true, arena: false, crowd: true, part: 0, monsterAt: null, bossAt: null, health: 1, check: null,
       pips: 1, lives: 3, spells: ['heal', 'fire'], sel: 0, mana: 1, lineN: 0,   // the HUD's state (4c-6a)
       move: null, lastPress: null,   // the move the controls asked for, and the last control pressed (4c-6b)
@@ -13115,7 +13133,7 @@ function showReadout(g, lb) {
   lines[0].innerHTML = '<b>' + Math.round(g.fps) + ' fps</b> · processor ' + g.cpu.toFixed(1) + ' ms a frame';
   lines[1].textContent = p.width + ' × ' + p.height + ' · ' + p.sharpness.toFixed(2) + '× · ' + p.level + (lb.settings.picture === 'auto' ? ' (automatic)' : '') + ' · layers ' + Math.round(lb.world.stats.tileBytes / 1048576) + ' MB';
   lines[2].textContent = g.check
-    ? (g.check.hamlet ? 'Hamlet check: ' : g.check.parts ? 'Parts check: ' : g.check.cloud ? 'Cloud check: ' : 'Speed check: ') + g.check.legs[Math.min(g.check.i, g.check.legs.length - 1)].label + ', ' + (g.check.i + 1) + ' of ' + g.check.legs.length + '. Please wait.'
+    ? (g.check.breakdown ? 'Hamlet breakdown: ' : g.check.hamlet ? 'Hamlet check: ' : g.check.parts ? 'Parts check: ' : g.check.cloud ? 'Cloud check: ' : 'Speed check: ') + g.check.legs[Math.min(g.check.i, g.check.legs.length - 1)].label + ', ' + (g.check.i + 1) + ' of ' + g.check.legs.length + '. Please wait.'
     : PLACE_LABEL[PLACE_NAMES[g.place]] + ' · ' + PARTS[g.part].name + (g.ground ? ' · ' + whereOnLevel(g, lb) : ' · the flat strip') + (g.lastPress ? ' · pressed: ' + g.lastPress : '');
 }
 function whereOnLevel(g, lb) {
