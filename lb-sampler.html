@@ -1316,7 +1316,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.46.0';
+  const VERSION = '0.47.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -3107,10 +3107,10 @@ function pitWalls(pl,pr){const wall=(x0,d,sd)=>{const out=[];for(let k=0;k<=16;k
 function pitPath(x,pl,pr,camX){const [wl,wr]=pitWalls(pl,pr);x.beginPath();x.moveTo(pl-camX,gY(pl)-1);for(const p of wl)x.lineTo(p[0]-camX,p[1]);x.lineTo(pl+3-camX,LH+400);x.lineTo(pr-3-camX,LH+400);for(let i=wr.length-1;i>=0;i--)x.lineTo(wr[i][0]-camX,wr[i][1]);for(let X=pr;X>=pl;X-=2)x.lineTo(X-camX,gY(X)-1);x.closePath();}
 function pitPunch(x,pl,pr,camX){x.save();x.globalCompositeOperation="destination-out";pitPath(x,pl,pr,camX);x.fill();x.restore();}
 function pitInside(x,pl,pr,camX){const gt=Math.min(gY(pl),gY(pr)),g=x.createLinearGradient(0,gt,0,LH+60);g.addColorStop(0,mixc(INK,AIR.yule,0.5));g.addColorStop(0.5,mixc(INK,AIR.yule,0.2));g.addColorStop(1,INK);x.fillStyle=g;pitPath(x,pl,pr,camX);x.fill();}
-function pitIce(x,pl,pr,camX,col){const r=rng32(hsh(77,Math.round(pl)));x.save();x.fillStyle=col;
-  for(const [x0,d] of [[pl,1],[pr,-1]]){const y0=gY(x0);
+function pitIce(x,pl,pr,camX,col,G){const gY2=G||gY,r=rng32(hsh(77,Math.round(pl)));x.save();x.fillStyle=col;   // kit 0.46.0: G, a level's ground; left out, the strip's
+  for(const [x0,d] of [[pl,1],[pr,-1]]){const y0=gY2(x0);
     x.beginPath();x.ellipse(x0+d*1.5-camX,y0-1,5.5,3.2,0,0,Math.PI*2);x.fill();   // the lip's snow curls a little over the edge
-    const n=3+Math.floor(r()*2);for(let i=0;i<n;i++){const ix=x0+d*(1+i*3.2+r()*1.5),w=1.6+r()*1.4,L=7+r()*11+(i===0?5:0),iy=gY(ix)+1.5;x.beginPath();x.moveTo(ix-w-camX,iy);x.lineTo(ix+w-camX,iy);x.lineTo(ix+d*0.6-camX,iy+L);x.closePath();x.fill();}}
+    const n=3+Math.floor(r()*2);for(let i=0;i<n;i++){const ix=x0+d*(1+i*3.2+r()*1.5),w=1.6+r()*1.4,L=7+r()*11+(i===0?5:0),iy=gY2(ix)+1.5;x.beginPath();x.moveTo(ix-w-camX,iy);x.lineTo(ix+w-camX,iy);x.lineTo(ix+d*0.6-camX,iy+L);x.closePath();x.fill();}}
   x.restore();}
 const HAMLET_TONES={forest:[0.9,0.77,0.57,0.42],near:[0.82,0.66,0.5,0.34]};
 /* how bright the coloured bulbs are: 1 is the approved look and the default; 2 and 3 are there to try, with nothing in between (Barney, 24 November 2026, 13:38 and 16:11; a switch on the test link's Testing panel). Above 1 a bulb gains a soft glow, a paler and slightly
@@ -3809,9 +3809,10 @@ class Scene{
   play(ctx,s,W,t,camX,o){
     if(o.lvl){ // version 8: a level's rolling ground, as play.js's loopLevel draws it (its still parts into the path's tiles, its candles and shrines live)
       const T=o.lvl,P=T.ar?arP(T):lvBuild(T,s),e=LV[T.lv].edge,st=this.pass!=="live";   // kit 0.29.0: an arena (version 23) draws as play.js's loopArena: its path and scenery, no pieces
-      if(st)rlPath(ctx,T,camX,W,P.G);
-      lvDress(ctx,P,camX,W,t,this.pass||null,o.rm);
-      if(st){ctx.save();ctx.translate(-camX,0);P.pieces.forEach((pl,i)=>{if(pl.X>camX+W+40||pl.X+pl.w*pl.k<camX-40)return;c2Draw(ctx,pl);const w=P.walks[i];c2Lit(ctx,w,w.x0,w.x1,e);});ctx.restore();}
+      if(st)rlPath(ctx,T,camX,W,P.G,o._pits);   // kit 0.46.0: in the hamlet its pits' insides are drawn behind the snow (snowPath)
+      lvDress(ctx,P,camX,W,t,this.pass||null,o.rm,o._snow);
+      if(st){ctx.save();ctx.translate(-camX,0);P.pieces.forEach((pl,i)=>{if((pl.x0!=null?pl.x0:pl.X)>camX+W+40||(pl.x1!=null?pl.x1:pl.X+pl.w*pl.k)<camX-40)return;c2Draw(ctx,pl);const w=P.walks[i];c2Lit(ctx,w,w.x0,w.x1,e);
+        if(pl.sp.traced){if(o._snow)o._snow.push([pl.sp.sn,pl.X-camX,pl.Y,pl.k,pl.sp]);drawPropLights(ctx,pl.sp,pl.X,pl.Y,t,pl.seed||0);}});ctx.restore();}   // kit 0.46.0: a traced piece's own snow, and its lights
       return;
     }
     const Pp=this.pools,x=ctx,set=this.ver<5?"village":LV[o.level].set,SD=SETS[set==="village"&&this.ver>=5?"village5":set],PH=set==="village"?Pp.ph:Pp.get(set).ph;
@@ -4116,15 +4117,16 @@ Object.assign(Scene.prototype,{
     // the path's still parts; its pits are cut out of it, their insides drawn behind it, the snow rule laid along its top (a traced house or
     // prop carries the art's own snow instead), then the icicles over the lips' snow. Put together in the second working canvas (a), then copied back
     const b=sc.b.getContext("2d"),a=sc.a.getContext("2d"),d=sc.d,cap=SNOW[o.snowCol||"white"].cap;
-    if(pits0.length){b.setTransform(s,0,0,s,-d,0);for(const q of pits0)pitPunch(b,q[0],q[1],lx);}
+    const T=o.lvl,G=T?(T.ar?arP(T):lvBuild(T,s)).G:null;   // kit 0.46.0: on a level, its own pits and ground
+    if(pits0.length){b.setTransform(s,0,0,s,-d,0);b.save();b.globalCompositeOperation="destination-out";for(const q of pits0){if(T){rlPitPath(b,q[0],q[1],lx,G,T.lv);b.fill();}else pitPunch(b,q[0],q[1],lx);}b.restore();}
     a.setTransform(1,0,0,1,0,0);a.globalCompositeOperation="source-over";a.globalAlpha=1;a.shadowBlur=0;a.clearRect(0,0,sc.w,sc.h);
-    if(pits0.length){a.setTransform(s,0,0,s,-d,0);for(const q of pits0)pitInside(a,q[0],q[1],lx);}
+    if(pits0.length){a.setTransform(s,0,0,s,-d,0);for(const q of pits0){if(T){rlPitPath(a,q[0],q[1],lx,G,T.lv);a.fill();}else pitInside(a,q[0],q[1],lx);}}
     a.setTransform(1,0,0,1,0,0);a.drawImage(sc.b,0,0);
     const CP=this._cpT=fitCanvas(this._cpT,sc.w,sc.h);snowCap(CP,sc.b,(o.crust||6)*s,5*s,lx*s+d,7);
     const cc=CP.getContext("2d");cc.setTransform(s,0,0,s,-d,0);for(const q of sn0){if(q[4]){cc.globalCompositeOperation="destination-out";drawSprite(cc,q[4],q[1],q[2],q[3],false);cc.globalCompositeOperation="source-over";}drawSprite(cc,q[0],q[1],q[2],q[3],false);}
     cc.setTransform(1,0,0,1,0,0);cc.globalCompositeOperation="source-in";cc.fillStyle=cap;cc.fillRect(0,0,CP.width,CP.height);cc.globalCompositeOperation="source-over";
     a.drawImage(CP,0,0);
-    if(pits0.length){a.setTransform(s,0,0,s,-d,0);for(const q of pits0)pitIce(a,q[0],q[1],lx,cap);}
+    if(pits0.length){a.setTransform(s,0,0,s,-d,0);for(const q of pits0)pitIce(a,q[0],q[1],lx,cap,G||undefined);}
     b.setTransform(1,0,0,1,0,0);b.globalCompositeOperation="copy";b.drawImage(sc.a,0,0);b.globalCompositeOperation="source-over";
   },
   fs(ctx,kind,sp,X,Y,k,flip){if(!this.forePass||this.forePass===kind)drawSprite(ctx,sp,X,Y,k,flip);}, // a front-layer sprite: 'g' ground plants, 't' branches from the top
@@ -5723,11 +5725,11 @@ function c2Lit(c,wk,x0,x1,edge){c.save();c.strokeStyle=edge;c.lineWidth=2.2;c.li
    the forest about 35 to 40%, the old town's streets about 25%. A few steep banks need a jump or a climb; pits lie in the dips. Each place
    has small, right-sized pieces to stand on and climb (a lit top edge on each; walk off, nothing is dropped through). The camera follows
    the wanderer along and up, so the layers rise at their own rates. Drawn into the real places by overriding the Scene's play strip. */
-const RL_MAX={night:190,storm:135,dawn:270,mist:200};
+const RL_MAX={night:190,storm:135,dawn:270,mist:200,yule:135};
 // smooth value noise: the ground's small undulations at several scales, and the crumble of a bank's face
 function rlHash(k,s){let n=(Math.imul(k|0,374761393)+Math.imul(s|0,668265263))|0;n=Math.imul(n^(n>>>13),1274126177);n^=n>>>16;return (n>>>0)/4294967296*2-1;}
 function rlNoise(s,x){const i=Math.floor(x),f=x-i,u=f*f*(3-2*f);return rlHash(i,s)*(1-u)+rlHash(i+1,s)*u;}
-const RL_SEED={night:11,storm:23,dawn:37,mist:53},RL_ROUGH={night:1,storm:0.55,dawn:1.25,mist:1.05}; // the moor roughest, the old town's streets smoothest
+const RL_SEED={night:11,storm:23,dawn:37,mist:53,yule:67},RL_ROUGH={night:1,storm:0.55,dawn:1.25,mist:1.05,yule:0.55}; // the moor roughest, the old town's streets smoothest
 function tRough(T,x){const s=T.seed;return rlNoise(s,x/150)*6+rlNoise(s+1,x/61)*4.2+rlNoise(s+2,x/26)*2.5+rlNoise(s+3,x/10.5)*1.1;}
 // a bank's face: two or three steep pitches with short, tilted shelves between, different for every bank
 const _rlBank={};
@@ -5840,13 +5842,16 @@ function rlFaces(c,T,cam,W,G){const Pt=T.pts,lv=T.lv,SD=T.seed;c.fillStyle=C2_IN
     if(lv==="mist")for(let k=0;k<3;k++){const X0=top-d*(3+k*5),Y0=G(X0)+3,L=18+r()*22;rlTaper(c,[X0-cam,Y0],[X0-cam+d*(6+r()*5),Y0+L*0.45],[X0-cam+d*(3+r()*4),Y0+L],2.8,0.7,8);}
     if(lv==="night"||lv==="dawn")for(let k=0;k<6;k++){const X0=top-d*(1+k*2.6+r()),Y0=G(X0)+1.5,h=4+r()*5;c.lineWidth=1.2;c.beginPath();c.moveTo(X0-cam,Y0);c.quadraticCurveTo(X0-cam+d*1.5,Y0-h*0.6,X0-cam+d*(2+r()*2.5),Y0-h);c.stroke();}}}
 // the ground with its pits: solid between the pits, each pit a gap showing the air (ragged walls, lit lips, the place's dressing)
-function rlPath(c,T,cam,W,G){const lv=T.lv,A=AIR[lv],ink=C2_INK,pits=T.pits.filter(p=>p[1]>cam-80&&p[0]<cam+W+80);c.fillStyle=ink;
-  const segs=[];let x0=cam-20;for(const [pl,pr] of pits){segs.push([x0,pl+8]);x0=pr-8;}segs.push([x0,cam+W+20]);
-  for(const sg of segs){if(sg[1]<sg[0])continue;c.beginPath();c.moveTo(sg[0]-cam,LH+400);for(let x=Math.floor(sg[0]/2)*2;x<=sg[1];x+=2)c.lineTo(x-cam,G(x));c.lineTo(sg[1]-cam,G(sg[1]));c.lineTo(sg[1]-cam,LH+400);c.closePath();c.fill();}
-  for(const [pl,pr] of pits){const gt=Math.min(G(pl),G(pr)),g=c.createLinearGradient(0,gt,0,LH+60);g.addColorStop(0,mixc(ink,A,0.5));g.addColorStop(0.5,mixc(ink,A,0.2));g.addColorStop(1,ink);
+// kit 0.46.0: a pit's inside, its gradient set and its outline traced (rlPath's own lines, moved here): the hamlet's snow cuts it out of the path and
+// draws it behind (snowPath), as design system 31's pit in snow is drawn
+function rlPitPath(c,pl,pr,cam,G,lv){const A=AIR[lv],ink=C2_INK,gt=Math.min(G(pl),G(pr)),g=c.createLinearGradient(0,gt,0,LH+60);g.addColorStop(0,mixc(ink,A,0.5));g.addColorStop(0.5,mixc(ink,A,0.2));g.addColorStop(1,ink);
     // the pit's walls ragged, not ruled: each steps in and out a little on the way down
     const wall=(x0,d,sd)=>{const out=[];for(let k=0;k<=16;k++){const y=G(x0)+k*6.5;out.push([x0+d*(Math.min(k,2)*1.2+k*0.25+Math.abs(rlNoise(sd,k*0.9))*5.2*Math.min(1,k/2)),y]);}return out;},wl=wall(pl,1,71+pl),wr=wall(pr,-1,72+pr);
-    c.fillStyle=g;c.beginPath();c.moveTo(pl-cam,G(pl));for(const p of wl)c.lineTo(p[0]-cam,p[1]);c.lineTo(pl+3-cam,LH+400);c.lineTo(pr-3-cam,LH+400);for(let i=wr.length-1;i>=0;i--)c.lineTo(wr[i][0]-cam,wr[i][1]);for(let X=pr-2;X>pl;X-=2)c.lineTo(X-cam,G(X));c.closePath();c.fill();}
+    c.fillStyle=g;c.beginPath();c.moveTo(pl-cam,G(pl));for(const p of wl)c.lineTo(p[0]-cam,p[1]);c.lineTo(pl+3-cam,LH+400);c.lineTo(pr-3-cam,LH+400);for(let i=wr.length-1;i>=0;i--)c.lineTo(wr[i][0]-cam,wr[i][1]);for(let X=pr-2;X>pl;X-=2)c.lineTo(X-cam,G(X));c.closePath();}
+function rlPath(c,T,cam,W,G,pitsOut){const lv=T.lv,A=AIR[lv],ink=C2_INK,pits=T.pits.filter(p=>p[1]>cam-80&&p[0]<cam+W+80);c.fillStyle=ink;
+  const segs=[];let x0=cam-20;for(const [pl,pr] of pits){segs.push([x0,pl+8]);x0=pr-8;}segs.push([x0,cam+W+20]);
+  for(const sg of segs){if(sg[1]<sg[0])continue;c.beginPath();c.moveTo(sg[0]-cam,LH+400);for(let x=Math.floor(sg[0]/2)*2;x<=sg[1];x+=2)c.lineTo(x-cam,G(x));c.lineTo(sg[1]-cam,G(sg[1]));c.lineTo(sg[1]-cam,LH+400);c.closePath();c.fill();}
+  for(const [pl,pr] of pits){if(pitsOut){pitsOut.push([pl,pr]);continue;}rlPitPath(c,pl,pr,cam,G,lv);c.fill();}
   // a faint rim of the place's light along the ground, so the rolling line reads against the dark layer behind
   const inPit=x=>pits.some(p=>x>p[0]&&x<p[1]);
   c.save();c.strokeStyle=LV[lv].edge;c.globalAlpha=0.32;c.lineWidth=1.3;c.beginPath();let on=false;for(let x=Math.floor(cam/2)*2-10;x<=cam+W+10;x+=2){if(inPit(x)){on=false;continue;}const X=x-cam,Y=G(x);on?c.lineTo(X,Y):c.moveTo(X,Y);on=true;}c.stroke();c.restore();
@@ -5872,18 +5877,23 @@ const LV_SEC={
   E:{name:"The big hill",L:1000,pts:[[0,0,"s"],[300,0.5,"b"],[328,0.86,"s"],[540,1,"s"],[880,0,"f"]],spots:[520]},
   F:{name:"Terraces",L:920,pts:[[0,0,"f"],[40,0,"b"],[68,0.28,"f"],[230,0.31,"b"],[258,0.6,"s"],[440,0.68,"s"],[820,0,"f"]],spots:[150,440]},
   G:{name:"Mound between pits",L:900,pts:[[0,0,"f"],[130,0,"s"],[310,0.32,"s"],[480,0.27,"s"],[680,0,"f"]],pits:[[64,108],[740,784]],spots:[390]}};
-const LV_ORDER={night:"ACDBFGEDAF",storm:"AFDCBGEADC",dawn:"ABDEFGCDEA",mist:"ACGFEDBADF"};
+const LV_ORDER={night:"ACDBFGEDAF",storm:"AFDCBGEADC",dawn:"ABDEFGCDEA",mist:"ACGFEDBADF",
+  yule:"AFDCbGEADCeFbDa"};   // kit 0.46.0 (The Wretched Noel, a stand-in until Barney picks the fifteen at step G1): The Old Town's ten and five more, a small letter a section at the moor's height
+// kit 0.46.0: a place may give its levels a second height (RL_TALL), for sections written as small letters in its order: the same shape, as
+// high as on the moor (Barney, 25 November 2026, for the hamlet: "can we take some hill from the moor, there is an area with a good climb in it")
+const RL_TALL={yule:270};
 const LV_LEAD=300,LV_ARENA=1300;
 const LV_CP_CLEAR=[120,320];   // kit 0.9.1: the stretch round each checkpoint kept clear of pits (the same as Gloam Hallow keeps clear of monsters)
 // the level's terrain, in the same form as round 5d's stretches (rlT), so the same ground, banks, pits and camera rise draw it
 // the kit: a game may pass its own order of sections (the second loop shuffles them); the place's own order otherwise
 const _lvT={};
 function lvTerrain(lv,order){const ord=order||LV_ORDER[lv],id=lv+(ord===LV_ORDER[lv]?"":"-"+ord);if(_lvT[id])return _lvT[id];
-  for(const ch of ord)if(!LV_SEC[ch])throw new Error('Lantern Box: no hill section called "'+ch+'" (they are A to G).');
+  for(const ch of ord)if(!LV_SEC[ch]&&!(RL_TALL[lv]&&LV_SEC[ch.toUpperCase()]&&ch!==ch.toUpperCase()))throw new Error('Lantern Box: no hill section called "'+ch+'" (they are A to G'+(RL_TALL[lv]?', or a to g at the second height':'')+').');
   const pts=[[0,0,"f"]],pits=[],secs=[];let x=LV_LEAD;
-  for(let i=0;i<ord.length;i++){const S=LV_SEC[ord[i]];secs.push({id:ord[i],x0:x,x1:x+S.L});for(const p of S.pts)if(p[0]<S.L)pts.push([x+p[0],p[1],p[2]]);for(const q of S.pits||[])pits.push([x+q[0],x+q[1]]);x+=S.L;}
+  for(let i=0;i<ord.length;i++){const ch=ord[i],up=ch.toUpperCase(),tall=ch!==up,S=LV_SEC[up],hk=tall?RL_TALL[lv]/RL_MAX[lv]:1;secs.push(tall?{id:up,tall:true,x0:x,x1:x+S.L}:{id:up,x0:x,x1:x+S.L});for(const p of S.pts)if(p[0]<S.L)pts.push([x+p[0],p[1]*hk,p[2]]);for(const q of S.pits||[])pits.push([x+q[0],x+q[1]]);x+=S.L;}
   const arena=x;pts.push([arena,0,"f"]);const len=arena+LV_ARENA;pts.push([len,0,"f"],[len+4000,0,"f"]);
   const cps=[{x:120,name:"start"},{x:secs[Math.min(4,secs.length-1)].x1,name:"middle"},{x:arena+60,name:"boss door"}];
+  if(secs.length>=15)cps.splice(2,0,{x:secs[9].x1,name:"middle 2"});   // kit 0.46.0: a level of fifteen sections (the hamlet's) has two lanterns along the way, after the fifth and the tenth
   // kit 0.9.1 (Barney, 5 November 2026): no pit near a checkpoint, from LV_CP_CLEAR[0] before it to [1] after it, so a return is never
   // straight into one (the middle checkpoint of Night, Blood Red Rain and Dawn had the mound-between-pits section's first pit 64 past it)
   const kept=pits.filter(q=>!cps.some(c=>q[1]>c.x-LV_CP_CLEAR[0]&&q[0]<c.x+LV_CP_CLEAR[1]));
@@ -5896,21 +5906,31 @@ function lvBuild(T,S){const key=T.key+"@"+S.toFixed(3);if(_lvP[key])return _lvP[
   let kinds;
   if(lv==="night"){const a=sp(150,90,10,80,x=>drawWall(x,0,0,130,58,3)),b=sp(100,60,10,52,rlBoxTomb),c=sp(130,80,10,70,x=>drawWall(x,0,0,100,44,8));kinds=[[X=>put(a,X,130),130],[X=>put(b,X,80),80],[X=>put(c,X,100),100]];}
   else if(lv==="storm"){const a=sp(96,64,8,54,x=>{rlCrate(x,0,44,42,51,0.02);rlBarrel(x,45,28,36,52);}),b=sp(176,88,12,78,rlCart),c=sp(64,62,8,56,x=>rlCrate(x,0,48,46,43,0));kinds=[[X=>put(a,X,74),74],[X=>put(b,X,110,1,{wr:[38,100]}),110],[X=>put(c,X,48),48]];}
+  else if(lv==="yule"){const pp=hamletProps(S),one=id=>{const sp=pp[id],w=sp.xl+sp.xr;return[X=>{let y=-1e9;for(let q=X;q<=X+w;q+=4)y=Math.max(y,G(q));return{sp,X:X+sp.xl,Y:y+3,k:1,w:sp.xr,x0:X,x1:X+w,seed:Math.round(X)};},w];};
+    kinds=[one("cart"),one("presents"),one("train"),one("soldier")];}   // kit 0.46.0 (design system 31): the cart of presents, the pile of presents, the toy train and the fallen soldier
   else if(lv==="dawn"){const b=B("dolmen",21,{w:124,h:62}),c=sp(110,80,10,72,rlBoulders),d=sp(80,80,40,74,x=>drawCairn(x,0,0,1.3));let n=0;kinds=[[X=>rlDryWall(S,X,140,44,G,61+(n++)),140],[X=>put(b,X,124),124],[X=>put(c,X,100),100],[X=>put(d,X,60),60]];}
   else{const a=sp(190,70,20,60,onFlat(x=>drawLog(x,0,150,150,30,2),150)),b=sp(80,70,30,64,x=>drawStumpProp(x,0,0,1.5,1)),c=sp(166,146,26,138,rlGreatStump),d=sp(100,60,10,52,rlMossRock);
     kinds=[[X=>put(a,X,150,1,{desp:1}),150],[X=>put(b,X,40),40],[X=>put(c,X,110,1,{wr:[35,73]}),110],[X=>put(d,X,80),80]];}
   const pieces=[];let n=0;for(const s of T.secs){for(const c of LV_SEC[s.id].spots){const [mk,w]=kinds[n++%kinds.length];pieces.push(mk(s.x0+c-w/2));}}
   const desp=w=>{const y0=w.y;w.y=x=>{let m=-1e9;for(let d=-6;d<=6;d+=1.5)m=Math.max(m,y0(Math.max(w.x0,Math.min(w.x1,x+d))));return m;};return w;};
-  const walks=pieces.map(pl=>pl.desp?desp(c2Walk(pl,pl.X-6,pl.X+pl.w*pl.k+6,null,60)):pl.wr?c2Walk(pl,pl.X+pl.wr[0]*pl.k,pl.X+pl.wr[1]*pl.k,null,null):c2Walk(pl,pl.X-6,pl.X+pl.w*pl.k+6,null,pl.sp.perch?null:60));
+  const walks=pieces.map(pl=>pl.x0!=null?c2Walk(pl,pl.x0-6,pl.x1+6,null,60):pl.desp?desp(c2Walk(pl,pl.X-6,pl.X+pl.w*pl.k+6,null,60)):pl.wr?c2Walk(pl,pl.X+pl.wr[0]*pl.k,pl.X+pl.wr[1]*pl.k,null,null):c2Walk(pl,pl.X-6,pl.X+pl.w*pl.k+6,null,pl.sp.perch?null:60));
   // scenery: kept off pits, bank faces and pieces
   const r=mvRng(RL_SEED[lv]*31),banks=[];for(let i=0;i<T.pts.length-1;i++)if(T.pts[i][2]==="b")banks.push([T.pts[i][0],T.pts[i+1][0]]);
-  const clear=(x,m)=>!T.pits.some(p=>x>p[0]-m-20&&x<p[1]+m+20)&&!banks.some(b=>x>b[0]-m-12&&x<b[1]+m+12)&&!pieces.some(p=>x>p.X-m&&x<p.X+p.w*p.k+m);
-  const dress=[],gap={night:[110,190],storm:[360,480],dawn:[300,460],mist:[420,600]}[lv];
-  for(let x=180;x<T.arena-100;x+=gap[0]+r()*(gap[1]-gap[0])){if(clear(x,lv==="mist"?70:14))dress.push([x,Math.floor(r()*6)]);}
-  const P={T,G,pieces,walks,dress};return _lvP[key]=P;}
+  const clear=(x,m)=>!T.pits.some(p=>x>p[0]-m-20&&x<p[1]+m+20)&&!banks.some(b=>x>b[0]-m-12&&x<b[1]+m+12)&&!pieces.some(p=>p.x0!=null?x>p.x0-m&&x<p.x1+m:x>p.X-m&&x<p.X+p.w*p.k+m);
+  const dress=[],gap={night:[110,190],storm:[360,480],dawn:[300,460],mist:[420,600],yule:[360,480]}[lv];
+  if(lv==="yule"){const pp=hamletProps(S);for(let x=180;x<T.arena-100;x+=gap[0]+r()*(gap[1]-gap[0])){const v=Math.floor(r()*6),sp=pp[YULE_DRESS[v]],a=sp.xl+30,b=sp.xr+30;   // kit 0.46.0: the hamlet's scenery, kept clear across its whole width
+      if(clear(x-a,0)&&clear(x+b,0)&&clear(x,0)&&!T.cps.some(cp=>x+b>cp.x-90&&x-a<cp.x+130))dress.push([x,v]);}}   // and clear of the lamp posts (the checkpoints)
+  else for(let x=180;x<T.arena-100;x+=gap[0]+r()*(gap[1]-gap[0])){if(clear(x,lv==="mist"?70:14))dress.push([x,Math.floor(r()*6)]);}
+  const P={T,G,pieces,walks,dress};if(lv==="yule")P.props=hamletProps(S);return _lvP[key]=P;}
+// kit 0.46.0 (design system 31): the hamlet's traced props, painted once at a picture's sharpness, as the scene's pools paint them
+const _hamP={};
+function hamletProps(S){const k=S.toFixed(3);if(!_hamP[k]){const o={};for(const d of TRACED_PROPS)o[d.name]=tracedPropSprite(d,PROP_H[d.name],S);_hamP[k]=o;}return _hamP[k];}
+// the hamlet's scenery along a level (design system 31: "the bauble; the signpost, the iron fence, the wreath on its stand and the decorated bare tree as scenery")
+const YULE_DRESS=["sign","fence","wreath","tree","bauble","fence"];
 // the kit: pass "static" draws what never moves (into the path's tiles), "live" the candles and shrines (every frame), neither both
 // kit 0.25.0 (design system 19, play.js 1.8.0): gy, the ground at a picture x from the same cam, so each prop meets the ground in both passes
-function lvDress(c,P,cam,W,t,pass,rm){const lv=P.T.lv,G=P.G,gy=q=>G(q+cam),st=pass!=="live",lp=pass!=="static";for(const [x,v] of P.dress){if(x<cam-160||x>cam+W+160)continue;const X=x-cam;
+function lvDress(c,P,cam,W,t,pass,rm,sn){const lv=P.T.lv,G=P.G,gy=q=>G(q+cam),st=pass!=="live",lp=pass!=="static";for(const [x,v] of P.dress){if(x<cam-(lv==="yule"?300:160)||x>cam+W+(lv==="yule"?300:160))continue;const X=x-cam;
+  if(lv==="yule"){if(!st)continue;const sp=P.props[YULE_DRESS[v]];let y=-1e9;for(let q=x-sp.xl;q<=x+sp.xr;q+=4)y=Math.max(y,G(q));drawSprite(c,sp,X,y+2,1,false);if(sn)sn.push([sp.sn,X,y+2,1,sp]);drawPropLights(c,sp,X,y+2,t,Math.round(x));continue;}   // kit 0.46.0: the hamlet's
   if(lv==="night"){if(st)drawGrave5(c,X,G(x)+4,1.45,v,gy);if(v===2&&lp)drawCandle(c,X+26,G(x+26)+4,t,!!rm,gy);}
   else if(lv==="storm"){if(!st)continue;if(v===5)drawWell(c,X,G(x),gy);else drawStreetLamp(c,X,G(x),GOLD_LIGHT,gy);}
   else if(lv==="dawn"){if(st)drawMenhir(c,X,G(x)+2,1,v%3,gy);}
@@ -6646,6 +6666,32 @@ function cpPostKept(c,lv,X,Y,s,ty){const key=lv+"@"+s;let P=CPK[key];
 function cpGlass(lv,X,Y,t){const h=cpHook(lv),hx=X+h[0]*CP_PK,hy=Y+h[1]*CP_PK,ang=0.05*Math.sin(t*1.6)+0.025*Math.sin(t*2.9);return[hx-Math.sin(ang)*30*CP_LK,hy+Math.cos(ang)*30*CP_LK];}
 const CP_HOOK={};
 function cpHook(lv){return CP_HOOK[lv]||(CP_HOOK[lv]=cpPostB(mk(1,1).getContext("2d"),INK,lv));}
+// kit 0.46.0 (design system 31): a traced prop with the art's own snow, painted once at a sharpness into a kept picture (lights left to the caller)
+const YULE_KEPT={};
+function yuleKept(id,S){const key=id+"@"+S.toFixed(3);let E=YULE_KEPT[key];if(E)return E;const sp=hamletProps(S)[id],m=60,cv=mk(Math.ceil((sp.w+2*m)*S),Math.ceil((sp.h+2*m)*S)),x=cv.getContext("2d");
+  x.setTransform(S,0,0,S,(sp.ox+m)*S,(sp.oy+m)*S);drawSprite(x,sp,0,0,1,false);
+  const sv=mk(cv.width,cv.height),y=sv.getContext("2d");y.setTransform(S,0,0,S,(sp.ox+m)*S,(sp.oy+m)*S);drawSprite(y,sp.sn,0,0,1,false);y.setTransform(1,0,0,1,0,0);y.globalCompositeOperation="source-in";y.fillStyle=SNOW.white.cap;y.fillRect(0,0,sv.width,sv.height);
+  x.setTransform(1,0,0,1,0,0);x.drawImage(sv,0,0);KIT.poses++;return YULE_KEPT[key]={cv,sp,ox:(sp.ox+m)*S,oy:(sp.oy+m)*S};}
+function yuleGlowProp(c,X,Y,S,t){const E=yuleKept("lantern",S);c.save();const M=c.getTransform();c.setTransform(1,0,0,1,M.e,M.f);c.drawImage(E.cv,Math.round(X*S-E.ox),Math.round(Y*S-E.oy));c.restore();drawPropLights(c,E.sp,X,Y,t,0);}
+// kit 0.46.0 (design system 31; Barney, 25 November 2026: "The lamp itself lights"): the hamlet's checkpoint is its garlanded lamp post, and the
+// lamp's own glass is the lantern: dark until he reaches it, then lit gold with the usual spark, flare, ring, halo and pool of light at the lamp's head
+function cpYuleGlass(X,Y){const sp=hamletProps(1).post,g=sp.glows[0]||[0,-180];return[X+g[0],Y+g[1]];}
+function cpDrawYule(c,X,Y,st,t,S){const E=yuleKept("post",S),sp=E.sp,lit=st.lit||0,fl=st.flare||0,gc=[X+(sp.glows[0]||[0,-180])[0],Y+(sp.glows[0]||[0,-180])[1]];
+  if(lit>0&&FX){c.save();c.globalCompositeOperation="screen";c.translate(gc[0],Y);c.scale(2.6,0.5);const g=c.createRadialGradient(0,0,0,0,0,26);g.addColorStop(0,rgbaS(MV_GOLD,0.34*lit));g.addColorStop(1,rgbaS(MV_GOLD,0));c.fillStyle=g;c.fillRect(-26,-26,52,52);c.restore();} // the pool on the ground
+  if(lit>0&&FX){c.save();const g=c.createRadialGradient(gc[0],gc[1],4,gc[0],gc[1],90);g.addColorStop(0,rgbaS(MV_GOLD,0.2*lit));g.addColorStop(1,rgbaS(MV_GOLD,0));c.fillStyle=g;c.fillRect(gc[0]-90,gc[1]-90,180,180);c.restore();} // the warm wash
+  if(lit>0||fl>0){const pu=1+0.05*Math.sin(t*3.1);fxGlowAt(c,gc[0],gc[1],(64+50*fl)*pu,0.5*lit+0.5*fl,MV_GOLD);fxGlowAt(c,gc[0],gc[1],120,0.16*lit,MV_GOLD);}
+  c.save();const M=c.getTransform();c.setTransform(1,0,0,1,M.e,M.f);c.drawImage(E.cv,Math.round(X*S-E.ox),Math.round(Y*S-E.oy));c.restore();   // the post and its snow, kept
+  const path=()=>{c.beginPath();for(const g of sp.glass){g.forEach((q,i)=>i?c.lineTo(X+q[0],Y+q[1]):c.moveTo(X+q[0],Y+q[1]));c.closePath();}};
+  path();c.fillStyle="#241f29";c.fill("evenodd");   // dark glass, with a cold glint while it is unlit, as cpLantern's
+  if(lit<1){c.save();c.globalAlpha=1-lit;c.strokeStyle=lvA(LV.yule.edge,0.7);c.lineWidth=1.2;c.lineCap="round";c.beginPath();c.moveTo(gc[0]-3,gc[1]-5);c.lineTo(gc[0]-1.5,gc[1]+2);c.stroke();c.restore();}
+  if(lit>0){c.save();c.globalAlpha=lit;path();const g=c.createRadialGradient(gc[0],gc[1]+2,1,gc[0],gc[1],14);g.addColorStop(0,"#fff6dc");g.addColorStop(0.45,MV_GLASS_GOLD);g.addColorStop(1,"#c98a34");c.fillStyle=g;c.fill("evenodd");c.restore();}
+  if(fl>0){c.save();c.globalAlpha=fl;path();c.fillStyle="#fffaf0";c.fill("evenodd");c.restore();}
+  if(sp.deco)drawFirDeco(c,sp,X,Y,1,false,t,0,false);   // the garland's bulbs
+  if(lit>0||fl>0)fxGlowAt(c,gc[0],gc[1],16+10*fl,0.55*lit+0.4*fl,"#fff0c0");
+  if(st.ring>0&&st.ring<1){const u=st.ring;c.save();c.strokeStyle=rgbaS(MV_LAMP,(1-u)*0.9);c.lineWidth=2.4*(1-u)+0.6;c.beginPath();c.arc(gc[0],gc[1],10+40*u,0,Math.PI*2);c.stroke();c.restore();
+    const r=mvRng(91);for(let i=0;i<10;i++){const a=r()*Math.PI*2,d=(14+r()*36)*u;fxMote(c,gc[0]+Math.cos(a)*d,gc[1]+Math.sin(a)*d-12*u*u,1.5,1-u,i%3?MV_LAMP:"#fff6dc");}}
+  if(lit>0.6){for(let i=0;i<3;i++){const ph=((t*0.45+i/3)%1),x=gc[0]+Math.sin(t*1.7+i*2)*5,y=gc[1]+10-ph*52;fxMote(c,x,y,1.3,Math.sin(ph*Math.PI)*0.85*lit,i%2?MV_LAMP:"#fff6dc");}}
+  return gc;}
 // kit 0.20.0: how far a checkpoint's drawing reaches either side of its post, its widest glow included (the hook up to 39 right of the post,
 // the glass's sway 3, the glows 120), with room to spare: one wholly off screen isn't drawn
 const CP_REACH=[200,130];   // [to the right of the post, to the left]
@@ -7482,7 +7528,7 @@ function poseKey(P){return JSON.stringify(P,(k,v)=>typeof v==="number"?Math.roun
 function forgetKept(){
   TILE_POOL.clear();RIM_E.clear();MV_LIT.clear();MVC.length=0;CV_LOST.clear();
   KIT.fc=null;KIT.fs=null;KIT.th=null;
-  for(const o of[BOSS_CACHE,SH,MV_SH,CPK,BSK,MDK,_lvP])for(const k of Object.keys(o))delete o[k];
+  for(const o of[BOSS_CACHE,SH,MV_SH,CPK,BSK,MDK,_lvP,_hamP,YULE_KEPT])for(const k of Object.keys(o))delete o[k];   // kit 0.46.0: and the hamlet's props
   _bossCache=new WeakMap();RESETS++;
 }
 function makeTools(env){
@@ -7531,8 +7577,8 @@ function makeTools(env){
       if(!T.api){const banks=[];for(let i=0;i<T.pts.length-1;i++)if(T.pts[i][2]==="b")banks.push([T.pts[i][0],T.pts[i+1][0]]);
         T.api={
           place,order:T.order,length:T.len,arena:T.arena,
-          sections:T.secs.map(q=>({id:q.id,name:LV_SEC[q.id].name,x0:q.x0,x1:q.x1})),   // in play order; the flat start before them is LV_LEAD (300) long
-          checkpoints:T.cps.map(q=>({x:q.x,name:q.name})),                               // the start, after the fifth section, the boss's door
+          sections:T.secs.map(q=>q.tall?{id:q.id,name:LV_SEC[q.id].name,tall:true,x0:q.x0,x1:q.x1}:{id:q.id,name:LV_SEC[q.id].name,x0:q.x0,x1:q.x1}),   // in play order; the flat start before them is LV_LEAD (300) long; kit 0.46.0: tall, at the place's second height
+          checkpoints:T.cps.map(q=>({x:q.x,name:q.name})),                               // the start, after the fifth section, the boss's door (kit 0.46.0: fifteen sections, after the tenth too, "middle 2")
           pits:T.pits.map(q=>q.slice()),                                                  // [x0, x1]: a gap in the path (kit 0.9.1: none from 120 before a checkpoint to 320 after it)
           banks,                                                                          // [x0, x1]: a steep face, up or down
           ground:x=>tGround(T,x),                                                         // the ground's line at x, in picture lines (bigger is lower)
@@ -7741,8 +7787,8 @@ function makeTools(env){
       // wanderer's lantern ({ x, y }), for the spark that leaps from it as it lights (the first 0.18 s). Returns the glass's centre.
       const f=frame("checkpoint");o=o||{};const c=f.ctx,X=x-f.camX,Y=o.y==null?f.gy(x)+3:o.y,st=o.lit===true?{lit:1}:cpState(o.lit==null||o.lit===false?null:o.lit);
       // kit 0.20.0: wholly off screen (and not lighting from his lantern), it isn't drawn; where its glass hangs is still given
-      if((X+CP_REACH[0]<0||X-CP_REACH[1]>f.W)&&!(st.spark!=null&&o.from)){const g=cpGlass(f.level,X,Y,f.t);return{x:g[0]+f.camX,y:g[1]};}
-      const gc=cpDraw(c,"B",f.level,X,Y,st,f.t,QUICK?{s:f.s,ty:Math.round(f.camY*f.s)}:null);   // kit 0.20.0: the kept post at Fastest only
+      if((X+CP_REACH[0]<0||X-CP_REACH[1]>f.W)&&!(st.spark!=null&&o.from)){const g=f.level==="yule"?cpYuleGlass(X,Y):cpGlass(f.level,X,Y,f.t);return{x:g[0]+f.camX,y:g[1]};}
+      const gc=f.level==="yule"?cpDrawYule(c,X,Y,st,f.t,f.s):cpDraw(c,"B",f.level,X,Y,st,f.t,QUICK?{s:f.s,ty:Math.round(f.camY*f.s)}:null);   // kit 0.20.0: the kept post at Fastest only; kit 0.46.0: the hamlet's lamp post
       if(st.spark!=null&&o.from)cpSpark(c,[o.from.x-f.camX,o.from.y],gc,st.spark);
       return{x:gc[0]+f.camX,y:gc[1]};
     },
@@ -7867,6 +7913,7 @@ function makeTools(env){
     },
     splash(x,o){ // o: y, seed. The place's own splash of colour.
       const f=frame("splash");o=o||{};
+      if(f.level==="yule"){yuleGlowProp(f.ctx,x-f.camX,(o.y==null?f.gy(x):o.y)+2,f.s,f.t);return;}   // kit 0.46.0 (design system 31): the hamlet's glow prop, gold, never witch-green
       drawSplash(f.ctx,PLACE_SET[f.level],"on",x-f.camX,(o.y==null?f.gy(x):o.y)+3,f.t,f.rm,o.seed||0,"green","intense");
     },
     candle(x,y){const f=frame("candle");drawCandle(f.ctx,x-f.camX,(y==null?f.gy(x):y)+4,f.t,f.rm,y==null?q=>f.gy(q+f.camX):undefined);},   // kit 0.25.0: on the path it meets the ground
@@ -11332,8 +11379,8 @@ const SAMPLE_SCORES = [['MOR', 2480], ['VEX', 1960], ['BAR', 1120], ['OWL', 1040
 
 let G = null, LB = null;                  // the state of the run, and the kit
 let bar = null, readout = null, panel = null, showBar = null;
-const levelOf = (g, lb) => (g.arena ? lb.world.arena(PLACE_NAMES[g.place]) : lb.world.level(PLACE_NAMES[g.place]));   // kit 0.29.0: or the place's arena
-function nextGround(g) { if (g.hamlet) return; if (!g.ground) { g.ground = true; g.arena = false; } else if (!g.arena) g.arena = true; else { g.ground = false; g.arena = false; } }   // the level, the arena, the flat strip
+const levelOf = (g, lb) => (g.hamlet ? lb.world.level('yule') : g.arena ? lb.world.arena(PLACE_NAMES[g.place]) : lb.world.level(PLACE_NAMES[g.place]));   // kit 0.46.0: or the hamlet's level   // kit 0.29.0: or the place's arena
+function nextGround(g) { if (g.hamlet) { g.ground = !g.ground; g.arena = false; return; } if (!g.ground) { g.ground = true; g.arena = false; } else if (!g.arena) g.arena = true; else { g.ground = false; g.arena = false; } }   // the level, the arena, the flat strip
 function checkStart(lb, i) { const L = lb.world.level(PLACE_NAMES[i]); return L.sections.find((q) => q.id === 'E').x0 - 120; } // the foot of the big hill
 // the speed check's legs: each place up its big hill, then (since 4c-8) the Mist at its boss, as the design system's speed target asks
 const LEGS = [0, 1, 2, 3].map((i) => ({ place: i, label: PLACE_LABEL[PLACE_NAMES[i]], short: PLACE_LABEL[PLACE_NAMES[i]].replace('Blood Red Rain', 'Rain') }))
@@ -12238,7 +12285,7 @@ function buildPieces(g, lb) {
   [
     ['Place', () => { g.place = (g.place + 1) % PLACE_NAMES.length; }],
     ['Ground', () => nextGround(g)],
-    ['Hamlet', () => { g.hamlet = !g.hamlet; if (g.hamlet) { g.ground = false; g.arena = false; } }],   // design system 31: The Snowbound Hamlet, on the flat strip for now
+    ['Hamlet', () => { g.hamlet = !g.hamlet; g.arena = false; if (g.ground) g.x = 120; }],   // design system 31 (kit 0.46.0): The Snowbound Hamlet, its level or (Ground) the flat strip; it has no arena
     ['Section', () => nextSection(g, lb)],
     ['Walk', () => { g.autoWalk = !g.autoWalk; }],
     ['Rise', () => { g.rising = !g.rising; }],
