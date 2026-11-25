@@ -924,7 +924,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 .lb-buy:hover{color:var(--heading)}
 .lb-buy.is-ready{--ch:var(--chamfer-control);border:0;background:var(--brass);color:var(--on-brass);font-weight:700;
   clip-path:polygon(var(--ch) 0,calc(100% - var(--ch)) 0,100% var(--ch),100% calc(100% - var(--ch)),calc(100% - var(--ch)) 100%,var(--ch) 100%,0 calc(100% - var(--ch)),0 var(--ch))}
-.lb-buy:disabled{color:var(--text-dim);border-color:var(--brass-deep);cursor:default}
+/* kit 0.45.2: a shop button that can't be bought yet can still hold the focus for the keys (aria-disabled, not disabled), greyed the same */
+.lb-buy:disabled,.lb-buy[aria-disabled="true"]{color:var(--text-dim);border-color:var(--brass-deep);cursor:default}
 .lb-buy:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--focus)}
 .lb-buy.is-ready:focus-visible{box-shadow:inset 0 0 0 2px var(--on-brass)}
 .lb-socks{display:flex;gap:6px;flex:none}
@@ -1315,7 +1316,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.45.1';
+  const VERSION = '0.45.2';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -11501,7 +11502,7 @@ function shrinePlaqueTwo(lb, ui, back) {
       const ok = canBuy(rec, u), b = ui.txt('button', 'lb-buy' + (ok ? ' is-ready' : ''), ok ? 'Buy ' + u.price : String(u.price));
       b.type = 'button';
       b.setAttribute('aria-label', ok ? 'Buy ' + what + ' for ' + u.price + ' echo' : what.charAt(0).toUpperCase() + what.slice(1) + ', ' + u.price + ' echo, ' + (u.price - rec.echo) + ' more needed');
-      if (!ok) b.disabled = true;
+      if (!ok) b.setAttribute('aria-disabled', 'true');   // kit 0.45.2 (Barney, 25 November 2026, from CrazyGames' QA tool; "Yes, fix all three"): greyed, and still a stop for the keys
       return b;
     };
     const c1 = column('gh-sh1', 'Spell for the next run');
@@ -11511,8 +11512,8 @@ function shrinePlaqueTwo(lb, ui, back) {
       row.querySelector('.lb-shrine-name').textContent = sp.name;
       if (!phone) row.querySelector('.lb-shrine-text').append(ui.txt('span', 'lb-shrine-note', sp.note));
       if (chosen) row.append(ui.txt('span', 'lb-shrine-state', 'Chosen'));
-      else if (owned) { const b = ui.txt('button', 'lb-buy', 'Choose'); b.type = 'button'; row.append(b); items.push({ key, el: b, activate: () => { rec.spell = sp.id; lb.saveProgress(); lb.sfx('confirm'); again('tab'); } }); }
-      else { const u = unlockOf(sp.unlock), b = priceButton(u, sp.name.toLowerCase()); row.append(b); if (!b.disabled) items.push({ key, el: b, activate: () => { if (buyUnlock(lb, u)) again('tab'); } }); }
+      else if (owned) { const b = ui.txt('button', 'lb-buy', 'Choose'); b.type = 'button'; row.append(b); items.push({ key, col: 1, el: b, activate: () => { rec.spell = sp.id; lb.saveProgress(); lb.sfx('confirm'); again(); } }); }
+      else { const u = unlockOf(sp.unlock), b = priceButton(u, sp.name.toLowerCase()), ok = canBuy(rec, u); row.append(b); items.push({ key, col: 1, el: b, activate: ok ? () => { if (buyUnlock(lb, u)) again(key); } : null }); }
       c1.append(row);
     });
     const c2 = column('gh-sh2', 'Potions you can keep');
@@ -11522,10 +11523,23 @@ function shrinePlaqueTwo(lb, ui, back) {
       if (i) text.style.marginTop = phone ? '2px' : '4px';
       const pots = ui.el('div', 'lb-shrine-pots'), socks = ui.el('span', 'lb-socks', [0, 1, 2].map((j) => ui.potion(k, j < n, phone)).join(''));
       socks.setAttribute('aria-hidden', 'true'); pots.append(socks);
-      if (n < 3) { const u = unlockOf(k + (n + 1)), b = priceButton(u, u.towards); pots.append(b); if (!b.disabled) items.push({ key: 'pot:' + k, el: b, activate: () => { if (buyUnlock(lb, u)) again('pot:' + k); } }); }
+      if (n < 3) { const u = unlockOf(k + (n + 1)), b = priceButton(u, u.towards), ok = canBuy(rec, u); pots.append(b); items.push({ key: 'pot:' + k, col: 2, el: b, activate: ok ? () => { if (buyUnlock(lb, u)) again('pot:' + k); } : null }); }
       c2.append(text, pots);
     });
     items.push({ key: 'back', el: backBtn, activate: back });
+    // kit 0.45.2 (Barney, 25 November 2026, from CrazyGames' QA tool; "Yes, fix all three"): left and right go across between the two columns, to the
+    // nearest button in the other one, and stop at the edge; up and down keep the kit's one line. Only the tab turns the page
+    const centre = (e) => { const q = e.getBoundingClientRect(); return [q.left + q.width / 2, q.top + q.height / 2]; };
+    const across = (it, col) => () => {
+      const [x0, y0] = centre(it.el);
+      const near = items.filter((x) => x.col === col).reduce((best, x) => { const [x1, y1] = centre(x.el), d = (x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0); return !best || d < best.d ? { x, d } : best; }, null);
+      if (near) ui.select(items.indexOf(near.x));
+    };
+    items.forEach((it) => {
+      if (it.col === 1) { it.left = () => {}; it.right = across(it, 2); }
+      else if (it.col === 2) { it.left = across(it, 1); it.right = () => {}; }
+      else if (it.key === 'back') { it.left = () => {}; it.right = () => {}; }
+    });
     if (phone) { foot.style.paddingTop = '8px'; foot.append(soon(), backBtn); face.append(head, cols, foot); }
     else {
       const hy = ui.el('div', 'lb-shrine-row is-soon', ui.spell('hysteria', true) + '<span class="lb-shrine-text is-inline"><span class="lb-shrine-name">Hysteria</span><span class="lb-shrine-note"></span></span><span class="lb-shrine-state">Coming soon \u00b7 500</span>');
@@ -11550,7 +11564,8 @@ function shrinePlaqueTwo(lb, ui, back) {
       const ok = canBuy(rec, u);
       row.append(ui.txt('span', 'pr' + (ok ? '' : ' is-short'), String(u.price)));
       b.setAttribute('aria-label', ok ? 'Buy the ' + nm + ' belt for ' + u.price + ' echo' : 'The ' + nm + ' belt, ' + u.price + ' echo, ' + (u.price - rec.echo) + ' more needed');
-      if (ok) slot.belt = { key: 'belt:' + id, row: 1, el: b, activate: () => { if (buyUnlock(lb, u)) again('belt:' + id); } }; else b.setAttribute('aria-disabled', 'true');
+      slot.belt = { key: 'belt:' + id, row: 1, el: b, activate: ok ? () => { if (buyUnlock(lb, u)) again('belt:' + id); } : null };   // kit 0.45.2 (Barney, 25 November 2026, from CrazyGames' QA tool; "Yes, fix all three"): a stop, bought or not
+      if (!ok) b.setAttribute('aria-disabled', 'true');
     }
     let gb;
     if (gs) {                          // bought: one press switches it
@@ -11559,14 +11574,16 @@ function shrinePlaqueTwo(lb, ui, back) {
       gb.setAttribute('aria-pressed', on ? 'true' : 'false'); gb.setAttribute('aria-label', 'The ' + nm + " belt's glow: " + (on ? 'on' : 'off'));
       slot.glow = { key: 'glow:' + id, row: 2, el: gb, activate: () => { turnGlow(lb, id); again('glow:' + id); } };
     } else if (!owned) {
-      gb = ui.txt('button', 'lb-buy lb-glow is-locked', 'Glow ' + LOOK_PRICE.glow); gb.disabled = true;
+      gb = ui.txt('button', 'lb-buy lb-glow is-locked', 'Glow ' + LOOK_PRICE.glow); gb.setAttribute('aria-disabled', 'true');
+      slot.glow = { key: 'glow:' + id, row: 2, el: gb, activate: null };   // kit 0.45.2 (Barney, 25 November 2026, from CrazyGames' QA tool; "Yes, fix all three"): a stop, greyed
       gb.setAttribute('aria-label', 'The ' + nm + " belt's glow, " + LOOK_PRICE.glow + ' echo: needs the belt first');
     } else if (rec.echo >= LOOK_PRICE.glow) {
       gb = ui.txt('button', 'lb-buy lb-glow is-ready', 'Buy glow ' + LOOK_PRICE.glow);
       gb.setAttribute('aria-label', 'Buy the ' + nm + " belt's glow for " + LOOK_PRICE.glow + ' echo');
       slot.glow = { key: 'glow:' + id, row: 2, el: gb, activate: () => { if (buyGlow(lb, id)) again('glow:' + id); } };
     } else {
-      gb = ui.txt('button', 'lb-buy lb-glow', 'Glow ' + LOOK_PRICE.glow); gb.disabled = true;
+      gb = ui.txt('button', 'lb-buy lb-glow', 'Glow ' + LOOK_PRICE.glow); gb.setAttribute('aria-disabled', 'true');
+      slot.glow = { key: 'glow:' + id, row: 2, el: gb, activate: null };   // kit 0.45.2 (Barney, 25 November 2026, from CrazyGames' QA tool; "Yes, fix all three"): a stop, greyed
       gb.setAttribute('aria-label', 'The ' + nm + " belt's glow, " + LOOK_PRICE.glow + ' echo');
     }
     gb.type = 'button';
@@ -11590,14 +11607,17 @@ function shrinePlaqueTwo(lb, ui, back) {
       const ok = rec.echo >= LOOK_PRICE.glass;
       row.append(ui.txt('span', 'pr' + (ok ? ' is-buy' : ''), ok ? 'Buy ' + LOOK_PRICE.glass : String(LOOK_PRICE.glass)));
       b.setAttribute('aria-label', ok ? 'Buy the ' + nm + ' lantern glass for ' + LOOK_PRICE.glass + ' echo' : 'The ' + nm + ' lantern glass, ' + LOOK_PRICE.glass + ' echo');
-      if (ok) items.push({ key: 'glass:' + id, row: 3, el: b, activate: () => { if (buyGlass(lb, id)) again('glass:' + id); } }); else b.setAttribute('aria-disabled', 'true');
+      items.push({ key: 'glass:' + id, row: 3, el: b, activate: ok ? () => { if (buyGlass(lb, id)) again('glass:' + id); } : null });   // kit 0.45.2 (Barney, 25 November 2026, from CrazyGames' QA tool; "Yes, fix all three"): a stop, bought or not
+      if (!ok) b.setAttribute('aria-disabled', 'true');
     }
     r5.append(b);
   });
   items.push({ key: 'back', row: 4, el: backBtn, activate: back });
   /* the keys on this page (Barney's choice, 22 November 2026): a grid, where the kit's plaques move through their items in one line.
      Left and right along a row; up and down between a belt, its glow and the glass below; up from the belts reaches the page's tab,
-     down from the glass reaches Back. A button that can't be pressed is no stop, so the way leads round it. */
+     down from the glass reaches Back. Since kit 0.45.2 (Barney, 25 November 2026, from CrazyGames' QA tool; "Yes, fix all three"), every
+     belt, glow and glass is a stop, one that can't be bought yet too (greyed, and Enter does nothing there), so left and right go along
+     the whole row; until then a button that couldn't be pressed was no stop, and with little echo the keys had almost nowhere to go. */
   const sel = (it) => { if (it) ui.select(items.indexOf(it)); }, inRow = (r) => items.filter((it) => it.row === r);
   const mid = (el) => { const q = el.getBoundingClientRect(); return q.left + q.width / 2; };
   const nearest = (list, el) => list.reduce((best, it) => (!best || Math.abs(mid(it.el) - mid(el)) < Math.abs(mid(best.el) - mid(el)) ? it : best), null);

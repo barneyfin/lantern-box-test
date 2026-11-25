@@ -924,7 +924,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 .lb-buy:hover{color:var(--heading)}
 .lb-buy.is-ready{--ch:var(--chamfer-control);border:0;background:var(--brass);color:var(--on-brass);font-weight:700;
   clip-path:polygon(var(--ch) 0,calc(100% - var(--ch)) 0,100% var(--ch),100% calc(100% - var(--ch)),calc(100% - var(--ch)) 100%,var(--ch) 100%,0 calc(100% - var(--ch)),0 var(--ch))}
-.lb-buy:disabled{color:var(--text-dim);border-color:var(--brass-deep);cursor:default}
+/* kit 0.45.2: a shop button that can't be bought yet can still hold the focus for the keys (aria-disabled, not disabled), greyed the same */
+.lb-buy:disabled,.lb-buy[aria-disabled="true"]{color:var(--text-dim);border-color:var(--brass-deep);cursor:default}
 .lb-buy:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--focus)}
 .lb-buy.is-ready:focus-visible{box-shadow:inset 0 0 0 2px var(--on-brass)}
 .lb-socks{display:flex;gap:6px;flex:none}
@@ -1315,7 +1316,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.45.1';
+  const VERSION = '0.45.2';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
