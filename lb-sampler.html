@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.50.2';
+  const VERSION = '0.50.3';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -4608,13 +4608,13 @@ Object.assign(Scene.prototype,{
     for(const [cv,ox,k] of clp){at(k);ctx.drawImage(cv,-ox,0,W2,LH);ctx.drawImage(cv,-ox+W2,0,W2,LH);}
     if(L.snow&&clp.length&&this.cache.clB&&!HAM_OFF.moon){ // design system 31: the moonlight on the snow clouds, as Scene.render lays it: a warm light round the moon, kept only where a
       // cloud is (the clouds' blurred copies, twice, as version 11's band), added to the picture. Every frame: one of the costs to time on the Fire HD 8
-      const bH=Math.min(ctx.canvas.height,Math.ceil((this.cache.clB+CLOUD_SOFT*2)*s)+2),MB=this._mb=fitCanvas(this._mb,ctx.canvas.width,bH),mb2=MB.getContext("2d");
+      const hq=QUICK?0.5:1,bH=Math.min(ctx.canvas.height,Math.ceil((this.cache.clB+CLOUD_SOFT*2)*s)+2),MB=this._mb=fitCanvas(this._mb,Math.ceil(ctx.canvas.width*hq),Math.ceil(bH*hq)),mb2=MB.getContext("2d");   // kit 0.50.3: hq, half size at Fastest
       mb2.setTransform(1,0,0,1,0,0);mb2.globalCompositeOperation="source-over";mb2.globalAlpha=1;mb2.clearRect(0,0,MB.width,MB.height);
-      for(const [,ox,k,cb] of clp){mb2.setTransform(s,0,0,s,0,off(k));for(let n=0;n<2;n++){mb2.drawImage(cb,-ox,0,W2,LH);mb2.drawImage(cb,-ox+W2,0,W2,LH);}}
+      for(const [,ox,k,cb] of clp){mb2.setTransform(s*hq,0,0,s*hq,0,off(k)*hq);for(let n=0;n<2;n++){mb2.drawImage(cb,-ox,0,W2,LH);mb2.drawImage(cb,-ox+W2,0,W2,LH);}}
       const MV=this._mv=fitCanvas(this._mv,MB.width,MB.height),v=MV.getContext("2d");v.setTransform(1,0,0,1,0,0);v.globalCompositeOperation="source-over";v.globalAlpha=1;v.clearRect(0,0,MV.width,MV.height);
-      const mx=W*MOON.x*s,my=LH*MOON.y*s+off(0),g=v.createRadialGradient(mx,my,MOON.r*s*0.8,mx,my,MOON.r*s*5.2);g.addColorStop(0,"rgba(255,212,138,0.5)");g.addColorStop(0.45,"rgba(255,212,138,0.2)");g.addColorStop(1,"rgba(255,212,138,0)");
+      const mx=W*MOON.x*s*hq,my=(LH*MOON.y*s+off(0))*hq,g=v.createRadialGradient(mx,my,MOON.r*s*0.8*hq,mx,my,MOON.r*s*5.2*hq);g.addColorStop(0,"rgba(255,212,138,0.5)");g.addColorStop(0.45,"rgba(255,212,138,0.2)");g.addColorStop(1,"rgba(255,212,138,0)");
       v.fillStyle=g;v.fillRect(0,0,MV.width,MV.height);v.globalCompositeOperation="destination-in";v.drawImage(MB,0,0);v.globalCompositeOperation="source-over";
-      ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalCompositeOperation="screen";ctx.drawImage(MV,0,0);ctx.restore();}
+      ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalCompositeOperation="screen";if(hq<1){ctx.imageSmoothingEnabled=true;ctx.drawImage(MV,0,0,MV.width/hq,MV.height/hq);}else ctx.drawImage(MV,0,0);ctx.restore();}
     at(0);
     if(lv==="storm"){
       const st=lightning(t);
@@ -7965,12 +7965,17 @@ function castPainted(rig,key,s,M,N,last){M=M||CAST_KEPT;N=N||CAST_KEEP_N;let E=M
   E={cv,x0,y0,x1,y1};KIT.poses++;{const kk=key.split("|")[0];CAST_STATS[kk]=(CAST_STATS[kk]||0)+1;}M.set(key,E);if(M.size>N)M.delete(M.keys().next().value);return E;}
 // kit 0.49.0 (step K2b): The Sprung Horror's pictures, a few kept (each is large), and a kept picture in one colour (the mend's, laid over it)
 const CAST_BOSS=new Map(),CAST_BOSS_N=24;
+// kit 0.50.3 (the Fire's Hamlet breakdown, 25 November 2026: The Sprung Horror repainted its never-repeating sway about 9.5 times a second;
+// Barney: "both please"): at Fastest only its sway loops over one sway period (2π/1.7 s; its arms' own slower sway meets itself again a
+// little off, a small step each loop), holds still through a move, and its moves step 6 times a second; it keeps up to keep pictures
+const SH_FAST={loop:2*Math.PI/1.7,moves:6,keep:48};
 function castTinted(E,col){if(E.tint&&E.tintC===col)return E.tint;const T=mk(E.cv.width,E.cv.height),x=T.getContext("2d");x.drawImage(E.cv,0,0);x.globalCompositeOperation="source-in";x.fillStyle=col;x.fillRect(0,0,T.width,T.height);E.tint=T;E.tintC=col;return T;}
 // The Sprung Horror's pose on the Gaping Tree's clock (design system 31, Cast/sprung-horror.js: its film's moves, word for word, each from the
 // seconds into the game's move): the claws (roots), the head at head height (branch), the fan (splinters; Barney, 25 November 2026: the splinters
 // burst from its box, where the game's fly, so the fan's pose and its mouth's gathering glow are kept and the kit's splinters drawn), the
 // knock-back (the kit's own light), the mend (one picture, as the bosses' mends never repaint) and its sway. Times stepped to 12 a second, the sway's to 8
-function shPoseKit(name,u,t,mending,hit){const R=CAST_RIG.boss,k=R.k,mix=R.mixP,st=q=>Math.floor((q||0)*MV_RATE+1e-9)/MV_RATE,sr=QUICK?TREE16.sway:8,ti=Math.floor(t*sr)/sr,idle=()=>R.idle(ti);   // kit 0.49.2: at Fastest its sway at the Gaping Tree's 2.4 a second (design system 16)
+function shPoseKit(name,u,t,mending,hit){const R=CAST_RIG.boss,k=R.k,mix=R.mixP,MR=QUICK?SH_FAST.moves:MV_RATE,st=q=>Math.floor((q||0)*MR+1e-9)/MR,sr=QUICK?TREE16.sway:8,
+    ti=QUICK?(name?0:Math.floor(posmod(t,SH_FAST.loop)*sr)/sr):Math.floor(t*sr)/sr,idle=()=>R.idle(ti);   // kit 0.49.2: at Fastest its sway at the Gaping Tree's 2.4 a second (design system 16); kit 0.50.3: there a loop, and held through a move
   const outAt=v=>{const B0=[R.BASE[0]*k,R.BASE[1]*k],T=[B0[0]+R.HEAD[0]*v,lerpN(B0[1]-R.L0*k,R.HEAD[1],v)];return{L:0,top:[T[0]-B0[0],T[1]-B0[1]],C:[B0[0]+R.HEAD[0]*0.35*v,B0[1]-R.L0*k*(1+0.9*v)],lean:0.25*v,arms:[0.45+0.6*v,0.45+0.6*v],hot:1};};
   let P,sparks=null,trail=null,q=st(u);
   if(mending)P={lean:0.18,top:[0.08*k,0.04*k],L:0.5,arms:[0.15,0.15],hot:0};
@@ -8440,7 +8445,7 @@ function makeTools(env){
         const md=o.mend&&name!=="knock"?mdKit(lv,o.mend,(o.glance||[]).map(g=>({t:g.t,x:m(g.x),y:g.y})),{bx:X0,G:f.gy,t:f.t,st:r.st,rm:f.rm}):null;
         c.save();place(c);if(md)md.pre.forEach(fn=>fn(c));
         if(f.level==="yule"&&!HAM_OFF.cast){ // kit 0.49.0 (design system 31, step K2b): The Sprung Horror in the tree's place, its foot at the cast's foot line; the tree's branch and signals not drawn
-          const hp=shPoseKit(name,u,f.t,!!md,!!r.st.flare),E=castPainted(hp.rig,hp.key,s,CAST_BOSS,CAST_BOSS_N,CAST_LAST.get("boss"));CAST_LAST.set("boss",E);const X1=r.X+(r.st.dx||0),Y1=f.gy(X0)+2+(r.st.dy||0);
+          const hp=shPoseKit(name,u,f.t,!!md,!!r.st.flare),E=castPainted(hp.rig,hp.key,s,CAST_BOSS,QUICK?SH_FAST.keep:CAST_BOSS_N,CAST_LAST.get("boss"));CAST_LAST.set("boss",E);const X1=r.X+(r.st.dx||0),Y1=f.gy(X0)+2+(r.st.dy||0);
           if(r.st.clipY!=null){c.save();c.beginPath();c.rect(X1-400,-2000,800,2000+r.st.clipY);c.clip();}   // rising out of the ground as it arrives, as the tree does
           c.drawImage(E.cv,X1+E.x0,Y1+E.y0,E.cv.width/s,E.cv.height/s);
           if(md&&md.light>0){c.save();c.globalAlpha=Math.min(1,0.48*md.light);c.drawImage(castTinted(E,MANA),X1+E.x0,Y1+E.y0,E.cv.width/s,E.cv.height/s);c.restore();}   // the mend: mana's colour laid over it

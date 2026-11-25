@@ -19,3 +19,5 @@ Both files are built single-file pages (made by `python lantern-box/kit/build.py
 Since kit 0.50.1 Gloam Hallow here has The Wretched Noel, the Christmas level, as far as it is built (Settings, Testing, "The Wretched Noel"). It is switched on only on this link.
 
 Since kit 0.50.2 the menu's Hamlet breakdown card times The Snowbound Hamlet at Picture: Fastest with each of its costs left out in turn, for the Fire.
+
+Since kit 0.50.3, at Picture: Fastest, The Sprung Horror's sway loops and its moves step 6 times a second, and the moonlight on the hamlet's clouds is worked out at half size (the Fire's Hamlet breakdown).
