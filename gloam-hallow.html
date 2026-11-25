@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.50.3';
+  const VERSION = '0.51.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -3139,6 +3139,10 @@ function pitIce(x,pl,pr,camX,col,G){const gY2=G||gY,r=rng32(hsh(77,Math.round(pl
     const n=3+Math.floor(r()*2);for(let i=0;i<n;i++){const ix=x0+d*(1+i*3.2+r()*1.5),w=1.6+r()*1.4,L=7+r()*11+(i===0?5:0),iy=gY2(ix)+1.5;x.beginPath();x.moveTo(ix-w-camX,iy);x.lineTo(ix+w-camX,iy);x.lineTo(ix+d*0.6-camX,iy+L);x.closePath();x.fill();}}
   x.restore();}
 const HAMLET_TONES={forest:[0.9,0.77,0.57,0.42],near:[0.82,0.66,0.5,0.34]};
+// kit 0.51.0 (Barney, 25 November 2026: "tone down the haze in the hamlet as it looks too strong when seen by eye; it does not get your attention in the
+// other places"): the hamlet's backdrop layers' haze glow at this share of design system 32's (its haze is a pale lilac, so round the near firs it read
+// as a white glow). A change to the approved look, kept in NOTES-hamlet-for-design.md to take back to the design system
+const HAMLET_HAZE=0.4;
 /* how bright the coloured bulbs are: 1 is the approved look and the default; 2 and 3 are there to try, with nothing in between (Barney, 24 November 2026, 13:38 and 16:11; a switch on the test link's Testing panel). Above 1 a bulb gains a soft glow, a paler and slightly
    larger core and a wider halo. Measured over the nearest layer's tone a bulb gives about 1.8 times the light at 2 and 3 times at 3. Above 1 each bulb costs one more gradient a frame. */
 let BULB_BRIGHT=1;
@@ -3732,7 +3736,7 @@ class Scene{
       x.save();x.setTransform(s,0,0,s,-(this.tdx||0),0);x.globalCompositeOperation="destination-out";x.beginPath();x.moveTo(-10,LH+10);for(let sx=-10;sx<=W+10;sx+=6)x.lineTo(sx,yfn(sx+lx)+0.5);x.lineTo(W+10,LH+10);x.closePath();x.fill();x.restore();
       ctx.fillStyle=(SNOW[o.snowCol||"white"].fields||[])[L]||mixc(SNOW[o.snowCol||"white"].field,air,tint*0.7);ctx.beginPath();ctx.moveTo(-10,LH+120);for(let sx=-10;sx<=W+10;sx+=6)ctx.lineTo(sx,yfn(sx+lx));ctx.lineTo(W+10,LH+120);ctx.closePath();ctx.fill();}
     ctx.save();ctx.setTransform(1,0,0,1,0,ctx.getTransform().f); // the layer keeps the lift it was given
-    if(L>=2){ctx.shadowColor=rgba(haze,L===4?0.55:0.4);ctx.shadowBlur=(L===4?14:9)*s;}
+    if(L>=2){ctx.shadowColor=rgba(haze,(L===4?0.55:0.4)*(o.level==="yule"?HAMLET_HAZE:1));ctx.shadowBlur=(L===4?14:9)*s;}   /* kit 0.51.0: the hamlet's haze toned down (HAMLET_HAZE) */
     ctx.drawImage(off,0,0);ctx.restore();
     if(SN){const CP=this._cp=fitCanvas(this._cp,off.width,off.height),d=[0,2.2,3,4.2,5.5][L]*s;snowCap(CP,off,d,d*0.8,lx*s+(this.tdx||0),L);
       const cc=CP.getContext("2d");cc.setTransform(1,0,0,1,0,0);cc.globalCompositeOperation="destination-out";cc.drawImage(this._nc,0,0);cc.globalCompositeOperation="source-over";cc.drawImage(SM,0,0);cc.globalCompositeOperation="source-in";cc.fillStyle=mixc(SNOW[o.snowCol||"white"].cap,air,tint*0.6);cc.fillRect(0,0,CP.width,CP.height);cc.globalCompositeOperation="source-over";
@@ -13033,6 +13037,8 @@ const wantCheck = (lb) => CHECK_LINK || !!(lb.test && lb.test.check);
 // The Endless Rot on as well
 const CHECK_ROT = /[?&]check=rot\b/.test(location.search);
 const wantRotCheck = (lb) => CHECK_ROT || !!(lb.test && lb.test.check && lb.test.rot);
+const CHECK_NOEL = /[?&]check=noel\b/.test(location.search);   // The Wretched Noel's play check (the test link's card; step G1, Barney, 25 November 2026)
+const wantNoelCheck = (lb) => NOEL && (CHECK_NOEL || !!(lb.test && lb.test.check && lb.test.noel));
 // the play check's figures (see the play check, at the end): seconds to settle, to time a leg's frames and to time its drawing, as the
 // test page's speed check (WARM, RUN, LOAD), and at most 6 s of play while its drawing is timed; eight frames a refresh then; 30 ways for
 // each place's encounters to fall; the picture settled once at one level for 3.2 s (10 s at most); 150 walked before a stretch's timing;
@@ -15458,7 +15464,7 @@ const pct95 = (a) => { const b = a.slice().sort((x, y) => x - y); return b.lengt
 function startCheck(g, lb) {
   Object.assign(g, { safe: true, teach: false, monsTest: 'normal', loop: 1, orders: null });
   g.check = { legs: [], i: -1, phase: 'settle', t: 0, leadT: 0, inp: noInput(), res: [], work: 0, last: 0, lvl: null, stable: 0, slips: 0, picLost: 0, hooked: false, redone: 0 };
-  const rot = g.check.rot = wantRotCheck(lb);
+  const rot = g.check.rot = wantRotCheck(lb), noel = g.check.noel = !rot && wantNoelCheck(lb);
   if (rot) {                           // The Endless Rot's: in its arenas, with what its run starts with (startRot)
     g.run = 'rot';
     ROT_CHECK.waves.forEach((n) => g.check.legs.push({ p: arenaOfWave(n), wave: n, boss: false, n: 0 }));
@@ -15470,6 +15476,11 @@ function startCheck(g, lb) {
     // journey's check settles on Night's path among its monsters; the first leg then begins afresh
     startWave(g, lb, ROT_CHECK.waves[0], false);
     g.wave.gap = ROT_CHECK.fill;
+  } else if (noel) {                   // The Wretched Noel's: the hamlet's busiest stretch, then The Sprung Horror alone, with what its run starts with
+    g.run = 'noel'; g.p = NOEL_P;
+    g.spells = { heal: 1 }; g.spells[g.attack] = 1; g.spellList = ['heal', g.attack];
+    g.check.legs.push({ p: NOEL_P, boss: false, n: 0, noel: true }, { p: NOEL_P, boss: true, n: 0, noel: true });
+    withSeed(1, () => loadPlace(g, lb, NOEL_P, 0));
   } else {
     PLACES.forEach((p, k) => g.check.legs.push({ p: k, boss: false, n: 0 }, { p: k, boss: true, n: 0 }));
     withSeed(1, () => loadPlace(g, lb, 0, 0));
@@ -15506,7 +15517,7 @@ function nextLeg(g, lb) {
     startWave(g, lb, leg.wave, false);
     C.gap = g.wave.gap; g.wave.gap = ROT_CHECK.fill;
   } else if (leg.boss) {               // at the boss's door: the path's monsters left behind, so it is fought alone, with what it summons
-    withSeed(1000 * (leg.p + 1), () => loadPlace(g, lb, leg.p, 2));
+    withSeed(1000 * (leg.p + 1), () => loadPlace(g, lb, leg.p, g.run === 'noel' ? 3 : 2));   // (The Wretched Noel: its boss's door is its fourth lantern)
     g.mons = [];
   } else {
     const best = busiest(g, lb, leg.p);
@@ -15647,7 +15658,7 @@ function checkDraw(ctx, g, lb) {
     C.t += gap;
     if (C.t >= CHECK.load * 1000 || C.loadPlay >= CHECK.loadPlay) {
       const c = C.cur, leg = C.legs[C.i], sum = c.gaps.reduce((a, b) => a + b, 0), per = (now - C.loadStart) / Math.max(1, C.loadN);
-      C.res.push({ place: leg.p, boss: leg.boss, n: leg.wave ? c.most || 0 : leg.n, fps: c.gaps.length * 1000 / sum, slow: pct95(c.gaps), max: Math.max(...c.gaps),
+      C.res.push({ place: leg.p, noel: !!leg.noel, boss: leg.boss, n: leg.wave ? c.most || 0 : leg.n, fps: c.gaps.length * 1000 / sum, slow: pct95(c.gaps), max: Math.max(...c.gaps),
         drawn: per / CHECK.reps, keptUp: per < 18, work: c.work.reduce((a, b) => a + b, 0) / c.work.length, level: c.level });   // kept up: eight frames inside one refresh, so the time is an upper limit
       if (leg.wave) C.res[C.res.length - 1].wave = leg.wave;   // The Endless Rot's: the wave timed
       nextLeg(g, lb);
@@ -15661,6 +15672,7 @@ function finishCheck(g, lb) {
   const res = { v: 1, kit: lb.version, day: today(), device: device(), width: p.width, height: p.height, k: p.sharpness, lines: Math.round(lb.W),
     picture: s.picture, effects: !!s.effects, rm: !!s.reduceMotion, slips: C.slips, picLost: C.picLost, legs: C.res, trials: lb.trials || [] };   // trials: kit 0.20.2
   if (C.rot) res.rot = true;           // The Endless Rot's
+  if (C.noel) res.noel = true;         // The Wretched Noel's
   C.result = readCheck(res);
   // 5f-2 (Barney's Pixel: the reload to the title left it black for about 10 s): the result shows at once, over the scene paused as P pauses
   // it (the kit has no call for a game to pause; onPause opens the result in place of the pause plaque, where the menus' keys work and a
@@ -15703,7 +15715,7 @@ function readCheck(o) {
   const legs = [];
   for (const q of o.legs) {
     if (!q || typeof q !== 'object') return null;
-    const r = { place: num(q.place, 0, 3), boss: q.boss === true, n: num(q.n, 0, 99) || 0, fps: num(q.fps, 0, 1000), slow: num(q.slow, 0, 1e5), max: num(q.max, 0, 1e5),
+    const r = { place: num(q.place, 0, 3), noel: q.noel === true, boss: q.boss === true, n: num(q.n, 0, 99) || 0, fps: num(q.fps, 0, 1000), slow: num(q.slow, 0, 1e5), max: num(q.max, 0, 1e5),
       drawn: num(q.drawn, 0, 1e5), keptUp: q.keptUp === true, work: num(q.work, 0, 1e5) || 0, level: ['best', 'faster', 'fastest'].indexOf(q.level) >= 0 ? q.level : '' };
     if (r.place == null || r.fps == null || r.slow == null || r.max == null || r.drawn == null) return null;
     r.place = Math.round(r.place);
@@ -15714,6 +15726,7 @@ function readCheck(o) {
     lines: num(o.lines, 0, 1e5) || 0, picture: PICTURE_NAMES[o.picture] ? o.picture : 'auto', effects: o.effects !== false, rm: o.rm === true, slips: num(o.slips, 0, 99) || 0,
     picLost: num(o.picLost, 0, 99) || 0, legs, trials: Array.isArray(o.trials) ? o.trials.filter((x) => typeof x === 'string').slice(0, 8).map((x) => x.slice(0, 40)) : [] };
   if (o.rot === true) out.rot = true;
+  if (o.noel === true) out.noel = true;
   return out;
 }
 function checkShown(lb) {
@@ -15725,7 +15738,7 @@ function checkShown(lb) {
   if (res) lb.ui.open((ui) => checkPlaque(lb, ui, res));
   return !!res;
 }
-const legName = (lb, r) => PLACE_SHORT[r.place] + (r.wave ? ', wave ' + r.wave + ' (at most ' + r.n + (r.n === 1 ? ' monster)' : ' monsters)') :   // The Endless Rot's
+const legName = (lb, r) => r.noel ? 'Noel' + (r.boss ? ', The Sprung Horror' : ', the path (' + r.n + (r.n === 1 ? ' monster)' : ' monsters)')) : PLACE_SHORT[r.place] + (r.wave ? ', wave ' + r.wave + ' (at most ' + r.n + (r.n === 1 ? ' monster)' : ' monsters)') :   // The Endless Rot's
   r.boss ? ', ' + lb.world.bossNames[PLACES[r.place]] : ', the path (' + r.n + (r.n === 1 ? ' monster)' : ' monsters)'));
 const drawnIn = (r) => (r.keptUp ? 'under ' : '') + r.drawn.toFixed(1) + ' ms';
 const phonePass = (res) => res.legs.every((r) => r.fps >= 29.5 && r.drawn <= 25);
@@ -15734,7 +15747,7 @@ const computerPass = (res) => res.legs.every((r) => r.fps >= 58);
 function checkText(lb, res) {
   const lvl = res.legs[res.legs.length - 1].level;
   const lines = [
-    'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : '') + ', ' + res.day + ', kit ' + res.kit,
+    'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : res.noel ? ', ' + NOEL_RUN.name : '') + ', ' + res.day + ', kit ' + res.kit,
     res.device + ' · ' + res.width + ' × ' + res.height + ' at ' + res.k.toFixed(2) + '× · ' + res.lines + ' lines wide · Picture ' + PICTURE_NAMES[res.picture] +
       (lvl ? ' (' + PICTURE_NAMES[lvl] + ')' : '') + (res.effects ? '' : ' · effects off') + (res.rm ? ' · reduce motion' : '') + (res.slips ? ' · ' + res.slips + ' falls' : '') +
       (res.picLost ? ' · the picture was lost ' + res.picLost + (res.picLost === 1 ? ' time' : ' times') : '') +
@@ -15748,7 +15761,7 @@ function checkText(lb, res) {
 }
 // the result on the title (the plaque built from the kit's parts): each place's path and boss, the targets, and the ways to send it
 function checkPlaque(lb, ui, res, inRun) {   // inRun (5f-2): over the paused scene, so Close leaves the run
-  const phone = ui.phone, text = checkText(lb, res), subject = 'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : '');
+  const phone = ui.phone, text = checkText(lb, res), subject = 'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : res.noel ? ', ' + NOEL_RUN.name : '');
   const { panel, face } = ui.plaque('gh-ck', 560, 640, phone ? 'gap:6px;padding:12px 16px 12px' : 'gap:10px;padding:18px 20px 14px');
   const head = ui.heading('gh-ck', PLAYTEST ? 'Speed test' : 'Play check');
   const t = ui.el('table', 'lb-scores');

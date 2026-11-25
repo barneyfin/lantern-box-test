@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.50.3';
+  const VERSION = '0.51.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -3139,6 +3139,10 @@ function pitIce(x,pl,pr,camX,col,G){const gY2=G||gY,r=rng32(hsh(77,Math.round(pl
     const n=3+Math.floor(r()*2);for(let i=0;i<n;i++){const ix=x0+d*(1+i*3.2+r()*1.5),w=1.6+r()*1.4,L=7+r()*11+(i===0?5:0),iy=gY2(ix)+1.5;x.beginPath();x.moveTo(ix-w-camX,iy);x.lineTo(ix+w-camX,iy);x.lineTo(ix+d*0.6-camX,iy+L);x.closePath();x.fill();}}
   x.restore();}
 const HAMLET_TONES={forest:[0.9,0.77,0.57,0.42],near:[0.82,0.66,0.5,0.34]};
+// kit 0.51.0 (Barney, 25 November 2026: "tone down the haze in the hamlet as it looks too strong when seen by eye; it does not get your attention in the
+// other places"): the hamlet's backdrop layers' haze glow at this share of design system 32's (its haze is a pale lilac, so round the near firs it read
+// as a white glow). A change to the approved look, kept in NOTES-hamlet-for-design.md to take back to the design system
+const HAMLET_HAZE=0.4;
 /* how bright the coloured bulbs are: 1 is the approved look and the default; 2 and 3 are there to try, with nothing in between (Barney, 24 November 2026, 13:38 and 16:11; a switch on the test link's Testing panel). Above 1 a bulb gains a soft glow, a paler and slightly
    larger core and a wider halo. Measured over the nearest layer's tone a bulb gives about 1.8 times the light at 2 and 3 times at 3. Above 1 each bulb costs one more gradient a frame. */
 let BULB_BRIGHT=1;
@@ -3732,7 +3736,7 @@ class Scene{
       x.save();x.setTransform(s,0,0,s,-(this.tdx||0),0);x.globalCompositeOperation="destination-out";x.beginPath();x.moveTo(-10,LH+10);for(let sx=-10;sx<=W+10;sx+=6)x.lineTo(sx,yfn(sx+lx)+0.5);x.lineTo(W+10,LH+10);x.closePath();x.fill();x.restore();
       ctx.fillStyle=(SNOW[o.snowCol||"white"].fields||[])[L]||mixc(SNOW[o.snowCol||"white"].field,air,tint*0.7);ctx.beginPath();ctx.moveTo(-10,LH+120);for(let sx=-10;sx<=W+10;sx+=6)ctx.lineTo(sx,yfn(sx+lx));ctx.lineTo(W+10,LH+120);ctx.closePath();ctx.fill();}
     ctx.save();ctx.setTransform(1,0,0,1,0,ctx.getTransform().f); // the layer keeps the lift it was given
-    if(L>=2){ctx.shadowColor=rgba(haze,L===4?0.55:0.4);ctx.shadowBlur=(L===4?14:9)*s;}
+    if(L>=2){ctx.shadowColor=rgba(haze,(L===4?0.55:0.4)*(o.level==="yule"?HAMLET_HAZE:1));ctx.shadowBlur=(L===4?14:9)*s;}   /* kit 0.51.0: the hamlet's haze toned down (HAMLET_HAZE) */
     ctx.drawImage(off,0,0);ctx.restore();
     if(SN){const CP=this._cp=fitCanvas(this._cp,off.width,off.height),d=[0,2.2,3,4.2,5.5][L]*s;snowCap(CP,off,d,d*0.8,lx*s+(this.tdx||0),L);
       const cc=CP.getContext("2d");cc.setTransform(1,0,0,1,0,0);cc.globalCompositeOperation="destination-out";cc.drawImage(this._nc,0,0);cc.globalCompositeOperation="source-over";cc.drawImage(SM,0,0);cc.globalCompositeOperation="source-in";cc.fillStyle=mixc(SNOW[o.snowCol||"white"].cap,air,tint*0.6);cc.fillRect(0,0,CP.width,CP.height);cc.globalCompositeOperation="source-over";

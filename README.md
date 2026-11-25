@@ -21,3 +21,5 @@ Since kit 0.50.1 Gloam Hallow here has The Wretched Noel, the Christmas level, a
 Since kit 0.50.2 the menu's Hamlet breakdown card times The Snowbound Hamlet at Picture: Fastest with each of its costs left out in turn, for the Fire.
 
 Since kit 0.50.3, at Picture: Fastest, The Sprung Horror's sway loops and its moves step 6 times a second, and the moonlight on the hamlet's clouds is worked out at half size (the Fire's Hamlet breakdown).
+
+Since kit 0.51.0 the menu's Play check: The Wretched Noel card times the Christmas level as it is played (its busiest stretch, then The Sprung Horror alone), and the hamlet's haze is toned down.
