@@ -23,3 +23,5 @@ Since kit 0.50.2 the menu's Hamlet breakdown card times The Snowbound Hamlet at 
 Since kit 0.50.3, at Picture: Fastest, The Sprung Horror's sway loops and its moves step 6 times a second, and the moonlight on the hamlet's clouds is worked out at half size (the Fire's Hamlet breakdown).
 
 Since kit 0.51.0 the menu's Play check: The Wretched Noel card times the Christmas level as it is played (its busiest stretch, then The Sprung Horror alone), and the hamlet's haze is toned down.
+
+Since kit 0.52.0 the bats and the sleigh against the sky are backlit silhouettes in the sky's own tone, never brighter near the moon (design system 33, for the Basic Launch).
