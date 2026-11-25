@@ -270,6 +270,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   --window-dark: #1a1218;
   --lantern-glow: #ffc96a;
   --wanderer-scarf: #b3261e;
+  --cane-white: #fff3df;   /* kit 0.50.0, tokens version 20 (design system 32): the candy cane belt's stripes and the hat's fur */
+  --hat-red: #b3261e;      /* the Christmas hat */
   --belt-night-blue: #3d5cab;
   --belt-mulberry: #94407f;
   --belt-ash: #8f877c;
@@ -374,6 +376,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   --radius-arch-tile: 22px;
   --arch-filter: drop-shadow(0 0 2px #ffcf8a) drop-shadow(0 0 16px rgba(255,170,90,0.75)) drop-shadow(0 0 40px rgba(255,140,70,0.45));
   --picture-height: 540px;
+  --present-height: 65px;  /* kit 0.50.0, tokens version 20: The Wretched Noel's present, lines tall */
+  --cane-stripe: 3.4;      /* the candy cane belt's stripe width, puppet units */
   --ground-line: 468px;
   --boss-scale: 1.2;
   --boss-glow: screen 1.2 1.6;
@@ -1303,6 +1307,28 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 .lb-pane::before{content:"";position:absolute;inset:-2px;border-radius:50%;background:radial-gradient(closest-side,var(--lt) 0,transparent 100%);opacity:.5}
 .lb-lamp{position:relative;width:16px;height:22px}
 .lb-lamp .ink{fill:var(--brass-dim)}.lb-lamp .fr{fill:none;stroke:var(--brass-dim);stroke-width:1.5}.lb-lamp .gl{fill:var(--gl)}.lb-lamp .fl{fill:#fff2c4}
+/* kit 0.50.0: design system 32's bundle.css additions, word for word, after everything else */
+/* ---- version 32 (25 November 2026, Gloam Hallow's Christmas level, The Wretched Noel; design round 4 with Barney): its screens
+   (WretchedNoel), drawn on The Snowbound Hamlet. Nothing above changes ---- */
+/* the Echo Shrine with a third tab, Earned: 450 wide on a computer and a phone, so "Spells and potions" stays on one line (two tabs keep 330 and 340) */
+.lb-segments.is-three.lb-shrine-tabs,.lb-plaque.is-phone .lb-segments.is-three.lb-shrine-tabs{width:450px}
+/* the win's heading when it is a run's own long name ("The Frostbitten Triumph"): 28, clear of the setting's tag; 30 on a phone, in its own column */
+.lb-heading.is-win.is-long{font-size:28px}
+.lb-plaque.is-phone .lb-heading.is-win.is-long{font-size:30px}
+/* the candy cane belt's tile: the red and the warm white in diagonal stripes */
+.lb-belt .band.is-candy-cane,.lb-next-belt .band.is-candy-cane{background:repeating-linear-gradient(-45deg,var(--wanderer-scarf) 0 7px,var(--cane-white) 7px 14px)}
+/* the present's picture (play.js drawPresent): beside the big number on the run's end and the win, and in the plaque line in play */
+.lb-gift{display:flex;align-items:center;justify-content:center;gap:12px}
+.lb-gift-pic{display:block;flex:none;width:64px;height:64px}
+.lb-plaque.is-phone .lb-gift-pic{width:56px;height:56px}
+.lb-line .lb-line-present{display:block;flex:none;width:30px;height:30px}
+/* the win's earned block: his picture in the looks won, "Earned: ..." and "Worn from your next run" */
+.lb-earned-look{flex:none;width:54px;height:64px;display:block}
+.lb-earned-look canvas{width:54px;height:64px;display:block}
+.lb-earned-worn{margin:2px 0 0;font:400 14px/18px var(--font-text);color:var(--text-3)}
+/* the Christmas hat's tile on the Earned tab: his head and hat in a 46 by 46 pane */
+.lb-hat .lb-pane{width:46px;height:46px}
+.lb-hat .lb-pane canvas{width:46px;height:46px;display:block}
 
 </style>
 <script>
@@ -1316,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.49.2';
+  const VERSION = '0.50.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -6394,8 +6420,12 @@ function mvGlowFill(x,f){if(!MV_GLOW||LOOK_PIC||!LOOK_FX){f();return;}const m=x.
 // black, checked on the Pixel by Barney, 7 November 2026), each kept off the colours that already mean something (ember, gold,
 // witch-green, wisp-pale). setBelt chooses the one worn; it colours the puppet (MV_RED) and the stand-in (W_RED). Tokens: wanderer-scarf
 // (the red), belt-night-blue, belt-mulberry, belt-ash.
-const BELTS={red:"#b3261e",nightBlue:"#3d5cab",mulberry:"#94407f",ash:"#8f877c"};
-function setBelt(k){MV_RED=W_RED=BELTS[k]||BELTS.red;return MV_RED;}
+const BELTS={red:"#b3261e",nightBlue:"#3d5cab",mulberry:"#94407f",ash:"#8f877c",candyCane:"#b3261e"};
+// version 32: the candy cane belt is the red belt with warm-white diagonal stripes, CANE_W puppet units wide (the band is 3.4 deep);
+// the hat is the Christmas hat or none. Tokens: wanderer-scarf (the red), cane-white and hat-fur (fff3df), hat-red.
+let MV_CANE=0,MV_HAT="";const CANE_W=3.4,CANE_WHITE="#fff3df",HAT_RED="#b3261e",HAT_FUR="#fff3df";
+function setBelt(k){MV_RED=W_RED=BELTS[k]||BELTS.red;MV_CANE=k==="candyCane"?CANE_W:0;return MV_RED;}
+function setHat(on){MV_HAT=on?"christmas":"";}
 // version 27 (21 November 2026, the Full Launch work's design round with Barney): the looks bought on the Echo Shrine's Cosmetics page.
 // A glow: the belt's colour w towards white, with a halo (the belt's colour GLOW_HALO towards white) blur picture units wide, laid n times.
 // Version 28: the game uses strong (Barney, on his phone, 22 November 2026: "Belt should be strong"); soft is kept as the second named
@@ -6420,7 +6450,7 @@ function trialLook(){const n=TRIAL.fl,on=n>=2;GLOW_STRENGTH="strong";LOOK_ASK=n>
   return{belt:"red",glow:on,glass:on?"red":"gold",strength:GLOW_STRENGTH,lightX:LIGHT_X,atFastest:LOOK_ASK?(FAST_LAID?"over":true):false};}
 function setGlass(k){const g=GLASSES[k]||GLASSES.gold;MV_GLASS=g.glass;MV_POOL=g.light;MV_POOLOP=g.add?"screen":"";MV_POOLX=g.add?LIGHT_X:1;return g;}
 // the whole look: {belt, glow (true or false), glass}
-function setLook(o){o=o||{};setBelt(o.belt||"red");setGlow(o.belt||"red",!!o.glow);setGlass(o.glass||"gold");}
+function setLook(o){o=o||{};setBelt(o.belt||"red");setGlow(o.belt||"red",!!o.glow);setGlass(o.glass||"gold");setHat(!!o.hat);}
 const MV_BASE={hx:0,hy:-25,lean:0,ft:[[-2,-3,0],[2.2,-3,0]],sH:[17,-12.5],sb:0.4636,sbend:-1,fH:[4.5,-16.5],fl:[8.5,5.7],fbend:1,
   hem:1,lift:0,flare:0,bil:1,tip:2.5,nod:0,vx:0,vy:0,lan:0,ball:null,hand:0,flut:0,sword:true};
 function mvP(o){const P=Object.assign({},MV_BASE,o||{});P.ft=(o&&o.ft)||MV_BASE.ft;return P;}
@@ -6459,12 +6489,41 @@ function mvCloak(x,G,P,tq){
   x.beginPath();x.moveTo(top1[0],top1[1]);x.lineTo(top2[0],top2[1]);x.quadraticCurveTo(fc[0],fc[1],fb[0],fb[1]);
   for(let i=0;i<=9;i++){const u=i/9,hx=P.hx+dx+10+pool*0.9+(fo-hf)*(1-u)+(-29-P.bil*1.4-P.flare-pool*1.8-bo)*u,hy=P.hy+(i%2?15.5:20)*dep/20-P.lift*(0.3+0.7*u)+Math.sin(tq*9+i)*fl*(MV_RM?0.33:1);x.lineTo(hx,hy);}
   x.quadraticCurveTo(bc[0],bc[1],top1[0],top1[1]);x.closePath();x.fill();}
-function mvCowl(x,P){const b=P.bil,tp=P.tip;x.save();x.translate(0,-30);x.rotate(P.nod);x.translate(0,30);
+function mvCowlFrame(x,P){x.translate(0,-30);x.rotate(P.nod);x.translate(0,30);x.translate(0,-35);x.scale(0.86,0.86);x.translate(0,35);}
+function mvCowl(x,P){if(MV_HAT){x.save();mvCowlFrame(x,P);x.beginPath();
+    x.moveTo(-7,-30);x.quadraticCurveTo(-13.5,-40,-9.5,-48.5);x.quadraticCurveTo(-2,-57.5,9,-54);x.quadraticCurveTo(14.5,-48,14,-39.5);
+    x.quadraticCurveTo(10.5,-37.5,8,-36);x.quadraticCurveTo(8.6,-33,6.5,-30);x.closePath();x.fill();x.restore();return;}
+  const b=P.bil,tp=P.tip;x.save();x.translate(0,-30);x.rotate(P.nod);x.translate(0,30);
   x.translate(0,-35);x.scale(0.86,0.86);x.translate(0,35);x.beginPath();
   x.moveTo(-7,-30);x.quadraticCurveTo(-12,-39,-9,-47);x.quadraticCurveTo(-16-b*0.6,-51,-25-b*1.2,-38+tp);x.quadraticCurveTo(-15-b*0.5,-48,-6,-53.5);
   x.quadraticCurveTo(3,-60,10.5,-52.5);x.quadraticCurveTo(14.5,-47.5,14,-39.5);x.quadraticCurveTo(10.5,-37.5,8,-36);x.quadraticCurveTo(8.6,-33,6.5,-30);
   x.closePath();x.fill();x.restore();}
 function mvBody(x,G,P){x.save();x.translate(P.hx,P.hy);x.rotate(P.lean);}
+// version 32: the Christmas hat (Barney's sheet, 25 November 2026). Its tail streams back with his speed, lifts a little as he falls,
+// and sways slowly; it is drawn in the upper body's frame, so it follows every pose.
+function mvHatTail(P,tq){const sp=Math.min(1,Math.hypot(P.vx,P.vy)/54);return{dx:-3.5*sp,dy:-2.5*sp+Math.max(-2,Math.min(3,-P.vy/40)),sw:Math.sin(tq*6.3)*(0.8+1.2*sp)};}
+function mvFur(x,pts,w){x.lineCap=x.lineJoin="round";x.lineWidth=w;x.beginPath();pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.stroke();
+  for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1],n=Math.max(1,Math.round(Math.hypot(b[0]-a[0],b[1]-a[1])/(w*0.55)));
+    for(let j=0;j<=n;j++){const u=j/n;x.beginPath();x.arc(a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u,w*0.62,0,Math.PI*2);x.fill();}}}
+function mvHat(x,P,tq){const T=mvHatTail(P,tq),tx=-27.5+T.dx+T.sw*0.4,ty=-35+T.dy+T.sw;x.save();mvCowlFrame(x,P);
+  x.fillStyle=HAT_RED;x.beginPath();x.moveTo(-10.5,-50.5);x.quadraticCurveTo(-15,-50,tx+2,ty-1.5);x.lineTo(tx-1,ty+0.5);
+  x.quadraticCurveTo(-17,-63,0.5,-63.5);x.quadraticCurveTo(11,-62,13.5,-54);x.closePath();x.fill();
+  x.fillStyle=x.strokeStyle=HAT_FUR;mvFur(x,[[-11,-50.5],[1,-53.5],[13.8,-53]],5.2);x.beginPath();x.arc(tx-0.5,ty+0.5,3.1,0,Math.PI*2);x.fill();x.restore();}
+function mvHatBall(x,P,tq){const R=12.5,tx=-25,ty=-3;x.save();x.translate(P.hx,-R-0.5);x.rotate(P.ball);
+  x.fillStyle=HAT_RED;x.beginPath();x.moveTo(-3,-12.2);x.quadraticCurveTo(-14,-16,tx,ty);x.quadraticCurveTo(-13,-9,-11,-2.5);x.arc(0,0,R-0.6,Math.PI+0.22,Math.PI*1.6);x.closePath();x.fill();
+  x.fillStyle=x.strokeStyle=HAT_FUR;mvFur(x,[[-11.6,-1.2],[-8.4,-8.8],[-2.6,-12.2]],4.2);x.beginPath();x.arc(tx-0.5,ty+0.3,2.8,0,Math.PI*2);x.fill();x.restore();}
+// version 32: the candy cane belt's stripes, warm white over the belt's red (or its glow's lighter red)
+function mvStripes(x,x0,y0,x1,y1){const w=MV_CANE,h=y1-y0;x.fillStyle=CANE_WHITE;
+  for(let s=x0-h-2*w;s<x1+2*w;s+=2*w){x.beginPath();x.moveTo(s,y1);x.lineTo(s+w,y1);x.lineTo(s+w+h,y0);x.lineTo(s+h,y0);x.closePath();x.fill();}}
+function mvCaneBand(x){x.save();x.beginPath();x.rect(-9.8,-11.3,20.2,3.4);x.clip();mvStripes(x,-10,-11.4,10.6,-7.8);x.restore();
+  x.save();x.beginPath();x.ellipse(-9.6,-9.5,2.3,2,0.3,0,Math.PI*2);x.clip();mvStripes(x,-12.2,-11.8,-7.2,-7.2);x.restore();}
+function mvCaneTails(x,G,P,tq,origin){const sp=Math.min(1,Math.hypot(P.vx,P.vy)/54);
+  let dx=-0.6-2.6*Math.max(-1.6,Math.min(1.6,P.vx/54))-Math.min(1,Math.abs(P.vy)/90)*1.1,dy=0.9-2.2*Math.max(-1.2,Math.min(1.2,P.vy/54));
+  const d=Math.hypot(dx,dy)||1;dx/=d;dy/=d;const nx=-dy,ny=dx,L=24+10*sp,amp=1.3+2.3*sp,K=origin||G.knot;x.fillStyle=CANE_WHITE;
+  for(let k=0;k<2;k++){const len=L-k*7,N=Math.max(4,Math.round(len/MV_CANE)),pt=(u,side)=>{const w=1.6-u*0.75,wv=Math.sin(tq*7+u*5+k*1.3)*u*amp,
+      px=K[0]+dx*u*len+nx*wv,py=K[1]+k*2.2+dy*u*len+ny*wv;return[px+side*nx*w,py+side*ny*w];};
+    for(let i=1;i<N;i+=2){const a=i/N,b=Math.min(1,(i+1)/N),sl=0.5/N,q=[pt(a,-1),pt(b,-1),pt(Math.min(1,b+sl),1),pt(Math.min(1,a+sl),1)];
+      x.beginPath();q.forEach((p,j)=>j?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();x.fill();}}}
 function mvBall(x,P,tq,det){ // the tucked roll: the cloak wrapped round into a ragged ball, the cowl's point and the boots showing
   const R=12.5;x.save();x.translate(P.hx,-R-0.5);x.rotate(P.ball);
   if(!det){x.beginPath();for(let i=0;i<18;i++){const a=i/18*Math.PI*2,r=R+(i%2?-1.4:0.6)*(a>2.4&&a<4.6?1.6:0.5);i?x.lineTo(Math.cos(a)*r,Math.sin(a)*r):x.moveTo(Math.cos(a)*r,Math.sin(a)*r);}x.closePath();x.fill();
@@ -6497,12 +6556,13 @@ function mvBeltPath(G,P,tq,K){const p=new Path2D();
     p.addPath(b,new DOMMatrix().translateSelf(P.hx,P.hy).rotateSelf(P.lean*180/Math.PI));}
   mvTails(null,G,P,tq,K,p);return p;}
 function mvDet(x,P,tq,G){
-  if(P.ball!=null){mvBall(x,P,tq,true);const a=P.ball+0.5,K=[P.hx-Math.cos(a)*11,-13-Math.sin(a)*11];if(mvFastOn())mvFastLines(x,mvBeltPath(null,P,tq,K));x.fillStyle=MV_RED;mvGlowFill(x,()=>mvTails(x,null,P,tq,K));return;}
+  if(P.ball!=null){mvBall(x,P,tq,true);const a=P.ball+0.5,K=[P.hx-Math.cos(a)*11,-13-Math.sin(a)*11];if(mvFastOn())mvFastLines(x,mvBeltPath(null,P,tq,K));x.fillStyle=MV_RED;mvGlowFill(x,()=>mvTails(x,null,P,tq,K));
+    if(MV_CANE)mvCaneTails(x,null,P,tq,K);if(MV_HAT)mvHatBall(x,P,tq);return;}
   if(mvFastOn())mvFastLines(x,mvBeltPath(G,P,tq));
   mvBody(x,G,P);x.fillStyle=MV_RED;mvGlowFill(x,()=>wPoly(x,[[-9.8,-11.3],[10.2,-11.3],[10.4,-7.9],[-9.8,-7.9]]));
   x.lineWidth=1.3;x.strokeStyle=MV_INK;x.beginPath();x.moveTo(9.2,-9.5);x.lineTo(13.4,-8.5);x.stroke();
-  x.fillStyle=MV_RED;mvGlowFill(x,()=>{x.beginPath();x.ellipse(-9.6,-9.5,2.3,2,0.3,0,Math.PI*2);x.fill();});x.restore();
-  x.fillStyle=MV_RED;mvGlowFill(x,()=>mvTails(x,G,P,tq));
+  x.fillStyle=MV_RED;mvGlowFill(x,()=>{x.beginPath();x.ellipse(-9.6,-9.5,2.3,2,0.3,0,Math.PI*2);x.fill();});if(MV_CANE)mvCaneBand(x);x.restore();
+  x.fillStyle=MV_RED;mvGlowFill(x,()=>mvTails(x,G,P,tq));if(MV_CANE)mvCaneTails(x,G,P,tq);if(MV_HAT){mvBody(x,G,P);mvHat(x,P,tq);x.restore();}
   mvBody(x,G,P);x.fillStyle=x.strokeStyle=MV_INK;mvSword(x,G,P);mvRunes(x,G,P);x.restore();
   x.fillStyle=x.strokeStyle=MV_INK;wLantern(x,G.hook[0],G.hook[1],P.lan,MV_GLASS);}
 // the kit (0.43.0; HANDOVER-design-28.md, part 2): his light at Picture Fastest, in a game that has asked: the pool round the lantern and
@@ -6668,7 +6728,7 @@ function mvShatter(c,K,X,Y,f,u,edge){ // u 0..1 over the second the pieces tumbl
 // across); he forms kneeling and his lantern flares (fxGraveFlare, 0.5 s). Effects off: no glows. Nothing flashes.
 const GRAVE_OUT=0.4,GRAVE_BACK=0.6,GRAVE_U=0.25;
 // the card pieces held at u along the paths mvShatter throws them on (no fading), at alpha a; hot: the gathering's brighter gold edges
-function mvPiecesAt(c,K,X,Y,f,u,a,hot){const s=c.getTransform().a,ky=hot?"pcH":"pc";if(!K[ky]||K[ky+"S"]!==s){K[ky]=mvPieces(s,PL.kneel,null,hot);K[ky+"S"]=s;}const S=K[ky];
+function mvPiecesAt(c,K,X,Y,f,u,a,hot){const s=c.getTransform().a,ky=hot?"pcH":"pc",lk=[MV_RED,MV_GLOW,MV_GLASS,MV_CANE,MV_HAT].join("|");if(!K[ky]||K[ky+"S"]!==s||K[ky+"L"]!==lk){K[ky]=mvPieces(s,PL.kneel,null,hot);K[ky+"S"]=s;K[ky+"L"]=lk;}const S=K[ky];
   for(const p of S.out){const tx=p.vx*u*46,ty=p.vy*u*34+u*u*80;c.save();c.globalAlpha=a;c.translate(X+f*(p.cx+tx),Y+p.cy+ty);c.rotate(p.spin*u*f);c.scale(f,1);c.translate(-p.cx,-p.cy);c.drawImage(p.cv,-S.ox+p.bx,-S.oy+p.by,p.bw,p.bh);c.restore();}}
 // d: seconds since he broke (0 to 1); (Xb, Yb) where he broke, (Xe, Ye) where he forms, f his facing. As loopGrave draws it.
 function mvGather(c,K,Xb,Yb,Xe,Ye,f,d){d=Math.max(0,d);const out=d<GRAVE_OUT,v=out?0:Math.min(1,(d-GRAVE_OUT)/GRAVE_BACK),sm=v*v*(3-2*v);
@@ -6737,7 +6797,7 @@ let MV_RM=false;                                   // Reduce motion while a figu
 const MV_BOX=[-62,-122,98,14];                     // the figure's box in his own units, feet at (0, 0), with the sword at its longest
 const MVC=[];                                      // the painted figures, the most recent last
 function mvFigure(s,P,tq,k,edge,rm,f){ // painted facing its way, its feet on a whole pixel and its lit edge's offset painted in, so a blit is pixel for pixel
-  const key=s.toFixed(3)+"|"+k+"|"+f+"|"+edge+"|"+(rm?1:0)+"|"+tq.toFixed(4)+"|"+MV_RED+"|"+MV_GLASS+(MV_GLOW?"|"+MV_GLOWC+"|"+MV_GLOWB+"x"+MV_GLOWN+(!LOOK_PIC&&LOOK_FX?"g":mvFastOn()?"l"+MV_GLOWL:""):"")+"|"+JSON.stringify(P);   // kit 0.11.0: and the belt; kit 0.41.0: the glass, and a glow's halo (none with Effects off)
+  const key=s.toFixed(3)+"|"+k+"|"+f+"|"+edge+"|"+(rm?1:0)+"|"+tq.toFixed(4)+"|"+MV_RED+"|"+MV_GLASS+(MV_GLOW?"|"+MV_GLOWC+"|"+MV_GLOWB+"x"+MV_GLOWN+(!LOOK_PIC&&LOOK_FX?"g":mvFastOn()?"l"+MV_GLOWL:""):"")+(MV_CANE?"|cane":"")+(MV_HAT?"|"+MV_HAT:"")+"|"+JSON.stringify(P);   // kit 0.11.0: and the belt; kit 0.41.0: the glass, and a glow's halo (none with Effects off); kit 0.50.0: the candy cane's stripes and the hat (left out with neither, so every other look shares its pictures as before)
   for(let i=MVC.length-1;i>=0;i--)if(MVC[i].key===key){const F=MVC[i];if(i!==MVC.length-1){MVC.splice(i,1);MVC.push(F);}return F;}
   const b=MV_BOX,R=k*s,x0=f>0?b[0]:-b[2],x1=f>0?b[2]:-b[0],ox=Math.ceil(-x0*R)+4,oy=Math.ceil(-b[1]*R)+4,w=ox+Math.ceil(x1*R)+4,h=oy+Math.ceil((b[3]+(mvFastOn()?1:0))*R)+2,e=1.3*k/1.32*s;   // kit 0.43.0: one more unit of room below while the belt's lines are drawn (in the tucked roll the tails' lines reach 14.8 below his feet; the rows are added at the bottom, so nothing moves)
   let F=MVC.length>=(TRIAL.hero?32:8)?MVC.shift():null;   // kit 0.20.4: the hero trial keeps 32
@@ -6897,6 +6957,37 @@ function drawLoot(c,k,X,Y,t,o){o=o||{};const K=LOOT_K,col=lootCol(k),a=o.a==null
 // dropping out of a defeated monster (u 0..1 over 0.45 s): a hop from where it fell to its resting place, a little bounce, its light coming up
 function drawLootDrop(c,k,X,Y,mx,my,u,t){if(u<0)return;if(u>=1){drawLoot(c,k,X,Y,t);return;}const v=Math.min(1,u/0.8),x=mx+(X-mx)*v,y0=my+((Y-4)-my)*v-Math.sin(v*Math.PI)*22;
   const sq=u>0.8?1-Math.sin((u-0.8)/0.2*Math.PI)*0.18:1;drawLoot(c,k,x,Y,t,{x:0,y:y0-(Y-4),hov:0,bob:0,pool:Math.max(0,(u-0.6)/0.4),glint:false,sc:sq});}
+// version 32: the present (Gloam Hallow's Christmas level, The Wretched Noel; design round 3, Barney, 25 November 2026). Design 1 of
+// his sheet, traced (lantern-box/trace, present-reward.json, pieces 1 and 5): closed, and with its lid lifting; in units of the closed
+// present's height. Drawn as loot is: an ink cut-out hovering and bobbing over a pool of its light, with a glint; its glowing part, the
+// ribbon and bow, in wisp-pale with the wisps' glow, the colour of echo. The ribbon is drawn clipped to the outline (even-odd), so the
+// bow's loops stay open. PRESENT_H lines tall (65: Barney, 25 November 2026, "25% bigger", from 52). Tokens: wisp-pale, wisp-pale-glow.
+const PRESENT={"closed":{"ink":[[0.251,-0.672,-0.067,-0.639,-0.242,-0.616,-0.185,0.0,0.242,0.0],[0.298,-0.707,0.267,-0.806,0.143,-0.788,0.125,-0.79,0.127,-0.8,0.162,-0.819,0.191,-0.843,0.203,-0.856,0.213,-0.882,0.213,-0.909,0.205,-0.93,0.178,-0.963,0.141,-0.992,0.123,-1.0,0.106,-1.0,0.084,-0.988,0.044,-0.934,0.007,-0.843,-0.04,-0.837,-0.084,-0.899,-0.119,-0.934,-0.152,-0.957,-0.168,-0.963,-0.187,-0.963,-0.211,-0.948,-0.248,-0.891,-0.255,-0.866,-0.253,-0.833,-0.246,-0.814,-0.23,-0.796,-0.193,-0.777,-0.145,-0.765,-0.143,-0.755,-0.283,-0.738,-0.288,-0.629,-0.04,-0.66,-0.038,-0.664,0.061,-0.672,0.296,-0.703],[-0.187,-0.878,-0.174,-0.88,-0.149,-0.87,-0.1,-0.841,-0.055,-0.802,-0.053,-0.783,-0.069,-0.781,-0.096,-0.788,-0.149,-0.816,-0.18,-0.849],[0.137,-0.92,0.137,-0.889,0.114,-0.847,0.081,-0.816,0.04,-0.792,0.032,-0.792,0.028,-0.814,0.065,-0.864,0.1,-0.901,0.129,-0.92]],"snow":[[-0.036,-0.641,-0.02,-0.406,-0.038,-0.4,-0.22,-0.384,-0.215,-0.32,-0.034,-0.334,-0.017,-0.332,0.005,0.0,0.065,0.0,0.053,-0.338,0.248,-0.351,0.248,-0.427,0.055,-0.41,0.051,-0.414,0.046,-0.649],[0.213,-0.909,0.197,-0.942,0.16,-0.979,0.129,-0.998,0.106,-1.0,0.084,-0.988,0.05,-0.944,0.022,-0.889,0.007,-0.843,-0.013,-0.843,-0.04,-0.835,-0.084,-0.899,-0.119,-0.934,-0.152,-0.957,-0.168,-0.963,-0.187,-0.963,-0.211,-0.948,-0.236,-0.913,-0.255,-0.866,-0.255,-0.843,-0.242,-0.808,-0.224,-0.792,-0.193,-0.777,-0.131,-0.761,-0.048,-0.769,-0.036,-0.664,0.044,-0.672,0.028,-0.775,0.032,-0.779,0.104,-0.788,0.168,-0.823,0.203,-0.856,0.213,-0.882],[-0.191,-0.88,-0.182,-0.882,-0.149,-0.87,-0.1,-0.841,-0.055,-0.802,-0.053,-0.783,-0.069,-0.781,-0.096,-0.788,-0.149,-0.816,-0.172,-0.837],[0.137,-0.924,0.141,-0.92,0.139,-0.897,0.121,-0.856,0.081,-0.816,0.032,-0.79,0.026,-0.81,0.05,-0.845,0.1,-0.901]]},"open":{"ink":[[-0.031,-1.06,-0.056,-1.045,-0.076,-0.996,-0.083,-0.95,-0.083,-0.862,-0.097,-0.86,-0.117,-0.845,-0.124,-0.845,-0.2,-0.889,-0.247,-0.907,-0.285,-0.913,-0.301,-0.909,-0.317,-0.895,-0.328,-0.872,-0.334,-0.845,-0.334,-0.786,-0.328,-0.771,-0.307,-0.746,-0.283,-0.736,-0.249,-0.732,-0.2,-0.74,-0.184,-0.738,-0.184,-0.73,-0.313,-0.656,-0.274,-0.559,-0.235,-0.581,-0.223,-0.579,-0.171,0.0,0.256,0.0,0.268,-0.645,-0.14,-0.625,-0.138,-0.635,-0.062,-0.676,-0.052,-0.685,0.025,-0.724,0.241,-0.847,0.175,-0.932,0.062,-0.868,0.047,-0.864,0.045,-0.874,0.064,-0.895,0.095,-0.948,0.099,-0.967,0.095,-0.992,0.085,-1.012,0.056,-1.037,0.006,-1.056],[-0.278,-0.829,-0.243,-0.833,-0.161,-0.821,-0.122,-0.806,-0.117,-0.798,-0.117,-0.786,-0.148,-0.779,-0.188,-0.779,-0.229,-0.786,-0.264,-0.808,-0.278,-0.821],[0.016,-0.992,0.023,-0.959,0.023,-0.934,0.016,-0.907,-0.017,-0.85,-0.033,-0.835,-0.041,-0.835,-0.049,-0.845,-0.049,-0.86,-0.035,-0.915,-0.008,-0.973,0.008,-0.992]],"snow":[[-0.019,-0.629,-0.019,-0.594,0.019,0.0,0.08,0.0,0.062,-0.633],[0.085,-1.012,0.056,-1.037,0.006,-1.056,-0.031,-1.06,-0.05,-1.05,-0.064,-1.031,-0.08,-0.977,-0.083,-0.95,-0.082,-0.864,-0.105,-0.856,-0.118,-0.843,-0.175,-0.878,-0.223,-0.899,-0.262,-0.911,-0.285,-0.913,-0.301,-0.909,-0.32,-0.889,-0.332,-0.856,-0.336,-0.804,-0.328,-0.771,-0.307,-0.746,-0.295,-0.74,-0.243,-0.732,-0.161,-0.746,-0.103,-0.777,-0.052,-0.685,0.017,-0.722,0.016,-0.732,-0.035,-0.817,0.021,-0.849,0.054,-0.883,0.08,-0.918,0.095,-0.948,0.099,-0.967,0.097,-0.986],[-0.283,-0.827,-0.278,-0.831,-0.243,-0.833,-0.161,-0.821,-0.122,-0.806,-0.115,-0.786,-0.148,-0.779,-0.214,-0.783,-0.245,-0.794],[0.014,-0.996,0.023,-0.959,0.019,-0.918,0.0,-0.876,-0.037,-0.831,-0.05,-0.85,-0.035,-0.915,-0.008,-0.973]]}},PRESENT_H=65,PRESENT_PALE="#f4f7ff",PRESENT_GLOW="#c8d6ff";
+function presentPath(lists,X,y,H){const p=new Path2D();for(const q of lists){p.moveTo(X+q[0]*H,y+q[1]*H);for(let i=2;i<q.length;i+=2)p.lineTo(X+q[i]*H,y+q[i+1]*H);p.closePath();}return p;}
+// o: {open, hov (lines, 4), bob (a slow bob), pool (0..1), glow (0..1), a (0..1), glint, seed, size (lines, PRESENT_H), x, y}
+function drawPresent(c,X,Y,t,o){o=o||{};const H=o.size||PRESENT_H,a=o.a==null?1:o.a,hov=o.hov==null?4:o.hov,b=o.bob==null?Math.sin(t*5)*1.6:o.bob,pl=o.pool==null?1:o.pool,
+    gl=(o.glow==null?1:o.glow)*(LOOK_FX?1:0),s=Math.hypot(c.getTransform().a,c.getTransform().b),P=o.open?PRESENT.open:PRESENT.closed,x=X+(o.x||0);
+  if(pl>0){c.save();c.translate(x,Y+1);c.scale(1,0.32);const g=c.createRadialGradient(0,0,1,0,0,H*0.8);g.addColorStop(0,"rgba(200,214,255,"+(0.5*pl*a)+")");g.addColorStop(1,"rgba(200,214,255,0)");c.fillStyle=g;c.fillRect(-H,-H,2*H,2*H);c.restore();}
+  const y=Y-hov-b+(o.y||0),out=presentPath(P.ink,x,y,H),rib=presentPath(P.snow,x,y,H);
+  if(gl>0)fxGlowAt(c,x,y-H*0.62,H*0.62,(0.3+0.06*Math.sin(t*5))*a*gl,PRESENT_GLOW);
+  c.save();c.globalAlpha=a;if(gl>0){c.shadowColor=PRESENT_GLOW;c.shadowBlur=H*0.16*s*gl;c.fillStyle=PRESENT_PALE;c.fill(rib);c.fill(rib);c.shadowBlur=0;c.shadowColor="transparent";}
+  c.fillStyle=MV_INK;c.fill(out,"evenodd");c.save();c.clip(out,"evenodd");if(gl>0){c.shadowColor=PRESENT_GLOW;c.shadowBlur=H*0.08*s*gl;}c.fillStyle=PRESENT_PALE;c.fill(rib);c.restore();c.restore();
+  if(o.glint!==false){const gp=((t+(o.seed||0))%2.6)/0.45;if(gp<1){const k=Math.sin(gp*Math.PI)*H*0.09;c.save();c.globalAlpha=a;c.fillStyle=PRESENT_PALE;c.translate(x+H*0.2,y-H*0.78);
+    c.beginPath();c.moveTo(0,-k*1.6);c.lineTo(k*0.3,-k*0.3);c.lineTo(k*1.6,0);c.lineTo(k*0.3,k*0.3);c.lineTo(0,k*1.6);c.lineTo(-k*0.3,k*0.3);c.lineTo(-k*1.6,0);c.lineTo(-k*0.3,-k*0.3);c.closePath();c.fill();c.restore();}}}
+// out of the boss's box when it falls (u 0..1 over 0.6 s): a hop from (mx,my) to its resting place, one bounce, its light coming up
+function drawPresentDrop(c,X,Y,mx,my,u,t){if(u<0)return;if(u>=1){drawPresent(c,X,Y,t);return;}const v=Math.min(1,u/0.8),x=mx+(X-mx)*v,y0=my+(Y-my)*v-Math.sin(v*Math.PI)*40;
+  drawPresent(c,X,Y,t,{x:x-X,y:y0-Y+4,hov:0,bob:0,pool:Math.max(0,(u-0.6)/0.4),glint:false});}
+// untouched after PRESENT_WAIT seconds, it comes to him (u 0..1 over 0.6 s): it glides on an arc to his feet at (cx,Y), then opens there
+const PRESENT_WAIT=8;
+function drawPresentFly(c,X,Y,cx,u,t){const e=u<0.5?2*u*u:1-2*(1-u)*(1-u),x=X+(cx-X)*e;drawPresent(c,x,Y,t,{hov:4+Math.sin(u*Math.PI)*22,bob:0,pool:1-u*0.6,glint:false});}
+// touched (u 0..1 over PRESENT_OPEN seconds): the lid lifts (the open design from 0.15), echo rises and streams into him at (cx,cy),
+// and the present fades from 0.7
+const PRESENT_OPEN=1.2;
+function drawPresentOpen(c,X,Y,cx,cy,u,t){if(u<0||u>1)return;const H=PRESENT_H,a=u<0.7?1:Math.max(0,1-(u-0.7)/0.3);
+  drawPresent(c,X,Y,t,{open:u>=0.15,hov:4,bob:0,a,glint:false,pool:a});if(u>=0.12)drawPresentWisps(c,X,Y-4-H*0.82,cx,cy,(u-0.12)/0.88,14);}
+function drawPresentWisps(c,X,y,tx,ty,u,n){for(let i=0;i<n;i++){const v=Math.min(1,Math.max(0,u*1.4-i*0.05)),sx=X+(i%3-1)*3,sy=y-4-i*1.5,
+    mx=(sx+tx)/2+Math.sin(i*1.7)*14,my=Math.min(sy,ty)-26-(i%4)*5,w=1-v,px=w*w*sx+2*w*v*mx+v*v*tx,py=w*w*sy+2*w*v*my+v*v*ty;
+  if(v<1)fxMote(c,px,py,2.6,0.95*(1-v*0.5),PRESENT_PALE);}}
 // picked up (u 0..1 over 0.5 s): it lifts and flies into the wanderer's chest, shrinking, then a gold glint and a ring of its motes
 function drawLootPick(c,k,X,Y,cx,cy,u,t){if(u<0||u>1)return;const col=lootCol(k),e=u*u,x=X+(cx-X)*e,y=(Y-4)+(cy-(Y-4))*e-Math.sin(u*Math.PI)*18;
   if(u<0.8)drawLoot(c,k,X,Y,t,{x:x-X,y:y-(Y-4),hov:0,bob:0,sc:1-u*0.75,a:1-u*0.3,pool:1-u*1.6,glint:false});
@@ -8093,8 +8184,8 @@ function makeTools(env){
     look(o){if(TRIAL.fl!=null)return trialLook();o=o||{};if(GLOWS[o.strength])GLOW_STRENGTH=o.strength;if(o.lightX>0)LIGHT_X=+o.lightX;
       if(o.atFastest!=null){LOOK_ASK=o.atFastest?1:0;FAST_LAID=o.atFastest==='over'?1:0;if(LOOK_PIC)LOOK_PIC=LOOK_ASK?"fastest":"bare";}
       const b=o.belt==='scarf'||!BELTS[o.belt]?'red':o.belt,gl=GLASSES[o.glass]?o.glass:'gold';
-      setLook({belt:b,glow:!!o.glow,glass:gl});return{belt:b,glow:!!o.glow,glass:gl,strength:GLOW_STRENGTH,lightX:LIGHT_X,atFastest:LOOK_ASK?(FAST_LAID?'over':true):false};},
-    LOOKS:{belts:Object.keys(BELTS),glasses:Object.keys(GLASSES),strengths:Object.keys(GLOWS)},
+      setLook({belt:b,glow:!!o.glow,glass:gl,hat:!!o.hat});return{belt:b,glow:!!o.glow,glass:gl,hat:!!o.hat,strength:GLOW_STRENGTH,lightX:LIGHT_X,atFastest:LOOK_ASK?(FAST_LAID?'over':true):false};},   // kit 0.50.0 (design system 32): hat, the Christmas hat on or off; belt may be candyCane
+    LOOKS:{belts:Object.keys(BELTS),glasses:Object.keys(GLASSES),strengths:Object.keys(GLOWS),names:{candyCane:"Candy cane",hat:"Christmas hat"}},   // kit 0.50.0: the Christmas looks' names on screen (design system 32, Wanderer)
     wanderer(x,o){ // version 8 (4c-3): the posable wanderer (Moves). o: y; move and step, or walking (true) or standing, in time; facing (1 or -1);
       // sword {reach, bite}: its upgrades; safe: seconds into the second of safety (his lit edge pulses slowly for 1 s); hurt {kind: "armour" or
       // "health", t: seconds since the blow}; shatter: seconds since he broke into his card pieces (1.1 s); pit [x0, x1]: falling into that pit,
@@ -8194,6 +8285,17 @@ function makeTools(env){
       const f=frame("acidPatch");o=o||{};const y=o.y==null?f.gy((x0+x1)/2):o.y,gy=o.y==null?(X=>f.gy(X+f.camX)):null;fxAcidPatch(f.ctx,x0-f.camX,x1-f.camX,y,K132,(o.t||0)/1.5,undefined,gy);
     },
     LOOT:LOOT.map(q=>q.k),
+    present(x,o){ // kit 0.50.0 (design system 32, Loot: The Wretched Noel's present), drawn as play.js draws it, every frame. o: y; drop { x, y, t } (out of the
+      // boss's box as it falls at x, y: PRESENT.drop seconds); fly { x, t } (left untouched, it comes to him at x: PRESENT.fly seconds); open { x, y, t } (touched,
+      // its lid lifts and its echo streams into him at x, y: PRESENT.open seconds). Left at rest it hovers, bobs and glints over its pool of light.
+      // With Effects off it is drawn without its glow (LOOK_FX), as the design asks
+      const f=frame("present");o=o||{};const c=f.ctx,X=x-f.camX,Y=o.y==null?f.gy(x)+1:o.y;
+      if(o.open)drawPresentOpen(c,X,Y,o.open.x-f.camX,o.open.y,(o.open.t||0)/PRESENT_OPEN,f.t);
+      else if(o.fly)drawPresentFly(c,X,Y,o.fly.x-f.camX,clamp((o.fly.t||0)/0.6,0,1),f.t);
+      else if(o.drop)drawPresentDrop(c,X,Y,o.drop.x-f.camX,o.drop.y,(o.drop.t||0)/0.6,f.t);
+      else drawPresent(c,X,Y,f.t,{seed:o.seed||0});
+    },
+    PRESENT:{height:PRESENT_H,wait:PRESENT_WAIT,open:PRESENT_OPEN,drop:0.6,fly:0.6},   // kit 0.50.0: its figures (design system 32: the waits and moments are starting figures)
     loot(kind,x,o){ // kind: one of world.LOOT; o: y, seed (so neighbours glint apart), drop { x, y, t } (out of a monster that fell at x, y: 0.45 s),
       // pick { x, y, t } (into the wanderer's chest at x, y: 0.5 s); keep: t (kit 0.9.0: a potion kept, flying up to its socket: 0.45 s). It stays
       // until picked up; it never times out or blinks. size (kit 0.17.5): how large, 1 as the design system draws it (Gloam Hallow asks 1.4, design system 14's LOOT_SIZE).
