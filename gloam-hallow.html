@@ -1316,7 +1316,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.49.1';
+  const VERSION = '0.49.2';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -7857,13 +7857,19 @@ function mvDrawKitRot(x,s,X,Y,P,tq,f,edge,k,o,rot){const F=mvFigure(s,P,tq,k,edg
 
 // kit 0.48.0 (design system 31, step K2a): a puppet's pose painted once by drawCastRig into a kept picture, the kit's way: drawn in a working canvas,
 // then only the box it reached (and room for its rim and glow) kept. The most recently used are kept, CAST_KEEP_N of them, the oldest going first
-const CAST_KEPT=new Map(),CAST_KEEP_N=60;let CAST_SCR=null;
-function castPainted(rig,key,s,M,N){M=M||CAST_KEPT;N=N||CAST_KEEP_N;let E=M.get(key);if(E){M.delete(key);M.set(key,E);return E;}
+const CAST_KEPT=new Map(),CAST_KEEP_N=120;let CAST_SCR=null;   // kit 0.49.2: 120 (was 60: four kinds walking and attacking turned them over)
+// kit 0.49.2 (Barney's Pixel, 25 November 2026: the hamlet's whole scene 19 fps at Fastest, its page work 10.8 ms, slowest frames 75 to 150 ms):
+// at Fastest a frame paints at most CAST_BUDGET new puppet pictures; a puppet whose new pose isn't painted yet shows its own last picture (CAST_LAST,
+// by its id) for the frame or two until its turn, so when a pose is drawn changes, never what it looks like. At Best and Faster every pose at once
+const CAST_BUDGET=1,CAST_LAST=new Map(),CAST_STATS={};   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
+let CAST_PAINTS={frame:-1,n:0};
+function castPainted(rig,key,s,M,N,last){M=M||CAST_KEPT;N=N||CAST_KEEP_N;let E=M.get(key);if(E){M.delete(key);M.set(key,E);return E;}
+  if(QUICK){if(CAST_PAINTS.frame!==KIT.frame)CAST_PAINTS={frame:KIT.frame,n:0};if(CAST_PAINTS.n>=CAST_BUDGET&&last)return last;CAST_PAINTS.n++;}   // kit 0.49.2: the budget, at Fastest
   const W0=620,H0=560,OX=310,OY=460;if(!CAST_SCR||CAST_SCR.s!==s)CAST_SCR={s,cv:mk(W0*s,H0*s)};
   const sc=CAST_SCR.cv,x=sc.getContext("2d");x.setTransform(1,0,0,1,0,0);x.globalCompositeOperation="source-over";x.globalAlpha=1;x.shadowBlur=0;x.shadowColor="transparent";x.clearRect(0,0,sc.width,sc.height);x.setTransform(s,0,0,s,OX*s,OY*s);
   const b=drawCastRig(x,0,0,{rig})||[-OX,-OY,W0-OX,H0-OY],P=26,x0=Math.max(-OX,Math.floor(b[0]-P)),y0=Math.max(-OY,Math.floor(b[1]-P)),x1=Math.min(W0-OX,Math.ceil(b[2]+P)),y1=Math.min(H0-OY,Math.ceil(b[3]+P));
   const cv=mk(Math.max(1,Math.ceil((x1-x0)*s)),Math.max(1,Math.ceil((y1-y0)*s)));cv.getContext("2d").drawImage(sc,Math.round((x0+OX)*s),Math.round((y0+OY)*s),cv.width,cv.height,0,0,cv.width,cv.height);
-  E={cv,x0,y0,x1,y1};KIT.poses++;M.set(key,E);if(M.size>N)M.delete(M.keys().next().value);return E;}
+  E={cv,x0,y0,x1,y1};KIT.poses++;{const kk=key.split("|")[0];CAST_STATS[kk]=(CAST_STATS[kk]||0)+1;}M.set(key,E);if(M.size>N)M.delete(M.keys().next().value);return E;}
 // kit 0.49.0 (step K2b): The Sprung Horror's pictures, a few kept (each is large), and a kept picture in one colour (the mend's, laid over it)
 const CAST_BOSS=new Map(),CAST_BOSS_N=24;
 function castTinted(E,col){if(E.tint&&E.tintC===col)return E.tint;const T=mk(E.cv.width,E.cv.height),x=T.getContext("2d");x.drawImage(E.cv,0,0);x.globalCompositeOperation="source-in";x.fillStyle=col;x.fillRect(0,0,T.width,T.height);E.tint=T;E.tintC=col;return T;}
@@ -7871,7 +7877,7 @@ function castTinted(E,col){if(E.tint&&E.tintC===col)return E.tint;const T=mk(E.c
 // seconds into the game's move): the claws (roots), the head at head height (branch), the fan (splinters; Barney, 25 November 2026: the splinters
 // burst from its box, where the game's fly, so the fan's pose and its mouth's gathering glow are kept and the kit's splinters drawn), the
 // knock-back (the kit's own light), the mend (one picture, as the bosses' mends never repaint) and its sway. Times stepped to 12 a second, the sway's to 8
-function shPoseKit(name,u,t,mending,hit){const R=CAST_RIG.boss,k=R.k,mix=R.mixP,st=q=>Math.floor((q||0)*MV_RATE+1e-9)/MV_RATE,ti=Math.floor(t*8)/8,idle=()=>R.idle(ti);
+function shPoseKit(name,u,t,mending,hit){const R=CAST_RIG.boss,k=R.k,mix=R.mixP,st=q=>Math.floor((q||0)*MV_RATE+1e-9)/MV_RATE,sr=QUICK?TREE16.sway:8,ti=Math.floor(t*sr)/sr,idle=()=>R.idle(ti);   // kit 0.49.2: at Fastest its sway at the Gaping Tree's 2.4 a second (design system 16)
   const outAt=v=>{const B0=[R.BASE[0]*k,R.BASE[1]*k],T=[B0[0]+R.HEAD[0]*v,lerpN(B0[1]-R.L0*k,R.HEAD[1],v)];return{L:0,top:[T[0]-B0[0],T[1]-B0[1]],C:[B0[0]+R.HEAD[0]*0.35*v,B0[1]-R.L0*k*(1+0.9*v)],lean:0.25*v,arms:[0.45+0.6*v,0.45+0.6*v],hot:1};};
   let P,sparks=null,trail=null,q=st(u);
   if(mending)P={lean:0.18,top:[0.08*k,0.04*k],L:0.5,arms:[0.15,0.15],hot:0};
@@ -7910,7 +7916,11 @@ function castGonkSwing(id,P,fwd,t){const R=CAST_RIG.hatmaw;let g=CAST_GK.get(id)
   return[Math.round(g.pL*25)/25,Math.round(g.c*100)/100];}
 // a puppet's pose from the game's monster at this moment (the rigs' P), and the key of its kept picture. Its time is stepped to 12 a second
 // (MV_RATE, the puppets' own rate) and its walk to 8 poses a stride, so a pose is painted once and shared
-function castPose(kind,o,m,t){const R=CAST_RIG[kind],a=o.attack,st=u=>Math.floor((u||0)*MV_RATE+1e-9)/MV_RATE,hot=o.hit!=null&&o.hit>=0&&o.hit<0.13;
+function castPose(kind,o,m,t){const R=CAST_RIG[kind],a=o.attack,st=u=>Math.floor((u||0)*MV_RATE+1e-9)/MV_RATE,hot=o.hit!=null&&o.hit>=0&&o.hit<0.13,QK=QUICK;
+  // kit 0.49.2, at Fastest only, as the kit's monsters there (kit 0.34.3): attacking, a puppet stands in its standing stance (no walk), so its attack's
+  // pictures depend on the attack alone and are shared; the wind-up toy's key turns in quarters of a second (eighths at Best and Faster), the gonk's
+  // lantern and cloak hold still (as a waiting mouth-hat's hop is stepped there, kit 0.20.13, and the Gaping Tree's sway held, kit 0.20.12), and while
+  // the wind-up toy attacks its key holds still too
   const L=(MO_GAIT_P[MON_P[kind]]||{}).L||56,wq=w=>w==null?null:Math.round(w/(L/8))*(L/8);
   let P,key,rig;
   if(kind==="crawler"){ // the present crawler: the crawler's lunge, or its six legs scuttling with the ground it covers (the game gives a crawler no walk: its x serves)
@@ -7918,16 +7928,16 @@ function castPose(kind,o,m,t){const R=CAST_RIG[kind],a=o.attack,st=u=>Math.floor
     else{const w=Math.round(Math.abs(o.walk!=null?o.walk:o.x)/3.5)*3.5%28;P={walked:w};key="c|w"+w;}
     rig=R.rig(P).rig;}
   else if(kind==="ghoul2"){ // the gingerbread man: the ghoul's walk and swipe
-    const w=wq(m.walk),u=a?st(a.t):null;P={walk:w,swipe:u};key="g|"+w+"|"+u;rig=R.rig(P).rig;}
+    const w=a&&QK?null:wq(m.walk),u=a?st(a.t):null;P={walk:w,swipe:u};key="g|"+w+"|"+u;rig=R.rig(P).rig;}
   else if(kind==="walker"){ // the wind-up toy: the walker's walk and its low and high sweeps; its key turns half a turn a second, in eighths
-    const w=wq(m.walk),u=a?st(a.t):null,kq=Math.floor(t*8)/8;P=Object.assign({walk:w,key:kq*Math.PI},a?(a.name==="low"?R.low(u):R.high(u)):{});key="w|"+w+"|"+(a?a.name+u:"")+"|"+kq%2;rig=R.rig(P).rig;}
+    const w=a&&QK?null:wq(m.walk),u=a?st(a.t):null,kr=QK?4:8,kq=a&&QK?0:Math.floor(t*kr)/kr;P=Object.assign({walk:w,key:kq*Math.PI},a?(a.name==="low"?R.low(u):R.high(u)):{});key="w|"+w+"|"+(a?a.name+u:"")+"|"+kq%2;rig=R.rig(P).rig;}
   else{ // the gonk: the mouth-hat's hop drawn as a scurry (moving while its hop is up), its spit as the lob and its bite as the staff blow
     let feet=null;
     if(a&&a.name==="hop"){const u=st(a.t),mv=Math.sin(u*R.HOPW)>0,q=R.scurry(u,mv);P=q.P;feet=q.feet;key="h|"+(mv?u%0.6:"s");}
     else if(a&&a.name==="spit"){const u=st(a.t),q=R.spit(u);P=Object.assign({},q);delete P.dx;key="h|S"+u;}
     else if(a&&a.name==="bite"){const u=st(a.t),q=R.leap(u);P=Object.assign({},q);delete P.dx;delete P.dy;if(q.tuck)feet=[{dx:-0.03,up:-0.06*q.tuck},{dx:0.03,up:-0.06*q.tuck}];key="h|B"+u;}
     else{P={};key="h|s";}
-    const fwd=(o.facing===1?1:-1)*-o.x,sw=castGonkSwing(o.id||"gonk",P,fwd,t);key+="|"+sw[0]+"|"+sw[1];
+    const fwd=(o.facing===1?1:-1)*-o.x,sw0=castGonkSwing(o.id||"gonk",P,fwd,t),sw=QK?[0,0]:sw0;   // kit 0.49.2: at Fastest the lantern hangs and the cloak falls still (the Pixel: its swing painted about 50 new pictures a second), as the Gaping Tree's sway is held therekey+="|"+sw[0].toFixed(2)+"|"+sw[1].toFixed(2);
     rig=R.rigFull(P,sw[0],sw[1],feet).rig;}
   if(hot){rig.hot=1;key+="|hit";}
   return{rig,key:kind+"|"+(FX?1:0)+"|"+key};}
@@ -7943,7 +7953,7 @@ function poseKey(P){return JSON.stringify(P,(k,v)=>typeof v==="number"?Math.roun
 // kit 0.45.0: every store of kept pictures that is not the scene's own (the scene is made again in makeTools). Each is filled again the
 // next time its picture is wanted. Not here: MD_PROF and CP_HOOK (figures read from a picture once, not pictures), HXC (colours)
 function forgetKept(){
-  TILE_POOL.clear();RIM_E.clear();MV_LIT.clear();MVC.length=0;CV_LOST.clear();CAST_KEPT.clear();CAST_BOSS.clear();CAST_SCR=null;   // kit 0.48.0: and the puppets' pictures
+  TILE_POOL.clear();RIM_E.clear();MV_LIT.clear();MVC.length=0;CV_LOST.clear();CAST_KEPT.clear();CAST_BOSS.clear();CAST_LAST.clear();CAST_SCR=null;   // kit 0.48.0: and the puppets' pictures
   KIT.fc=null;KIT.fs=null;KIT.th=null;
   for(const o of[BOSS_CACHE,SH,MV_SH,CPK,BSK,MDK,_lvP,_hamP,YULE_KEPT])for(const k of Object.keys(o))delete o[k];   // kit 0.46.0: and the hamlet's props
   _bossCache=new WeakMap();RESETS++;
@@ -8266,7 +8276,7 @@ function makeTools(env){
       const out=at?{phase:at.phase,dx,dy}:{phase:null,dx,dy};
       if(f.level==="yule"&&CAST_RIG[o.kind]&&o.rise==null){ // kit 0.48.0 (design system 31, step K2a): in the hamlet, its puppet, drawn where the kit puts the monster, its foot
         // at the cast's foot line (2 lines below the ground; the gonk 8 more, its hem in the path); a mouth-hat's hop is the gonk's scurry, so the hop's lift is left out
-        const cp=castPose(o.kind,o,m,f.t),E=castPainted(cp.rig,cp.key,s),hy=at&&o.attack.name==="hop"?at.dy:0,Yc=(o.y==null?f.gy(x):o.y)+(o.kind==="hatmaw"?2+CAST_RIG.hatmaw.SINK:2)+dy-hy;
+        const cid=o.id!=null?o.kind+"|"+o.id:o.kind,cp=castPose(o.kind,o,m,f.t),E=castPainted(cp.rig,cp.key,s,null,null,CAST_LAST.get(cid));CAST_LAST.set(cid,E);if(CAST_LAST.size>200)CAST_LAST.clear();const hy=at&&o.attack.name==="hop"?at.dy:0,Yc=(o.y==null?f.gy(x):o.y)+(o.kind==="hatmaw"?2+CAST_RIG.hatmaw.SINK:2)+dy-hy;
         const c=f.ctx,Xs=Math.round(X*s)/s;if(fc===1){c.save();c.translate(Xs,0);c.scale(-1,1);c.translate(-Xs,0);}
         if(o.defeat==null)c.drawImage(E.cv,Math.round((Xs+E.x0)*s)/s,Math.round((Yc+E.y0)*s)/s,E.cv.width/s,E.cv.height/s);
         else{const d=defeatCanvas("M",260,250,s);d.c.drawImage(E.cv,Math.round((130+E.x0)*s),Math.round((230+E.y0)*s));   // its picture broken up as a monster's is
@@ -8326,7 +8336,7 @@ function makeTools(env){
         const md=o.mend&&name!=="knock"?mdKit(lv,o.mend,(o.glance||[]).map(g=>({t:g.t,x:m(g.x),y:g.y})),{bx:X0,G:f.gy,t:f.t,st:r.st,rm:f.rm}):null;
         c.save();place(c);if(md)md.pre.forEach(fn=>fn(c));
         if(f.level==="yule"){ // kit 0.49.0 (design system 31, step K2b): The Sprung Horror in the tree's place, its foot at the cast's foot line; the tree's branch and signals not drawn
-          const hp=shPoseKit(name,u,f.t,!!md,!!r.st.flare),E=castPainted(hp.rig,hp.key,s,CAST_BOSS,CAST_BOSS_N),X1=r.X+(r.st.dx||0),Y1=f.gy(X0)+2+(r.st.dy||0);
+          const hp=shPoseKit(name,u,f.t,!!md,!!r.st.flare),E=castPainted(hp.rig,hp.key,s,CAST_BOSS,CAST_BOSS_N,CAST_LAST.get("boss"));CAST_LAST.set("boss",E);const X1=r.X+(r.st.dx||0),Y1=f.gy(X0)+2+(r.st.dy||0);
           if(r.st.clipY!=null){c.save();c.beginPath();c.rect(X1-400,-2000,800,2000+r.st.clipY);c.clip();}   // rising out of the ground as it arrives, as the tree does
           c.drawImage(E.cv,X1+E.x0,Y1+E.y0,E.cv.width/s,E.cv.height/s);
           if(md&&md.light>0){c.save();c.globalAlpha=Math.min(1,0.48*md.light);c.drawImage(castTinted(E,MANA),X1+E.x0,Y1+E.y0,E.cv.width/s,E.cv.height/s);c.restore();}   // the mend: mana's colour laid over it
@@ -8367,7 +8377,7 @@ function makeTools(env){
       drawFairyKit(f.ctx,[ax-f.camX,ay,qx-f.camX,qy,bx-f.camX,by,seed||0],f.t,f.level,f.s);
     },
     // for the test page's readout
-    get stats(){return{tileBytes:KIT.bytes,poses:KIT.poses,builds:KIT.builds,thru:KIT.thruN,tints:KIT.tints||0,mdReads:KIT.mdReads||0};},   // kit 0.36.0: tints, mana's colour laid on (a fill, not a repaint); mdReads, a boss's outline read
+    get stats(){return{cast:Object.assign({},CAST_STATS),tileBytes:KIT.bytes,poses:KIT.poses,builds:KIT.builds,thru:KIT.thruN,tints:KIT.tints||0,mdReads:KIT.mdReads||0};},   // kit 0.36.0: tints, mana's colour laid on (a fill, not a repaint); mdReads, a boss's outline read
     _thruCloud(on){KIT.thru=on!==false;},   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
     get _looks(){return{sil:mvSil,det:mvDet,draw:mvDraw,move:mvMove,rm(v){MV_RM=!!v;},state(){return{red:MV_RED,glass:MV_GLASS,pool:MV_POOL,op:MV_POOLOP,x:MV_POOLX,glow:MV_GLOW,halo:MV_GLOWC,blur:MV_GLOWB,n:MV_GLOWN,strength:GLOW_STRENGTH,lightX:LIGHT_X,ask:LOOK_ASK,pic:LOOK_PIC,fx:LOOK_FX,laid:FAST_LAID,laidX:FAST_LAID_X,lines:MV_GLOWL,kept:MV_LIT.size};}};},   // test only (kit 0.41.0): the wanderer's painting, to set beside the design system's own
     get _legs(){return{legs:moLegs,gait:MO_GAIT,stoop:MO_STOOP,hand:moWalkerHandAt,room:MON_ROOM,box:MON_BOX,scene};},   // test only (kit 0.34.0): the walker's and the ghoul's legs, the stoop and the painter, for measuring where their feet and the stooped arm are and how far each reaches
