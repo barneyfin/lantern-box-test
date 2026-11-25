@@ -25,3 +25,5 @@ Since kit 0.50.3, at Picture: Fastest, The Sprung Horror's sway loops and its mo
 Since kit 0.51.0 the menu's Play check: The Wretched Noel card times the Christmas level as it is played (its busiest stretch, then The Sprung Horror alone), and the hamlet's haze is toned down.
 
 Since kit 0.52.0 the bats and the sleigh against the sky are backlit silhouettes in the sky's own tone, never brighter near the moon (design system 33, for the Basic Launch).
+
+Since kit 0.52.1 the backlit bats look the same but their pictures are made before each frame (faster on the Fire); `?trial=nodark` (timing only) lays them on without darken.

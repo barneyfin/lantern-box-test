@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.52.0';
+  const VERSION = '0.52.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2274,11 +2274,12 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // picture at Fastest for the visit, whatever is saved (it saves nothing), and dresses the wanderer itself, whatever a game asks: fl0,
 // Fastest as kit 0.42.0 draws it, a plain belt and the gold glass; fl1, his light kept, a plain belt and the gold glass; fl2, the
 // strong glow and the red glass, its light added to the scene; fl3, the same with its light laid over the scene (part 4's fallback).
+// nodark (kit 0.52.1): the backlit flyers laid on without "darken" (a wrong look: for timing darken's own cost on the Fire only).
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{fast:w.includes("fastest"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
+  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
 const TRIAL_FL=["look timing T0: Fastest as it is, a plain belt and the gold glass","look timing T1: his light kept, a plain belt and the gold glass","look timing T2: the strong glow and the red glass, its light added","look timing T3: the strong glow and the red glass, its light laid over"];   // kit 0.43.0
-const TRIAL_WORDS=[TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
+const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -4470,27 +4471,51 @@ function drawFairyKit(x,fl,t,lv,s,dx){ // as drawFairy, but each light is the pa
   x.globalAlpha=1;
 }
 Object.assign(Scene.prototype,{
-  // design system 33 (kit 0.52.0; HANDOVER-design-33.md): a group of flyers (the far swarm, the big bats, the sleigh) as a backlit
-  // silhouette in the sky's own tone, the kit's way of Scene.backlit. paint(x) draws the group in ink into BF, a picture of its own,
-  // with ctx's transform; then in each box round the group (B, in lines; boxes that touch become one), a copy of it filled with the bare
-  // sky blend is laid on with "darken", and BF itself at 1 - share. So a flyer's tone is mix(ink, min(behind, bare sky), share): always
-  // darker than what is behind it, never lighter near the moon. Two flyers that overlap make one shape. y0: where the sky is drawn
-  kitBacklit(ctx,s,lv,y0,B,paint,share){
-    const cw=ctx.canvas.width,ch=ctx.canvas.height,M=ctx.getTransform(),R=[];
-    for(const b of B){const x0=Math.max(0,Math.floor(M.a*b[0]+M.e)-2),y1=Math.max(0,Math.floor(M.d*b[1]+M.f)-2),x2=Math.min(cw,Math.ceil(M.a*b[2]+M.e)+2),y2=Math.min(ch,Math.ceil(M.d*b[3]+M.f)+2);if(x2>x0&&y2>y1)R.push([x0,y1,x2,y2]);}
-    for(let i=0;i<R.length;i++)for(let j=i+1;j<R.length;j++){const a=R[i],c=R[j];
-      if(a[0]<=c[2]&&c[0]<=a[2]&&a[1]<=c[3]&&c[1]<=a[3]){R[i]=[Math.min(a[0],c[0]),Math.min(a[1],c[1]),Math.max(a[2],c[2]),Math.max(a[3],c[3])];R.splice(j,1);i=-1;break;}}
-    if(!R.length)return;
-    const U=[Math.min(...R.map(r=>r[0])),Math.min(...R.map(r=>r[1])),Math.max(...R.map(r=>r[2])),Math.max(...R.map(r=>r[3]))];
-    const F=this._bf=fitCanvas(this._bf,cw,ch),g=F.getContext("2d");
-    g.save();g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation="source-over";g.globalAlpha=1;g.clearRect(U[0],U[1],U[2]-U[0],U[3]-U[1]);
-    g.beginPath();g.rect(U[0],U[1],U[2]-U[0],U[3]-U[1]);g.clip();g.setTransform(M);paint(g);g.restore();
-    const S=this.kitBareSky(cw,ch,s,lv,y0),T=this._bt=fitCanvas(this._bt,cw,ch),v=T.getContext("2d");
-    for(const r of R){const w=r[2]-r[0],h=r[3]-r[1];
-      v.setTransform(1,0,0,1,0,0);v.globalAlpha=1;v.globalCompositeOperation="source-over";v.clearRect(r[0],r[1],w,h);v.drawImage(F,r[0],r[1],w,h,r[0],r[1],w,h);
-      v.globalCompositeOperation="source-atop";v.drawImage(S,r[0],r[1],w,h,r[0],r[1],w,h);v.globalCompositeOperation="source-over";   // (the sky is solid, so as source-in)
-      ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation="darken";ctx.drawImage(T,r[0],r[1],w,h,r[0],r[1],w,h);
-      ctx.globalCompositeOperation="source-over";ctx.globalAlpha=1-share;ctx.drawImage(F,r[0],r[1],w,h,r[0],r[1],w,h);ctx.restore();}
+  // design system 33 (HANDOVER-design-33.md): a group of flyers (the far swarm, the big bats, the sleigh) as a backlit silhouette in the
+  // sky's own tone, the kit's way of Scene.backlit. Each group is painted in ink into a picture of its own (BF), in a box round it (B, in
+  // lines; boxes that touch become one), and a copy of it filled with the bare sky blend (BT); where the group is drawn, BT is laid on with
+  // "darken", then BF at 1 - share. So a flyer's tone is mix(ink, min(behind, bare sky), share): always darker than what is behind it,
+  // never lighter near the moon. Two flyers that overlap make one shape.
+  // Kit 0.52.1: the same picture to the pixel as kit 0.52.0, made faster. 0.52.0 painted each group's pictures in the middle of the frame,
+  // leaving the frame's own picture for its working ones and back several times a frame, which a tile-based phone graphics chip pays for
+  // dearly (the Fire HD 8: Blood Red Rain's path 51 fps before, 30 with 0.52.0). Now every group's pictures are made here, before the frame's
+  // drawing begins (as the clouds' composite is), each box copied to its own slot of two working pictures, and kitBacklitLay only lays them on.
+  // G: groups {k, ty (the group's rise, as at() gives it), B, paint, share}; y0: where the sky is drawn
+  kitBacklitPrep(ctx,s,lv,y0,G){
+    const cw=ctx.canvas.width,ch=ctx.canvas.height,out={},all=[];
+    for(const q of G){if(!q)continue;const R=[];
+      for(const b of q.B){const x0=Math.max(0,Math.floor(s*b[0])-2),y1=Math.max(0,Math.floor(s*b[1]+q.ty)-2),x2=Math.min(cw,Math.ceil(s*b[2])+2),y2=Math.min(ch,Math.ceil(s*b[3]+q.ty)+2);if(x2>x0&&y2>y1)R.push([x0,y1,x2,y2]);}
+      for(let i=0;i<R.length;i++)for(let j=i+1;j<R.length;j++){const a=R[i],c=R[j];
+        if(a[0]<=c[2]&&c[0]<=a[2]&&a[1]<=c[3]&&c[1]<=a[3]){R[i]=[Math.min(a[0],c[0]),Math.min(a[1],c[1]),Math.max(a[2],c[2]),Math.max(a[3],c[3])];R.splice(j,1);i=-1;break;}}
+      out[q.k]={R,share:q.share,slots:[]};all.push([q,out[q.k]]);}
+    // each box's slot in the working pictures, in rows, 2 apart
+    let ax=0,ay=0,rh=0;for(const [,o] of all)for(const r of o.R){const w=r[2]-r[0],h=r[3]-r[1];if(ax&&ax+w>cw){ax=0;ay+=rh+2;rh=0;}o.slots.push([ax,ay]);ax+=w+2;rh=Math.max(rh,h);}
+    const need=ay+rh;if(!need)return out;
+    const AH=this._blH=Math.max(this._blH||0,ch,need),F=this._bf=fitCanvas(this._bf,cw,ch),g=F.getContext("2d"),S=this.kitBareSky(cw,ch,s,lv,y0);
+    const AF=this._baf=fitCanvas(this._baf,cw,AH),a=AF.getContext("2d"),AT=this._bat=fitCanvas(this._bat,cw,AH),v=AT.getContext("2d");
+    a.setTransform(1,0,0,1,0,0);a.globalCompositeOperation="source-over";a.globalAlpha=1;a.clearRect(0,0,cw,need);
+    // each group painted where it is on the screen (BF, the canvas's size; at a shifted place the canvas's single-precision transform would
+    // round a few edge pixels differently), then its boxes copied into their slots (AF)
+    const kf=KIT.fly;KIT.fly=s;   // (the bats' wing pictures, as where they are drawn)
+    for(const [q,o] of all){if(!o.R.length)continue;
+      const U=[Math.min(...o.R.map(r=>r[0])),Math.min(...o.R.map(r=>r[1])),Math.max(...o.R.map(r=>r[2])),Math.max(...o.R.map(r=>r[3]))];
+      g.save();g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation="source-over";g.globalAlpha=1;g.clearRect(U[0],U[1],U[2]-U[0],U[3]-U[1]);
+      g.beginPath();g.rect(U[0],U[1],U[2]-U[0],U[3]-U[1]);g.clip();g.setTransform(s,0,0,s,0,q.ty);q.paint(g);g.restore();
+      o.R.forEach((r,i)=>{const w=r[2]-r[0],h=r[3]-r[1];a.drawImage(F,r[0],r[1],w,h,o.slots[i][0],o.slots[i][1],w,h);});}
+    KIT.fly=kf;
+    // AT: the slots again, filled with the bare sky blend where they are on the screen
+    v.setTransform(1,0,0,1,0,0);v.globalAlpha=1;v.globalCompositeOperation="source-over";v.clearRect(0,0,cw,need);v.drawImage(AF,0,0,cw,need,0,0,cw,need);
+    v.globalCompositeOperation="source-atop";   // (the sky is solid, so as source-in)
+    for(const [,o] of all)o.R.forEach((r,i)=>{const w=r[2]-r[0],h=r[3]-r[1];v.drawImage(S,r[0],r[1],w,h,o.slots[i][0],o.slots[i][1],w,h);});
+    v.globalCompositeOperation="source-over";
+    return out;
+  },
+  kitBacklitLay(ctx,o){if(!o||!o.R.length)return;const F=this._baf,T=this._bat;
+    ctx.save();ctx.setTransform(1,0,0,1,0,0);
+    o.R.forEach((r,i)=>{const sx=o.slots[i][0],sy=o.slots[i][1],w=r[2]-r[0],h=r[3]-r[1];
+      ctx.globalAlpha=1;ctx.globalCompositeOperation=TRIAL.nodark?"source-over":"darken";ctx.drawImage(T,sx,sy,w,h,r[0],r[1],w,h);
+      ctx.globalCompositeOperation="source-over";ctx.globalAlpha=1-o.share;ctx.drawImage(F,sx,sy,w,h,r[0],r[1],w,h);});
+    ctx.restore();
   },
   // the bare sky blend alone, SKY[lv]'s four stops as the sky picture has them, drawn where the sky is (y0), with no moon, halo or stars:
   // painted once a size and place, the canvas's size
@@ -4655,6 +4680,11 @@ Object.assign(Scene.prototype,{
       }
     }
     const layOn=(p,al)=>{if(!p)return;ctx.save();ctx.setTransform(1,0,0,1,0,0);if(al!=null)ctx.globalAlpha=al;for(const r of p.R)ctx.drawImage(p.OV,r[0],r[1],r[2],r[3],r[0],r[1],r[2],r[3]);ctx.restore();};
+    // design system 33 (kit 0.52.1): the backlit flyers' pictures, made before the frame's own drawing begins (kitBacklitPrep)
+    const bl=this.kitBacklitPrep(ctx,s,lv,off(0),[
+      L.fly==="bats"&&{k:"sw",ty:off(f(0.34),0.34),B:swarmBoxes(W,t,camX*f(0.34),rm),paint:x=>drawSwarm(x,W,t,camX*f(0.34),rm,INK),share:tn[1]*0.9},
+      L.sleigh&&!HAM_OFF.sleigh&&(()=>{const span=W+760,v=rm?26:68,cx=W+380-posmod(t*v+camX*f(0.34),span),cy=205+Math.sin(t*0.45)*18;return{k:"sl",ty:off(f(0.34),0.34),B:[sleighBox(cx-165,cy-2,0.95)],paint:x=>drawSleigh(x,cx-165,cy-2,0.95,INK,t,rm),share:tn[1]*0.9};})(),
+      L.fly==="bats"&&{k:"bb",ty:off(f(0.62),0.62),B:bigBatBoxes(W,t,camX*f(0.62),rm),paint:x=>drawBigBats(x,W,t,camX*f(0.62),rm,INK),share:tn[2]*0.7}]);
     ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation="source-over";ctx.drawImage(this.sky,0,off(0));
     const mb=after=>{if(!L.mist)return;L.mist.bands.forEach((b,i)=>{if(b[0]!==after)return;const cv=this.cache.mist[i],k=[0.03,0.12,0.28,0.5][after]*(rm?0.4:1),ox=posmod(t*b[3]*(rm?0.4:1)+camX*k,W2);
       at(k,[0.03,0.12,0.28,0.5][after]);ctx.save();ctx.globalAlpha=b[2];ctx.drawImage(cv,-ox,b[1]-100,W2,200);ctx.drawImage(cv,-ox+W2,b[1]-100,W2,200);ctx.restore();});};
@@ -4682,12 +4712,12 @@ Object.assign(Scene.prototype,{
     this.kitLayer(ctx,s,W,t,L2x,2,tn[1],o,L2y);layOn(lit.L2,FAR_THRU); /* version 10; version 11: at 0.55 */mb(2);
     if(L.light==="sun"){at(0);drawRays(ctx,W,t,rm);}
     at(f(0.34),0.34);KIT.fly=s;
-    if(L.fly==="bats")this.kitBacklit(ctx,s,lv,off(0),swarmBoxes(W,t,camX*f(0.34),rm),x=>drawSwarm(x,W,t,camX*f(0.34),rm,INK),tn[1]*0.9);   // design system 33: backlit (was the air colour, and version 10's lit-through-a-cloud)
+    if(L.fly==="bats")this.kitBacklitLay(ctx,bl.sw);   // design system 33: backlit (was the air colour, and version 10's lit-through-a-cloud)
     else if(L.fly==="crows")drawCrowFlocks(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],0.25)); /* version 9: a quarter towards the air, was tn[1]*0.9 */else drawCrowsAlone(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],tn[1]*0.9),3,false);if(lv==="mist")drawLeaves(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],tn[1]*0.9),0); // version 8
-    if(L.sleigh&&!HAM_OFF.sleigh){const span=W+760,v=rm?26:68,cx=W+380-posmod(t*v+camX*f(0.34),span),cy=205+Math.sin(t*0.45)*18;this.kitBacklit(ctx,s,lv,off(0),[sleighBox(cx-165,cy-2,0.95)],x=>drawSleigh(x,cx-165,cy-2,0.95,INK,t,rm),tn[1]*0.9);}   // design system 31: the sleigh, ahead of the swarm; 33: backlit
+    if(L.sleigh&&!HAM_OFF.sleigh)this.kitBacklitLay(ctx,bl.sl);   // design system 31: the sleigh, ahead of the swarm; 33: backlit
     KIT.fly=null;this.kitLayer(ctx,s,W,t,camX*f(0.5),3,tn[2],o,off(f(0.5),0.5));mb(3);KIT.fly=s;
     at(f(0.62),0.62);
-    if(L.fly==="bats")this.kitBacklit(ctx,s,lv,off(0),bigBatBoxes(W,t,camX*f(0.62),rm),x=>drawBigBats(x,W,t,camX*f(0.62),rm,INK),tn[2]*0.7);   // design system 33: backlit (was the air colour)
+    if(L.fly==="bats")this.kitBacklitLay(ctx,bl.bb);   // design system 33: backlit (was the air colour)
     else if(L.fly==="crows")drawCrowsAlone(ctx,W,t,camX*f(0.62),rm,mixc(INK,AIR[lv],tn[2]*0.7),3,true);if(lv==="mist")drawLeaves(ctx,W,t,camX*f(0.62),rm,mixc(INK,AIR[lv],tn[2]*0.78),1); // version 8
     KIT.fly=null;
     this.kitLayer(ctx,s,W,t,camX*f(0.76),4,tn[3],o,off(f(0.76),0.76));
