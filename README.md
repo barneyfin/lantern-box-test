@@ -49,3 +49,5 @@ Since kit 0.56.3 the Snowbound Hamlet's walking puppets reuse their pictures: ea
 Since 0.56.3-r1 a monster hemmed in on both sides stands still instead of turning round every frame (the present crawlers' flicker).
 
 Since kit 0.56.4 the Snowbound Hamlet's puppets are painted again when the picture changes size (a Picture change, Automatic stepping down, or the screen turning), so none comes out too big and sunk into the path.
+
+Since kit 0.56.5 the Snowbound Hamlet is lighter at Picture: Fastest for slow tablets: the wind-up toy's key holds still, half the falling snow, and the snowmen's eyes without their soft blur. Best and Faster are unchanged.

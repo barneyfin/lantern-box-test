@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.56.4';
+  const VERSION = '0.56.5';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -3368,7 +3368,7 @@ function drawFirDeco(x,sp,X,Y,k,fl,t,seed,star,part){   // kit: part "still" lea
     for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?R*0.45:R;i?x.lineTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr):x.moveTo(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr);}
     x.closePath();x.fill();x.restore();}
   if(part!=="still"&&sp.eyes&&sp.eyes.length){const o=blinkOpen(t,seed||0);
-    if(o>0.03){x.save();x.fillStyle=EYE_LIGHT;x.shadowColor=EYE_LIGHT;x.shadowBlur=5;
+    if(o>0.03){x.save();x.fillStyle=EYE_LIGHT;x.shadowColor=EYE_LIGHT;x.shadowBlur=QUICK?0:5;   // kit 0.56.5 (step 4b): no blur at Fastest (the Fire: about 2 ms a frame), still gold and blinking
       for(const e of sp.eyes){let ax=0,ay=0,lo=1e9,hi=-1e9;for(const q of e){ax+=q[0];ay+=q[1];lo=Math.min(lo,q[0]);hi=Math.max(hi,q[0]);}ax/=e.length;ay/=e.length;
         const f=Math.max(1.2,EYE_MIN/Math.max(0.01,(hi-lo)*k));x.beginPath();   // the art's eye shape, enlarged if it is too small to see, and squashed flat as the eye closes
         e.forEach((q,i)=>{const px=X+sg*(ax+(q[0]-ax)*f)*k,py=Y+(ay+(q[1]-ay)*f*o)*k;i?x.lineTo(px,py):x.moveTo(px,py);});x.closePath();x.fill();}
@@ -3442,7 +3442,8 @@ function drawSleigh(x,X,Y,k,col,t,rm){
   x.restore();
 }
 function drawSnow(x,W,t,layer,rm,col){ // falling snow in two depths, as the rain is; sparser and straight down under Reduce motion
-  const n=Math.round(W*(layer?0.07:0.16)*(rm?0.5:1)),sp=(layer?62:34)*(rm?0.6:1),H=LH+20,span=W+140;
+  // kit 0.56.5 (step 4b; the Fire's Hamlet check: the snow about 3 ms a frame; Barney: "lighter snow"): half as many flakes at Fastest, falling and drifting as before
+  const n=Math.round(W*(layer?0.07:0.16)*(rm||QUICK?0.5:1)),sp=(layer?62:34)*(rm?0.6:1),H=LH+20,span=W+140;
   x.save();x.fillStyle=col;x.globalAlpha=layer?0.9:0.62;x.beginPath();
   for(let i=0;i<n;i++){
     const a=hsh(107,i,layer),b=hsh(109,i,layer),r1=(a&4095)/4095,r2=((a>>>12)&4095)/4095,r3=(b&4095)/4095,r4=((b>>>12)&4095)/4095;
@@ -8158,7 +8159,10 @@ function castPose(kind,o,m,t){const R=CAST_RIG[kind],a=o.attack,st=u=>Math.floor
   else if(kind==="ghoul2"){ // the gingerbread man: the ghoul's walk and swipe
     const w=a&&QK?null:wq(m.walk),u=a?st(a.t):null;P={walk:w,swipe:u};key="g|"+w+"|"+u;rig=R.rig(P).rig;}
   else if(kind==="walker"){ // the wind-up toy: the walker's walk and its low and high sweeps; its key turns half a turn a second, in eighths
-    const w=a&&QK?null:wq(m.walk),u=a?st(a.t):null,kr=QK?4:8,kq=a&&QK?0:(Math.floor(t*kr)%(2*kr))/kr;P=Object.assign({walk:w,key:kq*Math.PI},a?(a.name==="low"?R.low(u):R.high(u)):{});key="w|"+w+"|"+(a?a.name+u:"")+"|"+kq%2;rig=R.rig(P).rig;}
+    // kit 0.56.5 (step 4b; the Fire's Hamlet check, 26 November 2026: the puppets needed 171 pictures in a minute at Fastest, the wind-up toy 94 of
+    // them, its key's eight places times its legs' eight, more than the 120 kept, so they were painted again and again; Barney: "Key still, lighter
+    // snow"): at Fastest its key holds still, as the gonk's lantern and cloak do there, so its walk has eight pictures. At Best and Faster it turns
+    const w=a&&QK?null:wq(m.walk),u=a?st(a.t):null,kr=QK?4:8,kq=QK?0:(Math.floor(t*kr)%(2*kr))/kr;P=Object.assign({walk:w,key:kq*Math.PI},a?(a.name==="low"?R.low(u):R.high(u)):{});key="w|"+w+"|"+(a?a.name+u:"")+"|"+kq%2;rig=R.rig(P).rig;}
   else{ // the gonk: the mouth-hat's hop drawn as a scurry (moving while its hop is up), its spit as the lob and its bite as the staff blow
     let feet=null;
     if(a&&a.name==="hop"){const u=st(a.t),mv=Math.sin(u*R.HOPW)>0,n=Math.round(u*MV_RATE)%(MV_RATE/2),q=R.scurry(n/MV_RATE,mv);P=q.P;feet=q.feet;key="h|"+(mv?"r"+n:"s");}   // kit 0.56.3: its scurry repeats every half second, six steps, so it is counted round within that (its key had been the time in 0.6 s laps: 36 names, and more from rounding)
