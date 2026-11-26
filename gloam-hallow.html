@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.54.0';
+  const VERSION = '0.55.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2314,7 +2314,7 @@ const INK="#060508";
 
 /* ============================== Lantern Box ============================== */
 const SKY={night:["#1b0f2e","#57284f","#c06844","#eea05c"],storm:["#0f0507","#370c14","#74201f","#9c3a28"],
-  dawn:["#0a1530","#22406c","#6a8cb8","#c2cfe0"],mist:["#55654f","#81907a","#aab59a","#ccd3b8"],yule:["#070a2c","#2a2274","#7c479f","#d79bb4"]};
+  dawn:["#0a1530","#22406c","#6a8cb8","#c2cfe0"],mist:["#55654f","#81907a","#aab59a","#ccd3b8"],yule:["#040837","#291e8f","#904cbd","#eabfd1"]};   // kit 0.55.0 (Barney, 26 November 2026: the hamlet's sky brighter, the same purplish to blue; was #070a2c, #2a2274, #7c479f, #d79bb4)
 const AIR={night:"#b8644e",storm:"#6e1f1f",dawn:"#6a82a8",mist:"#a6b195",yule:"#8f74b4"};
 const HAZE={night:"#ffb066",storm:"#ff5a3a",dawn:"#d2e0f4",mist:"#e8eed6",yule:"#a999dc"};
 const MOON={x:0.64,y:0.36,r:80,col:"#ffe2a6",halo:"#ffae63"};
@@ -13150,7 +13150,15 @@ const NOEL_P = 1;                      // The Old Town's place in PLACES: the br
 const NOEL_MIX = { M: ['hatmaw', 'ghoul2'], big: [0.15, 0.35], extra: [0, 2],   // The Old Town's sections and extras (no flyers)
   // Barney, 26 November 2026: "35 20 25 20": each monster drawn from these shares, the same all along the level, in place of the patterns'
   // roles (whose flyers had all become present crawlers: 76% of them); as many monsters as before
-  share: [['crawler', 0.35], ['hatmaw', 0.20], ['ghoul2', 0.25], ['walker', 0.20]] };   // the present crawler, the gonk, the gingerbread man, the wind-up toy
+  // and (the same day) a step up at each lantern, the whole level still 35 20 25 20: a share for each stage, the start to the first lantern,
+  // the first to the second, the second to the boss's door (about 13, 22 and 22 monsters on Grim)
+  share: [[['crawler', 0.50], ['hatmaw', 0.15], ['ghoul2', 0.25], ['walker', 0.10]],    // the present crawler, the gonk, the gingerbread man, the wind-up toy
+          [['crawler', 0.34], ['hatmaw', 0.20], ['ghoul2', 0.26], ['walker', 0.20]],
+          [['crawler', 0.27], ['hatmaw', 0.23], ['ghoul2', 0.24], ['walker', 0.26]]] };
+// Barney, 26 November 2026: in The Wretched Noel the wind-up toy 10% faster and the gingerbread man 20% (how fast they move; their legs step
+// with the lines walked, so they step faster too)
+const NOEL_PACE = { walker: 1.1, ghoul2: 1.2 };
+const noelPace = (g, m) => (g.run === 'noel' && NOEL_PACE[m.kind]) || 1;
 const NOEL_BOSS = Object.assign({}, BOSS.mist, { hp: 45 });   // the Gaping Tree's fight at The Tentacled Skull's health, 45 blows (the brief, starting)
 const NOEL_LANTERN = ['the first lantern', 'the second lantern', 'the third lantern', 'Boss'];   // its four lanterns' words under Continue (the plan's question 5: provisional)
 const NOEL_WIN = { heading: 'The Frostbitten Triumph', lead: '', line: 'The toys lie shattered, and the winter dark yields nothing more.' };   // the brief's words; the win card itself is step G2
@@ -14167,7 +14175,7 @@ function enterStep(m, g, lb, dt) {     // walking or flying in to its entry poin
   if (m.kind === 'crawler') v = m.walkT % 0.7 < 0.35 ? K.speed : 0;
   else if (m.kind === 'hatmaw') v = Math.sin(m.walkT * 5.72) > 0 ? K.speed : 0;
   else if (m.kind === 'ghoul2') v = K.speed * Math.max(0, Math.sin(m.walkT * 4.5)) ** 2;
-  v *= hard(g, 'speed');
+  v *= hard(g, 'speed') * noelPace(g, m);
   m.bx += dir * Math.min(v * dt, Math.abs(m.entry - m.bx));
   if (!K.ground) m.by += Math.max(-40 * dt, Math.min(40 * dt, g.L.ground(m.bx) - K.hover - m.alt - m.by));
   place(m, g, m.bx, 0);
@@ -15301,11 +15309,12 @@ function spawnMonsters(g, lb) {
   g.walls = g.L.pits.concat(g.L.banks.filter((b) => Math.abs(bankRise(g, b)) >= BANK_MIN), g.pieces.map((p) => [p.x0, p.x1]));
   if (g.monsTest === 'none') return;
   const mix = g.run === 'noel' ? NOEL_MIX : MIX[PLACES[g.p]];
-  let n = 0, h = 0;                    // h: the climb's half, 0 before the halfway lantern, 1 after
+  let n = 0, h = 0, st = 0;            // h: the climb's half, 0 before the halfway lantern, 1 after; st: The Wretched Noel's stage, 0 to 2
   const share = (sh) => { let r = lb.rand(); for (const [k, w] of sh) if ((r -= w) < 0) return k; return sh[sh.length - 1][0]; };
-  const kindOf = (role) => g.monsTest === 'hatmaw' ? 'hatmaw' : mix.share ? share(mix.share) : role === 'S' ? 'crawler' : role === 'F' ? (g.run === 'noel' ? 'crawler' : 'bat2') : lb.rand() < mix.big[h] ? 'walker' : lb.pick(mix.M);   // The Wretched Noel: no flyers
+  const kindOf = (role) => g.monsTest === 'hatmaw' ? 'hatmaw' : mix.share ? share(mix.share[st]) : role === 'S' ? 'crawler' : role === 'F' ? (g.run === 'noel' ? 'crawler' : 'bat2') : lb.rand() < mix.big[h] ? 'walker' : lb.pick(mix.M);   // The Wretched Noel: no flyers
   g.L.sections.forEach((s, i) => {
     h = i < HALF ? 0 : 1;              // the climb: stretches numbered along the path, 1 to 10
+    st = Math.min(2, Math.floor(i / HALF));   // (The Wretched Noel: its lanterns after the fifth and tenth sections)
     const pats = PATTERNS[s.id], pat = pats[Math.floor(lb.rand() * pats.length)].slice();
     for (let e = 0; e < mix.extra[h]; e++) pat.push([0.12 + lb.rand() * 0.8, lb.pick(['S', 'S', 'F', 'M'])]);
     for (const [u, role] of pat) {
@@ -15449,7 +15458,7 @@ function monsterUpdate(m, g, lb, dt, busy, camX) {
   m.moving = want || (m.kind === 'hatmaw' && m.walkT > 0);
   if (m.patrol) v *= 0.6;              // walking its stretch, it goes slower than it comes at him
   if (m.rush > 0) { m.rush -= dt; if (want) v = Math.max(v, K.speed * (m.kind === 'hatmaw' ? 1.3 : 1.8)); }   // struck: it rushes in to strike back
-  v *= hard(g, 'speed');               // step 5e-5: faster in the second loop
+  v *= hard(g, 'speed') * noelPace(g, m);   // step 5e-5: faster in the second loop (and The Wretched Noel's own paces)
   const s = Math.sign(goal - m.bx);
   let nx = m.bx + s * Math.min(Math.abs(goal - m.bx), v * dt);
   let bumped = false;
