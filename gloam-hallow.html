@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.56.2';
+  const VERSION = '0.56.3';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -4116,7 +4116,7 @@ const GB=(()=>{
     return{rig:{h:H,merge:O.merge,frontLine:O.frontLine,jointR:O.jointR,parts:[arm(0,O.armOut+0.25*s1),leg(0),leg(1),{who,pose:B.pose,sx:B.s,sy:B.s,pin:hm,at,ang:bang},
       arm(1,(S?S.a[0]+0.4:-0.25*s1)-O.armOut)]}};}
   function frame(t){const s=state(t),u=s.phase==='swipe'?t-TW-HOLD1:null;return{cast:[{who,pose:1,x:s.x,rig:rig({walk:s.walk,swipe:u}).rig}],tag:s.phase};}
-  return{rig,frame,LOOP,moSwipe,name:'gingerbread man'};
+  return{rig,frame,LOOP,moSwipe,stride:GP.gaitL,name:'gingerbread man'};   // kit 0.56.3: and his stride (castPose)
 })();
 // the present crawler as a cut-out puppet from his parts sheet (round 2, 25 November 2026). Pieces (crawlerParts, units of piece 1's height):
 // 1 the whole figure (for fitting), 2 the box (its black bow made cream on a copy of the sheet, to match piece 1), 3 and 5 legs (each used twice, mirrored for the back pair),
@@ -4228,7 +4228,7 @@ const WU2=(()=>{
     else{P={};tag='stand';}
     P.key=t*Math.PI;
     return{cast:[{who,pose:1,x,rig:rig(P).rig}],tag};}
-  return{rig,frame,LOOP,k,low,high,name:'wind-up toy'};
+  return{rig,frame,LOOP,k,low,high,stride:G.L,name:'wind-up toy'};   // kit 0.56.3: and its stride (castPose)
 })();
 // the gonk, second puppet (his parts sheet try 3, 25 November 2026, 07:36). Pieces (gonkParts2, units of piece 1's height; pieces 1 and 2 line up exactly):
 // 1 the whole figure (for fitting), 2 the body with its whole hat (curl and all), beard and cloak, a pin at the shoulder, 3 the arm (shoulder to wrist; its open hand
@@ -8140,7 +8140,11 @@ function castPose(kind,o,m,t){const R=CAST_RIG[kind],a=o.attack,st=u=>Math.floor
   // pictures depend on the attack alone and are shared; the wind-up toy's key turns in quarters of a second (eighths at Best and Faster), the gonk's
   // lantern and cloak hold still (as a waiting mouth-hat's hop is stepped there, kit 0.20.13, and the Gaping Tree's sway held, kit 0.20.12), and while
   // the wind-up toy attacks its key holds still too
-  const L=(MO_GAIT_P[MON_P[kind]]||{}).L||56,wq=w=>w==null?null:Math.round(w/(L/8))*(L/8);
+  // kit 0.56.3 (Barney, 26 November 2026: "Fix the never repeating"): a walk is taken in eighths of the puppet's own stride (R.stride: the
+  // gingerbread man's 44 lines, the wind-up toy's 64; the gingerbread man's had been the kit ghoul's 84) and counted round within it, so a
+  // walking puppet has eight pictures, painted once and kept. Before, the lines walked only grew, so every step was a new picture (173
+  // wind-up toy pictures in 25 seconds), turning the 120-picture store over and pushing the other puppets' pictures out
+  const L=R.stride||(MO_GAIT_P[MON_P[kind]]||{}).L||56,wq=w=>{if(w==null)return null;const n=Math.round(w/(L/8));return(((n%8)+8)%8)*(L/8);};
   let P,key,rig;
   if(kind==="crawler"){ // the present crawler: the crawler's lunge, or its six legs scuttling with the ground it covers (the game gives a crawler no walk: its x serves)
     if(a){const u=st(a.t),q=R.lunge(u);P={sx:q.sx,sy:q.sy,tilt:q.tilt,jaw:q.jaw,hot:q.hot,legs:q.legs||null};key="c|L"+u;}
@@ -8149,10 +8153,10 @@ function castPose(kind,o,m,t){const R=CAST_RIG[kind],a=o.attack,st=u=>Math.floor
   else if(kind==="ghoul2"){ // the gingerbread man: the ghoul's walk and swipe
     const w=a&&QK?null:wq(m.walk),u=a?st(a.t):null;P={walk:w,swipe:u};key="g|"+w+"|"+u;rig=R.rig(P).rig;}
   else if(kind==="walker"){ // the wind-up toy: the walker's walk and its low and high sweeps; its key turns half a turn a second, in eighths
-    const w=a&&QK?null:wq(m.walk),u=a?st(a.t):null,kr=QK?4:8,kq=a&&QK?0:Math.floor(t*kr)/kr;P=Object.assign({walk:w,key:kq*Math.PI},a?(a.name==="low"?R.low(u):R.high(u)):{});key="w|"+w+"|"+(a?a.name+u:"")+"|"+kq%2;rig=R.rig(P).rig;}
+    const w=a&&QK?null:wq(m.walk),u=a?st(a.t):null,kr=QK?4:8,kq=a&&QK?0:(Math.floor(t*kr)%(2*kr))/kr;P=Object.assign({walk:w,key:kq*Math.PI},a?(a.name==="low"?R.low(u):R.high(u)):{});key="w|"+w+"|"+(a?a.name+u:"")+"|"+kq%2;rig=R.rig(P).rig;}
   else{ // the gonk: the mouth-hat's hop drawn as a scurry (moving while its hop is up), its spit as the lob and its bite as the staff blow
     let feet=null;
-    if(a&&a.name==="hop"){const u=st(a.t),mv=Math.sin(u*R.HOPW)>0,q=R.scurry(u,mv);P=q.P;feet=q.feet;key="h|"+(mv?u%0.6:"s");}
+    if(a&&a.name==="hop"){const u=st(a.t),mv=Math.sin(u*R.HOPW)>0,n=Math.round(u*MV_RATE)%(MV_RATE/2),q=R.scurry(n/MV_RATE,mv);P=q.P;feet=q.feet;key="h|"+(mv?"r"+n:"s");}   // kit 0.56.3: its scurry repeats every half second, six steps, so it is counted round within that (its key had been the time in 0.6 s laps: 36 names, and more from rounding)
     else if(a&&a.name==="spit"){const u=st(a.t),q=R.spit(u);P=Object.assign({},q);delete P.dx;key="h|S"+u;}
     else if(a&&a.name==="bite"){const u=st(a.t),q=R.leap(u);P=Object.assign({},q);delete P.dx;delete P.dy;if(q.tuck)feet=[{dx:-0.03,up:-0.06*q.tuck},{dx:0.03,up:-0.06*q.tuck}];key="h|B"+u;}
     else{P={};key="h|s";}
