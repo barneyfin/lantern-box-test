@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.56.5';
+  const VERSION = '0.56.6';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -8119,7 +8119,39 @@ function shPoseKit(name,u,t,mending,hit){const R=CAST_RIG.boss,k=R.k,mix=R.mixP,
     else if(q<1.58)P=mix({L:0.75,arms:[1.0,1.0],lid:0.2,hot:0.6},idle(),ease((q-1.13)/0.45));else P=idle();}
   else P=idle();
   const r=R.rig(P).rig;if(trail)r.trail={pts:trail,w:6,a:1};if(sparks)r.sparks=sparks;if(hit)r.hot=1;
-  return{rig:r,key:"boss|"+(FX?1:0)+"|"+(mending?"mend":(name||"sway")+"|"+(name?q:"")+"|"+ti)+(hit?"|hit":"")};}
+  // kit 0.56.6: a move it has no pose for (its arrival) draws its sway (idle), so it is named as the sway is: one picture, not one for each step
+  const kn=name&&SH_POSED[name]?name:null;
+  return{rig:r,key:"boss|"+(FX?1:0)+"|"+(mending?"mend":(kn||"sway")+"|"+(kn?q:"")+"|"+ti)+(hit?"|hit":"")};}
+const SH_POSED={roots:1,branch:1,splinters:1,knock:1};   // the moves shPoseKit poses
+// kit 0.56.6 (step 4b; the Fire's Hamlet check on 0.56.5: the path smooth once its pictures were painted, its first seconds and the boss's still
+// catching as each pose was painted the first time it showed; Barney: "Yes, paint ahead"): world.hamlet.warm(list, ms) paints puppet pictures
+// before they are wanted. warmItems turns the game's list into every pose world.monster or world.boss would ask for at Fastest, named as they
+// name them: a monster's walk (its eight steps; the gonk's six and its stand), a monster's attack (each step to its length, 12 a second), the
+// boss (its sway's loop, its four moves 6 a second, its mend). Each pose is taken in the middle of its step, so its name is the one play gives it
+const WARM=new WeakMap();
+function warmItems(list){const out=[],R=MV_RATE;
+  for(const it of list){
+    if(it.boss){const sr=TREE16.sway,M=SH_FAST.moves;for(let j=0;j<SH_FAST.loop*sr-1e-9;j++)out.push({boss:null,u:0,t:(j+0.5)/sr});
+      for(const n of Object.keys(SH_POSED)){const len=BS_PHASES.mist[n][2];for(let k=0;k<len*M-1e-9;k++)out.push({boss:n,u:(k+0.5)/M,t:0});}
+      out.push({boss:"mend"});continue;}
+    const kind=it.kind;if(!CAST_RIG[kind])continue;
+    if(it.walk){if(kind==="crawler")for(let i=0;i<8;i++)out.push({kind,o:{kind,x:i*3.5},m:{}});
+      else if(kind==="hatmaw"){out.push({kind,o:{kind,x:0,id:"warm"},m:{}});for(let k=1;k<=6;k++)out.push({kind,o:{kind,x:0,id:"warm",attack:{name:"hop",t:(k+0.5)/R}},m:{}});}
+      else{const L=CAST_RIG[kind].stride;for(let i=0;i<8;i++)out.push({kind,o:{kind,x:0},m:{walk:i*L/8}});}}
+    else if(it.attack)for(let k=0;k<(+it.len||0)*R-1e-9;k++)out.push({kind,o:{kind,x:0,id:"warm",attack:{name:it.attack,t:(k+0.5)/R}},m:{walk:null}});}
+  return out;}
+// paints the list's pictures not yet kept, at least one a call (if any are left) and on while ms have not gone; returns how many poses are
+// left to look at (0: all kept). Only at Fastest in the hamlet (elsewhere it returns 0 and paints nothing). The kit remembers how far each
+// list got, and starts it again when the picture's scale changes (the kept pictures are let go then)
+function warmCast(list,ms,f){const s=f.s;if(f.level!=="yule"||!QUICK||HAM_OFF.cast||!Array.isArray(list))return 0;
+  let W=WARM.get(list);if(!W||W.s!==s){W={items:warmItems(list),i:0,s};WARM.set(list,W);}
+  const t0=performance.now();let n=0;
+  while(W.i<W.items.length){if(n>0&&performance.now()-t0>=ms)break;const it=W.items[W.i++];let rig,key,M,N;
+    if(it.boss!==undefined){const hp=it.boss==="mend"?shPoseKit(null,0,0,true,false):shPoseKit(it.boss,it.u,it.t,false,false);rig=hp.rig;key=hp.key;M=CAST_BOSS;N=SH_FAST.keep;}
+    else{const cp=castPose(it.kind,it.o,it.m,0);rig=cp.rig;key=cp.key;M=CAST_KEPT;N=CAST_KEEP_N;}
+    if(M.has(key))continue;
+    castPainted(rig,key,s,M,N,null);n++;}
+  return W.items.length-W.i;}
 // the claws bursting up through the ground at the marks, as its film draws them (the traced claws, shown only above the ground), after the
 // kit's own ground warning (the tree's cracks, which the game's roots use): in place of the roots, on the same clock
 function shClawsFx(u,cr,G,t){const fx=[];if(u<0.75){const v=ease(u/0.75);fx.push(x=>{for(const p of cr)bsWarn(x,p,G,44,v,t,1);});}
@@ -8227,6 +8259,11 @@ function makeTools(env){
   return{
     PLACES:["night","storm","dawn","mist"],
     hamlet:{ // design system 31: The Snowbound Hamlet's two switches, for the test link's Testing panel only (never the players' Settings)
+      // kit 0.56.6: and warm(list, ms), for play, between world.begin and world.end: at Picture: Fastest in the hamlet, paints the puppets' pictures
+      // before they are wanted, at least one a call and on until ms milliseconds have gone; returns how many poses are left (0: all kept). list:
+      // [{ kind, walk: true } | { kind, attack: name, len: seconds } | { boss: true }], kind 'crawler', 'ghoul2', 'walker' or 'hatmaw'. Pass the same
+      // list each frame (the kit remembers how far it got). Elsewhere it paints nothing and returns 0
+      warm(list,ms){return warmCast(list,Math.max(0,+ms||0),frame("hamlet.warm"));},
       tones(v){if(!HAMLET_TONES[v])throw new Error('Lantern Box: the hamlet\'s tones are "forest" or "near".');LV.yule.tints=HAMLET_TONES[v];},   // "forest" (option 2) is the approved default
       bulbs(v){BULB_BRIGHT=Math.round(clamp(v,1,3));},   // 1, 2 or 3 (the default since kit 0.56.2; it was 1)
       sky(v){const k=HAMLET_SKY[v];if(!k)throw new Error('Lantern Box: the hamlet\'s sky is "brighter", "brightest" or "original".');   // kit 0.56.0
@@ -13218,6 +13255,18 @@ const CHECK_NOEL = /[?&]check=noel\b/.test(location.search);   // The Wretched N
 const CHECK_NOELPARTS = /[?&]check=noelparts\b/.test(location.search);
 // and in each of its legs, how many puppet pictures were painted a second while timed (the kit's count, world.stats.cast): many means the
 // puppets are being painted again and again, few that their cost is in drawing them
+// step 4b (kit 0.56.6; Barney, 26 November 2026: "Yes, paint ahead"): the hamlet's puppet pictures painted before they are wanted, at Picture:
+// Fastest (the Fire caught as each pose was painted the first time it showed): the four monsters' walks and attacks during the place card,
+// 40 ms a frame under its black, then one a frame if any are left; the boss's from the third lantern on, one a frame
+const NOEL_WARM = [{ kind: 'crawler', walk: true }, { kind: 'ghoul2', walk: true }, { kind: 'walker', walk: true }, { kind: 'hatmaw', walk: true },
+  { kind: 'crawler', attack: 'lunge', len: ATK_T.lunge }, { kind: 'ghoul2', attack: 'swipe', len: ATK_T.swipe }, { kind: 'walker', attack: 'low', len: ATK_T.low },
+  { kind: 'walker', attack: 'high', len: ATK_T.high }, { kind: 'hatmaw', attack: 'spit', len: ATK_T.spit }, { kind: 'hatmaw', attack: 'bite', len: ATK_T.bite }];
+const NOEL_BOSS_WARM = [{ boss: true }];
+function noelWarm(g, w) {
+  if (g.run !== 'noel' || !w.hamlet || !w.hamlet.warm) return;
+  const left = w.hamlet.warm(NOEL_WARM, g.mode === 'card' ? 40 : 0);
+  if (g.lastCp >= 3 && (g.mode === 'card' || !left)) w.hamlet.warm(NOEL_BOSS_WARM, g.mode === 'card' ? 40 : 0);
+}
 const castPaints = (lb) => { const st = lb.world.stats; return st && st.cast ? Object.values(st.cast).reduce((a, b) => a + (+b || 0), 0) : 0; };
 const NOEL_PARTS = [
   { part: 'everything', off: {} },
@@ -13746,6 +13795,7 @@ function playDraw(ctx, g, lb, t) {
   drawMonsters(g, lb, w, camX, true);   // flyers in front of him
   for (const b of g.gobs) w.gob(b.path, b.t / SPIT.fly);   // step 5e-8: the gobs in flight, in front of him
   drawShots(g, lb, w);
+  if (t == null) noelWarm(g, w);         // step 4b: the hamlet's pictures painted ahead (not in the play check's extra frames)
   w.end();
 }
 
