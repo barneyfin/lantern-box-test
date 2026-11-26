@@ -13147,7 +13147,10 @@ const TEST_LINK = /\/lantern-box-test\//.test(location.pathname);
 const NOEL = TEST_LINK || /[?&]noel\b/.test(location.search);
 const NOEL_RUN = { id: 'noel', name: 'The Wretched Noel' };
 const NOEL_P = 1;                      // The Old Town's place in PLACES: the brief's "pitched at The Old Town's step of the climb"
-const NOEL_MIX = { M: ['hatmaw', 'ghoul2'], big: [0.15, 0.35], extra: [0, 2] };   // starting figures: The Old Town's mix, with walkers (the wind-up toy); no flyers
+const NOEL_MIX = { M: ['hatmaw', 'ghoul2'], big: [0.15, 0.35], extra: [0, 2],   // The Old Town's sections and extras (no flyers)
+  // Barney, 26 November 2026: "35 20 25 20": each monster drawn from these shares, the same all along the level, in place of the patterns'
+  // roles (whose flyers had all become present crawlers: 76% of them); as many monsters as before
+  share: [['crawler', 0.35], ['hatmaw', 0.20], ['ghoul2', 0.25], ['walker', 0.20]] };   // the present crawler, the gonk, the gingerbread man, the wind-up toy
 const NOEL_BOSS = Object.assign({}, BOSS.mist, { hp: 45 });   // the Gaping Tree's fight at The Tentacled Skull's health, 45 blows (the brief, starting)
 const NOEL_LANTERN = ['the first lantern', 'the second lantern', 'the third lantern', 'Boss'];   // its four lanterns' words under Continue (the plan's question 5: provisional)
 const NOEL_WIN = { heading: 'The Frostbitten Triumph', lead: '', line: 'The toys lie shattered, and the winter dark yields nothing more.' };   // the brief's words; the win card itself is step G2
@@ -13173,6 +13176,9 @@ const CHECK_NOEL = /[?&]check=noel\b/.test(location.search);   // The Wretched N
 // The Wretched Noel's play check with the hamlet's costs left out one at a time, so one run on the Fire shows what each costs in play (the
 // kit's test-only world._hamletOff; the test page's Hamlet breakdown times the scene, this times the game as it is played). Eight legs
 const CHECK_NOELPARTS = /[?&]check=noelparts\b/.test(location.search);
+// and in each of its legs, how many puppet pictures were painted a second while timed (the kit's count, world.stats.cast): many means the
+// puppets are being painted again and again, few that their cost is in drawing them
+const castPaints = (lb) => { const st = lb.world.stats; return st && st.cast ? Object.values(st.cast).reduce((a, b) => a + (+b || 0), 0) : 0; };
 const NOEL_PARTS = [
   { part: 'everything', off: {} },
   { part: 'no moonlight on the clouds', off: { moon: true } },
@@ -14494,7 +14500,7 @@ function damage(g, lb, m, n, dir) {    // a blow or a fireball: it flares and jo
 function defeat(g, lb, m) {            // card pieces and its wisp rising to the score (the kit's, 1.6 s); the echo counts as it arrives
   m.st = 'defeat'; m.t = 0; m.atk = null; m.wdx = 0; m.ody = 0; m.beatenAt = lb.time;
   if (g.run === 'rot') { const sure = rotFelled(g, lb, m); feast(g, lb, false); if (sure) sureDrop(g, lb, m); else dropLoot(g, lb, m); return; }   // The Endless Rot: felled, not echo (step 2); the sure drop (step 3)
-  if (g.run === 'noel') { lb.sfx('defeat', 0); feast(g, lb, false); dropLoot(g, lb, m); return; }   // The Wretched Noel: monsters bank no echo (and, until Barney answers the wisps question, none rises)
+  if (g.run === 'noel') { lb.sfx('defeat', 0); feast(g, lb, false); dropLoot(g, lb, m); return; }   // The Wretched Noel: monsters bank no echo; their wisps still rise, uncounted (the kit's defeat draws them; Barney, 26 November 2026)
   const n = MON[m.kind].wisps * hard(g, 'echo');   // step 5e-5: doubled in the second loop
   lb.sfx('defeat', n);                 // step 5d: the card tearing, then its wisp's echo, louder the more echo it gives
   g.echoDue += n;
@@ -15296,7 +15302,8 @@ function spawnMonsters(g, lb) {
   if (g.monsTest === 'none') return;
   const mix = g.run === 'noel' ? NOEL_MIX : MIX[PLACES[g.p]];
   let n = 0, h = 0;                    // h: the climb's half, 0 before the halfway lantern, 1 after
-  const kindOf = (role) => g.monsTest === 'hatmaw' ? 'hatmaw' : role === 'S' ? 'crawler' : role === 'F' ? (g.run === 'noel' ? 'crawler' : 'bat2') : lb.rand() < mix.big[h] ? 'walker' : lb.pick(mix.M);   // The Wretched Noel: no flyers
+  const share = (sh) => { let r = lb.rand(); for (const [k, w] of sh) if ((r -= w) < 0) return k; return sh[sh.length - 1][0]; };
+  const kindOf = (role) => g.monsTest === 'hatmaw' ? 'hatmaw' : mix.share ? share(mix.share) : role === 'S' ? 'crawler' : role === 'F' ? (g.run === 'noel' ? 'crawler' : 'bat2') : lb.rand() < mix.big[h] ? 'walker' : lb.pick(mix.M);   // The Wretched Noel: no flyers
   g.L.sections.forEach((s, i) => {
     h = i < HALF ? 0 : 1;              // the climb: stretches numbered along the path, 1 to 10
     const pats = PATTERNS[s.id], pat = pats[Math.floor(lb.rand() * pats.length)].slice();
@@ -15837,18 +15844,18 @@ function checkDraw(ctx, g, lb) {
     if (C.stable >= (C.rot ? ROT_CHECK.settle : CHECK.settle) * 1000 || C.t >= (C.rot ? ROT_CHECK.settleMax : CHECK.settleMax) * 1000) nextLeg(g, lb);
   } else if (C.phase === 'warm') {
     C.t += gap;
-    if (C.t >= CHECK.warm * 1000) { C.phase = 'run'; C.t = 0; C.cur = { gaps: [], work: [] }; }
+    if (C.t >= CHECK.warm * 1000) { C.phase = 'run'; C.t = 0; C.cur = { gaps: [], work: [], paint0: C.noel ? castPaints(lb) : null }; }
   } else if (C.phase === 'run') {
     C.cur.gaps.push(gap); C.cur.work.push(work); C.t += gap;
     if (C.rot) C.cur.most = Math.max(C.cur.most || 0, rotOut(g));   // The Endless Rot's: the most monsters on screen while timed
-    if (C.t >= (C.legs[C.i] && C.legs[C.i].boss ? CHECK.bossRun : CHECK.run) * 1000) { C.phase = 'load'; C.t = 0; C.loadStart = null; C.loadN = 0; C.loadPlay = 0; C.cur.level = lb.picture.level; }
+    if (C.t >= (C.legs[C.i] && C.legs[C.i].boss ? CHECK.bossRun : CHECK.run) * 1000) { C.phase = 'load'; C.t = 0; C.loadStart = null; C.loadN = 0; C.loadPlay = 0; C.cur.level = lb.picture.level; if (C.cur.paint0 != null) C.cur.paints = castPaints(lb) - C.cur.paint0; }
   } else if (C.phase === 'load') {
     if (C.loadStart == null) { C.loadStart = now; C.loadN = 0; } else C.loadN++;
     C.t += gap;
     if (C.t >= CHECK.load * 1000 || C.loadPlay >= CHECK.loadPlay) {
       const c = C.cur, leg = C.legs[C.i], sum = c.gaps.reduce((a, b) => a + b, 0), per = (now - C.loadStart) / Math.max(1, C.loadN);
       C.res.push({ place: leg.p, noel: !!leg.noel, part: leg.part, boss: leg.boss, n: leg.wave ? c.most || 0 : leg.n, fps: c.gaps.length * 1000 / sum, slow: pct95(c.gaps), max: Math.max(...c.gaps),
-        drawn: per / CHECK.reps, keptUp: per < 18, work: c.work.reduce((a, b) => a + b, 0) / c.work.length, level: c.level });   // kept up: eight frames inside one refresh, so the time is an upper limit
+        drawn: per / CHECK.reps, keptUp: per < 18, work: c.work.reduce((a, b) => a + b, 0) / c.work.length, level: c.level, painted: c.paints != null ? c.paints * 1000 / sum : undefined });   // kept up: eight frames inside one refresh, so the time is an upper limit
       if (leg.wave) C.res[C.res.length - 1].wave = leg.wave;   // The Endless Rot's: the wave timed
       nextLeg(g, lb);
     }
@@ -15907,6 +15914,7 @@ function readCheck(o) {
     if (!q || typeof q !== 'object') return null;
     const r = { place: num(q.place, 0, 3), noel: q.noel === true, part: typeof q.part === 'string' ? q.part.slice(0, 40) : undefined, boss: q.boss === true, n: num(q.n, 0, 99) || 0, fps: num(q.fps, 0, 1000), slow: num(q.slow, 0, 1e5), max: num(q.max, 0, 1e5),
       drawn: num(q.drawn, 0, 1e5), keptUp: q.keptUp === true, work: num(q.work, 0, 1e5) || 0, level: ['best', 'faster', 'fastest'].indexOf(q.level) >= 0 ? q.level : '' };
+    const pd = num(q.painted, 0, 1e5); if (pd != null) r.painted = pd;   // The Wretched Noel's: puppet pictures painted a second
     if (r.place == null || r.fps == null || r.slow == null || r.max == null || r.drawn == null) return null;
     r.place = Math.round(r.place);
     if (o.rot === true) { const w = num(q.wave, 1, 1e6); if (w == null) return null; r.wave = Math.round(w); }   // The Endless Rot's: the wave timed
@@ -15945,7 +15953,7 @@ function checkText(lb, res) {
       (res.trials.length ? ' · trial: ' + res.trials.join(', ') : ''),   // kit 0.20.2's trials, from the page's address
     'Phone target (30 fps, drawn in 25 ms): ' + (phonePass(res) ? 'passes' : 'does not pass') + '. Computer target (60 fps): ' + (computerPass(res) ? 'passes' : 'does not pass') + '.'];
   res.legs.forEach((r) => lines.push(legName(lb, r) + ': ' + Math.round(r.fps) + ' fps, drawn in ' + drawnIn(r) + ', slowest 5% ' + Math.round(r.slow) + ' ms, longest ' +
-    Math.round(r.max) + ' ms, work ' + r.work.toFixed(1) + ' ms' + (r.level && r.level !== lvl ? ', Picture ' + PICTURE_NAMES[r.level] : '')));
+    Math.round(r.max) + ' ms, work ' + r.work.toFixed(1) + ' ms' + (r.painted != null ? ', puppets painted ' + r.painted.toFixed(1) + ' a second' : '') + (r.level && r.level !== lvl ? ', Picture ' + PICTURE_NAMES[r.level] : '')));
   if (PLAYTEST) lines.push('', ...runsLines(lb));   // the Night pass, part D: the playtest's run log, under its own heading
   lines.push('', 'My phone, tablet or computer: ');
   return lines.join('\n');
