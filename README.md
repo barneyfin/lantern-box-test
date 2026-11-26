@@ -39,3 +39,5 @@ Since 0.54.0-r1 The Wretched Noel's monsters are 35% present crawlers, 20% gonks
 Since kit 0.55.0 the Snowbound Hamlet's sky is brighter, and in The Wretched Noel the wind-up toys are 10% faster, the gingerbread men 20% faster, and the monsters get tougher at each lantern.
 
 Since kit 0.56.0 The Wretched Noel plays its own soundtrack, Iron Solstice, and Settings, Testing has "Hamlet: sky" (Brighter, Brightest, Original).
+
+Since kit 0.56.1 the Snowbound Hamlet has no big bats close to the screen, only the sleigh (25% smaller) with the bat swarm chasing it.

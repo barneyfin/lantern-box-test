@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.56.0';
+  const VERSION = '0.56.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2340,7 +2340,7 @@ const LV={
   mist:{name:"Mist",place:"The Wind Bent Forest",set:"forest",tints:[0.9,0.77,0.57,0.42],lift:35,cw4:520,back:0.26,light:"sun",fly:"fewcrows",litP:0.1,edge:"rgba(236,242,214,0.85)",vig:0.3,crest:0,
     mist:{col:"#eef2dc",bands:[[0,104,1,4],[1,378,1,5],[2,424,0.9,8],[3,456,0.55,11]]},
     desc:"walks a green forest at midday in thick mist, every tree bent the same way by the wind, the sun a pale disc, past stumps, ferns, a fallen trunk, a candlelit shrine and a woodcutter's hut"},
-  yule:{name:"Snowfall",place:"The Snowbound Hamlet",set:"hamlet",tints:[0.9,0.77,0.57,0.42],lift:70,light:"moon",fly:"bats",sleigh:true,snow:true,litP:0.3,edge:"rgba(214,222,255,0.9)",vig:0.45,crest:0.3,mist:null,
+  yule:{name:"Snowfall",place:"The Snowbound Hamlet",set:"hamlet",tints:[0.9,0.77,0.57,0.42],lift:70,light:"moon",fly:"bats",bigBats:false,sleigh:true,snow:true,litP:0.3,edge:"rgba(214,222,255,0.9)",vig:0.45,crest:0.3,mist:null,
     desc:"walks a black path crusted with snow through The Snowbound Hamlet at night, past snow-roofed houses, fir trees and snowmen, under a gold moon in a violet sky"}
 };
 const EMBER={danger:"#ff7a3a",glow:"#ff5a1f"};
@@ -4434,6 +4434,9 @@ function bigBatBoxes(W,t,lx,rm){const span=W+420,b=FLY_BOX.bat,out=[];
   for(let i=0;i<3;i++){const v=(rm?38:96)+i*18,X=W+210-posmod(t*v+i*span*0.37+lx,span),Y=150+i*58+Math.sin(t*0.8+i*1.7)*16,k=0.8+i*0.12;out.push([X+b[0]*k,Y+b[1]*k,X+b[2]*k,Y+b[3]*k]);}
   return out;}
 function sleighBox(X,Y,k){return[X-165*k,Y-60*k,X+50*k,Y+22*k];}
+// kit 0.56.1 (Barney, 26 November 2026: "Can you also make the sleigh 25% smaller"): the hamlet's sleigh at 0.95 x 0.75 of its drawn size (design
+// system 31 drew it at 0.95), in the same place ahead of the swarm
+const SLEIGH_K=0.95*0.75;
 function swarmBoxes(W,t,lx,rm){const span=W+760,v=rm?26:68,out=[];
   for(let f=0;f<2;f++){const cx=W+380-posmod(t*v+f*span*0.55+lx,span),cy=205+f*46+Math.sin(t*0.45+f*2)*18;if(cx>=-220&&cx<=W+220)out.push([cx-120,cy-56,cx+120,cy+56]);}
   return out;}
@@ -4717,8 +4720,8 @@ Object.assign(Scene.prototype,{
     const cr=QUICK&&clp.length&&L.fly==="bats"?{W2,layers:clp.map(([cv,ox,k])=>({d:cv===this.cache.cl1?1:0,ox,ty:off(k),D:Math.round(-up(k)*s)-Math.round(-up(0)*s)}))}:null;
     const bl=this.kitBacklitPrep(ctx,s,lv,off(0),[
       L.fly==="bats"&&{k:"sw",ty:off(f(0.34),0.34),B:swarmBoxes(W,t,camX*f(0.34),rm),paint:x=>drawSwarm(x,W,t,camX*f(0.34),rm,INK),share:tn[1]*0.9},
-      L.sleigh&&!HAM_OFF.sleigh&&(()=>{const span=W+760,v=rm?26:68,cx=W+380-posmod(t*v+camX*f(0.34),span),cy=205+Math.sin(t*0.45)*18;return{k:"sl",ty:off(f(0.34),0.34),B:[sleighBox(cx-165,cy-2,0.95)],paint:x=>drawSleigh(x,cx-165,cy-2,0.95,INK,t,rm),share:tn[1]*0.9};})(),
-      L.fly==="bats"&&{k:"bb",ty:off(f(0.62),0.62),B:bigBatBoxes(W,t,camX*f(0.62),rm),paint:x=>drawBigBats(x,W,t,camX*f(0.62),rm,INK),share:tn[2]*0.7}],cr);
+      L.sleigh&&!HAM_OFF.sleigh&&(()=>{const span=W+760,v=rm?26:68,cx=W+380-posmod(t*v+camX*f(0.34),span),cy=205+Math.sin(t*0.45)*18;return{k:"sl",ty:off(f(0.34),0.34),B:[sleighBox(cx-165,cy-2,SLEIGH_K)],paint:x=>drawSleigh(x,cx-165,cy-2,SLEIGH_K,INK,t,rm),share:tn[1]*0.9};})(),
+      L.fly==="bats"&&L.bigBats!==false&&{k:"bb",ty:off(f(0.62),0.62),B:bigBatBoxes(W,t,camX*f(0.62),rm),paint:x=>drawBigBats(x,W,t,camX*f(0.62),rm,INK),share:tn[2]*0.7}],cr);
     ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation="source-over";ctx.drawImage(this.sky,0,off(0));
     const mb=after=>{if(!L.mist)return;L.mist.bands.forEach((b,i)=>{if(b[0]!==after)return;const cv=this.cache.mist[i],k=[0.03,0.12,0.28,0.5][after]*(rm?0.4:1),ox=posmod(t*b[3]*(rm?0.4:1)+camX*k,W2);
       at(k,[0.03,0.12,0.28,0.5][after]);ctx.save();ctx.globalAlpha=b[2];ctx.drawImage(cv,-ox,b[1]-100,W2,200);ctx.drawImage(cv,-ox+W2,b[1]-100,W2,200);ctx.restore();});};
@@ -4751,7 +4754,7 @@ Object.assign(Scene.prototype,{
     if(L.sleigh&&!HAM_OFF.sleigh)this.kitBacklitLay(ctx,bl.sl);   // design system 31: the sleigh, ahead of the swarm; 33: backlit
     KIT.fly=null;this.kitLayer(ctx,s,W,t,camX*f(0.5),3,tn[2],o,off(f(0.5),0.5));mb(3);KIT.fly=s;
     at(f(0.62),0.62);
-    if(L.fly==="bats")this.kitBacklitLay(ctx,bl.bb);   // design system 33: backlit (was the air colour)
+    if(L.fly==="bats")this.kitBacklitLay(ctx,bl.bb);   // kit 0.56.1: none in the hamlet (bigBats:false; Barney, 26 November 2026: "My intention was just to have the sleigh with bats chasing it")   // design system 33: backlit (was the air colour)
     else if(L.fly==="crows")drawCrowsAlone(ctx,W,t,camX*f(0.62),rm,mixc(INK,AIR[lv],tn[2]*0.7),3,true);if(lv==="mist")drawLeaves(ctx,W,t,camX*f(0.62),rm,mixc(INK,AIR[lv],tn[2]*0.78),1); // version 8
     KIT.fly=null;
     this.kitLayer(ctx,s,W,t,camX*f(0.76),4,tn[3],o,off(f(0.76),0.76));
