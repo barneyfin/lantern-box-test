@@ -55,3 +55,5 @@ Since kit 0.56.5 the Snowbound Hamlet is lighter at Picture: Fastest for slow ta
 Since kit 0.56.6 the Snowbound Hamlet paints its monsters' pictures during the opening card, and the boss's after the third lantern, at Picture: Fastest, so play doesn't catch as each is painted.
 
 Since 0.56.6-r1 the Hamlet's speed test (check=noelparts) also times the boss fight with no moonlight, no snow, no sleigh and no snowmen's eyes.
+
+Since kit 0.56.7 The Sprung Horror's head shows whole at its spring's full stretch, and the Hamlet's twelve-part speed test shows its result at the end.

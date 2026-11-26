@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.56.6';
+  const VERSION = '0.56.7';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -8085,7 +8085,9 @@ let CAST_PAINTS={frame:-1,n:0};
 let CAST_S=0;
 function castPainted(rig,key,s,M,N,last){if(s!==CAST_S){CAST_KEPT.clear();CAST_BOSS.clear();CAST_LAST.clear();CAST_S=s;last=null;}M=M||CAST_KEPT;N=N||CAST_KEEP_N;let E=M.get(key);if(E){M.delete(key);M.set(key,E);return E;}
   if(QUICK){if(CAST_PAINTS.frame!==KIT.frame)CAST_PAINTS={frame:KIT.frame,n:0};if(CAST_PAINTS.n>=CAST_BUDGET&&last)return last;CAST_PAINTS.n++;}   // kit 0.49.2: the budget, at Fastest
-  const W0=620,H0=560,OX=310,OY=460;if(!CAST_SCR||CAST_SCR.s!==s)CAST_SCR={s,cv:mk(W0*s,H0*s)};
+  // kit 0.56.7 (Barney's Fire, the speed test: The Sprung Horror's head missing at its spring's full stretch): the working canvas reaches 470 lines
+  // ahead of the foot (was 310; the head reaches 424 with the room for its rim, the farthest of any puppet; the wind-up toy's sweep 148)
+  const W0=780,H0=560,OX=470,OY=460;if(!CAST_SCR||CAST_SCR.s!==s)CAST_SCR={s,cv:mk(W0*s,H0*s)};
   const sc=CAST_SCR.cv,x=sc.getContext("2d");x.setTransform(1,0,0,1,0,0);x.globalCompositeOperation="source-over";x.globalAlpha=1;x.shadowBlur=0;x.shadowColor="transparent";x.clearRect(0,0,sc.width,sc.height);x.setTransform(s,0,0,s,OX*s,OY*s);
   const b=drawCastRig(x,0,0,{rig})||[-OX,-OY,W0-OX,H0-OY],P=26,x0=Math.max(-OX,Math.floor(b[0]-P)),y0=Math.max(-OY,Math.floor(b[1]-P)),x1=Math.min(W0-OX,Math.ceil(b[2]+P)),y1=Math.min(H0-OY,Math.ceil(b[3]+P));
   const cv=mk(Math.max(1,Math.ceil((x1-x0)*s)),Math.max(1,Math.ceil((y1-y0)*s)));cv.getContext("2d").drawImage(sc,Math.round((x0+OX)*s),Math.round((y0+OY)*s),cv.width,cv.height,0,0,cv.width,cv.height);
