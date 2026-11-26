@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.52.2';
+  const VERSION = '0.53.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2275,12 +2275,12 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // Fastest as kit 0.42.0 draws it, a plain belt and the gold glass; fl1, his light kept, a plain belt and the gold glass; fl2, the
 // strong glow and the red glass, its light added to the scene; fl3, the same with its light laid over the scene (part 4's fallback).
 // nodark (kit 0.52.1): the backlit flyers laid on without "darken" (a wrong look: for timing darken's own cost on the Fire only).
-// cloudref (kit 0.52.2): at Picture: Fastest, design system 34's backlit flyers (no darken; the reference with the baked clouds).
+// cloudref (kit 0.52.2, for the Fire's timing): design system 34's Fastest flyers; retired in kit 0.53.0, where they are Fastest's own look.
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{fast:w.includes("fastest"),cloudref:w.includes("cloudref"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
+  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
 const TRIAL_FL=["look timing T0: Fastest as it is, a plain belt and the gold glass","look timing T1: his light kept, a plain belt and the gold glass","look timing T2: the strong glow and the red glass, its light added","look timing T3: the strong glow and the red glass, its light laid over"];   // kit 0.43.0
-const TRIAL_WORDS=[TRIAL.cloudref&&"design system 34's Fastest flyers",TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
+const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -4700,8 +4700,8 @@ Object.assign(Scene.prototype,{
     }
     const layOn=(p,al)=>{if(!p)return;ctx.save();ctx.setTransform(1,0,0,1,0,0);if(al!=null)ctx.globalAlpha=al;for(const r of p.R)ctx.drawImage(p.OV,r[0],r[1],r[2],r[3],r[0],r[1],r[2],r[3]);ctx.restore();};
     // design system 33 (kit 0.52.1): the backlit flyers' pictures, made before the frame's own drawing begins (kitBacklitPrep)
-    // design system 34 (kit 0.52.2): at Picture: Fastest, behind ?trial=cloudref for now, the flyers' reference: each cloud layer's picture, slide, rise and rest offset
-    const cr=QUICK&&TRIAL.cloudref&&clp.length&&L.fly==="bats"?{W2,layers:clp.map(([cv,ox,k])=>({d:cv===this.cache.cl1?1:0,ox,ty:off(k),D:Math.round(-up(k)*s)-Math.round(-up(0)*s)}))}:null;
+    // design system 34 (kit 0.52.2; on since 0.53.0, Barney: "we go with fix 2"): at Picture: Fastest, the flyers' reference: each cloud layer's picture, slide, rise and rest offset
+    const cr=QUICK&&clp.length&&L.fly==="bats"?{W2,layers:clp.map(([cv,ox,k])=>({d:cv===this.cache.cl1?1:0,ox,ty:off(k),D:Math.round(-up(k)*s)-Math.round(-up(0)*s)}))}:null;
     const bl=this.kitBacklitPrep(ctx,s,lv,off(0),[
       L.fly==="bats"&&{k:"sw",ty:off(f(0.34),0.34),B:swarmBoxes(W,t,camX*f(0.34),rm),paint:x=>drawSwarm(x,W,t,camX*f(0.34),rm,INK),share:tn[1]*0.9},
       L.sleigh&&!HAM_OFF.sleigh&&(()=>{const span=W+760,v=rm?26:68,cx=W+380-posmod(t*v+camX*f(0.34),span),cy=205+Math.sin(t*0.45)*18;return{k:"sl",ty:off(f(0.34),0.34),B:[sleighBox(cx-165,cy-2,0.95)],paint:x=>drawSleigh(x,cx-165,cy-2,0.95,INK,t,rm),share:tn[1]*0.9};})(),

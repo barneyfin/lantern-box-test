@@ -29,3 +29,5 @@ Since kit 0.52.0 the bats and the sleigh against the sky are backlit silhouettes
 Since kit 0.52.1 the backlit bats look the same but their pictures are made before each frame (faster on the Fire); `?trial=nodark` (timing only) lays them on without darken.
 
 Since kit 0.52.2 `?trial=cloudref` (timing) draws design system 34's Fastest flyers: no darken, from the bare sky and the baked clouds.
+
+Since kit 0.53.0, at Picture: Fastest the backlit bats are drawn the faster way (design system 34, as `cloudref` timed); Best and Faster unchanged.
