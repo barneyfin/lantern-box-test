@@ -53,3 +53,5 @@ Since kit 0.56.4 the Snowbound Hamlet's puppets are painted again when the pictu
 Since kit 0.56.5 the Snowbound Hamlet is lighter at Picture: Fastest for slow tablets: the wind-up toy's key holds still, half the falling snow, and the snowmen's eyes without their soft blur. Best and Faster are unchanged.
 
 Since kit 0.56.6 the Snowbound Hamlet paints its monsters' pictures during the opening card, and the boss's after the third lantern, at Picture: Fastest, so play doesn't catch as each is painted.
+
+Since 0.56.6-r1 the Hamlet's speed test (check=noelparts) also times the boss fight with no moonlight, no snow, no sleigh and no snowmen's eyes.

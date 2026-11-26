@@ -13251,7 +13251,7 @@ const wantRotCheck = (lb) => CHECK_ROT || !!(lb.test && lb.test.check && lb.test
 const CHECK_NOEL = /[?&]check=noel\b/.test(location.search);   // The Wretched Noel's play check (the test link's card; step G1, Barney, 25 November 2026)
 // step 4b (Barney, 26 November 2026: the Fire is a target again; "prepare the speed tests and I will do all the tests tonight"): ?check=noelparts,
 // The Wretched Noel's play check with the hamlet's costs left out one at a time, so one run on the Fire shows what each costs in play (the
-// kit's test-only world._hamletOff; the test page's Hamlet breakdown times the scene, this times the game as it is played). Eight legs
+// kit's test-only world._hamletOff; the test page's Hamlet breakdown times the scene, this times the game as it is played). Eight legs (twelve since the fight's own breakdown)
 const CHECK_NOELPARTS = /[?&]check=noelparts\b/.test(location.search);
 // and in each of its legs, how many puppet pictures were painted a second while timed (the kit's count, world.stats.cast): many means the
 // puppets are being painted again and again, few that their cost is in drawing them
@@ -13276,6 +13276,12 @@ const NOEL_PARTS = [
   { part: "no snowmen's eyes", off: { eyes: true } },
   { part: 'the old monsters, not puppets', off: { cast: true } },
   { boss: true, part: 'everything', off: {} },
+  // the boss fight's own breakdown (Barney, 26 November 2026, "add it": on 0.56.6 the Fire's fight ran 28 fps with the puppet and 29 with the old
+  // tree, its arena the cost, not the boss)
+  { boss: true, part: 'no moonlight on the clouds', off: { moon: true } },
+  { boss: true, part: 'no falling snow', off: { snow: true } },
+  { boss: true, part: 'no sleigh', off: { sleigh: true } },
+  { boss: true, part: "no snowmen's eyes", off: { eyes: true } },
   { boss: true, part: 'the Gaping Tree, not the puppet', off: { cast: true } },
 ];
 const wantNoelCheck = (lb) => NOEL && (CHECK_NOEL || CHECK_NOELPARTS || !!(lb.test && lb.test.check && lb.test.noel));
