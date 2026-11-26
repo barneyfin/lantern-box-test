@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.56.7';
+  const VERSION = '0.56.8';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -8098,6 +8098,15 @@ const CAST_BOSS=new Map(),CAST_BOSS_N=24;
 // Barney: "both please"): at Fastest only its sway loops over one sway period (2π/1.7 s; its arms' own slower sway meets itself again a
 // little off, a small step each loop), holds still through a move, and its moves step 6 times a second; it keeps up to keep pictures
 const SH_FAST={loop:2*Math.PI/1.7,moves:6,keep:48};
+// kit 0.56.8 (the Fire's Hamlet check on 0.56.7: the fight still painted 1.4 pictures a second, each struck pose's glowing picture, and they pushed
+// the boss's ready pictures out of its 48; Barney: "Yes, flash over it"): at Fastest a struck puppet keeps its picture and an ember flash is laid
+// over it, the picture in one colour, screened, fading over the hit's 0.13 s. One working canvas, so nothing is kept or painted for a hit
+let CAST_FL=null;
+function castFlash(c,E,x,y,w,h,a){if(!(a>0))return;const W=E.cv.width,H=E.cv.height;
+  if(!CAST_FL||CAST_FL.width<W||CAST_FL.height<H)CAST_FL=mk(Math.max(W,CAST_FL?CAST_FL.width:0),Math.max(H,CAST_FL?CAST_FL.height:0));
+  const k=CAST_FL.getContext("2d");k.setTransform(1,0,0,1,0,0);k.globalAlpha=1;k.globalCompositeOperation="source-over";k.clearRect(0,0,W,H);k.drawImage(E.cv,0,0);
+  k.globalCompositeOperation="source-in";k.fillStyle=MO.ember;k.fillRect(0,0,W,H);k.globalCompositeOperation="source-over";
+  c.save();c.globalCompositeOperation="screen";c.globalAlpha=0.7*Math.min(1,a);c.drawImage(CAST_FL,0,0,W,H,x,y,w,h);c.restore();}
 function castTinted(E,col){if(E.tint&&E.tintC===col)return E.tint;const T=mk(E.cv.width,E.cv.height),x=T.getContext("2d");x.drawImage(E.cv,0,0);x.globalCompositeOperation="source-in";x.fillStyle=col;x.fillRect(0,0,T.width,T.height);E.tint=T;E.tintC=col;return T;}
 // The Sprung Horror's pose on the Gaping Tree's clock (design system 31, Cast/sprung-horror.js: its film's moves, word for word, each from the
 // seconds into the game's move): the claws (roots), the head at head height (branch), the fan (splinters; Barney, 25 November 2026: the splinters
@@ -8120,10 +8129,10 @@ function shPoseKit(name,u,t,mending,hit){const R=CAST_RIG.boss,k=R.k,mix=R.mixP,
     else if(q<1.13)P=mix({L:0.95,bsy:1.04,arms:[1.6,1.6],lean:-0.06,lid:0.5,hot:1,bdy:-6},{L:0.75,bsy:1,arms:[1.0,1.0],lid:0.2,hot:0.6,bdy:0},ease((q-0.78)/0.35));
     else if(q<1.58)P=mix({L:0.75,arms:[1.0,1.0],lid:0.2,hot:0.6},idle(),ease((q-1.13)/0.45));else P=idle();}
   else P=idle();
-  const r=R.rig(P).rig;if(trail)r.trail={pts:trail,w:6,a:1};if(sparks)r.sparks=sparks;if(hit)r.hot=1;
+  const r=R.rig(P).rig;if(trail)r.trail={pts:trail,w:6,a:1};if(sparks)r.sparks=sparks;if(hit&&!QUICK)r.hot=1;   // kit 0.56.8: at Fastest its flash is laid over (castFlash)
   // kit 0.56.6: a move it has no pose for (its arrival) draws its sway (idle), so it is named as the sway is: one picture, not one for each step
   const kn=name&&SH_POSED[name]?name:null;
-  return{rig:r,key:"boss|"+(FX?1:0)+"|"+(mending?"mend":(kn||"sway")+"|"+(kn?q:"")+"|"+ti)+(hit?"|hit":"")};}
+  return{rig:r,key:"boss|"+(FX?1:0)+"|"+(mending?"mend":(kn||"sway")+"|"+(kn?q:"")+"|"+ti)+(hit&&!QUICK?"|hit":"")};}
 const SH_POSED={roots:1,branch:1,splinters:1,knock:1};   // the moves shPoseKit poses
 // kit 0.56.6 (step 4b; the Fire's Hamlet check on 0.56.5: the path smooth once its pictures were painted, its first seconds and the boss's still
 // catching as each pose was painted the first time it showed; Barney: "Yes, paint ahead"): world.hamlet.warm(list, ms) paints puppet pictures
@@ -8205,8 +8214,8 @@ function castPose(kind,o,m,t){const R=CAST_RIG[kind],a=o.attack,st=u=>Math.floor
     else{P={};key="h|s";}
     const fwd=(o.facing===1?1:-1)*-o.x,sw0=castGonkSwing(o.id||"gonk",P,fwd,t),sw=QK?[0,0]:sw0;   // kit 0.49.2: at Fastest the lantern hangs and the cloak falls still (the Pixel: its swing painted about 50 new pictures a second), as the Gaping Tree's sway is held therekey+="|"+sw[0].toFixed(2)+"|"+sw[1].toFixed(2);
     rig=R.rigFull(P,sw[0],sw[1],feet).rig;}
-  if(hot){rig.hot=1;key+="|hit";}
-  return{rig,key:kind+"|"+(FX?1:0)+"|"+key};}
+  if(hot&&!QK){rig.hot=1;key+="|hit";}   // kit 0.56.8: at Fastest no glowing picture; its flash is laid over (castFlash), flash its strength
+  return{rig,key:kind+"|"+(FX?1:0)+"|"+key,flash:hot&&QK?1-o.hit/0.13:0};}
 /* ============================== the tools: what a game calls, as lb.world ==============================
    The tools draw; games decide what happens. A frame is world.begin(ctx, { place, camX, rise }), then the things on the path
    in the order they should overlap, then world.end(). Things on the path are placed by x, along the path, and y, in picture
@@ -8566,7 +8575,8 @@ function makeTools(env){
         // at the cast's foot line (2 lines below the ground; the gonk 8 more, its hem in the path); a mouth-hat's hop is the gonk's scurry, so the hop's lift is left out
         const cid=o.id!=null?o.kind+"|"+o.id:o.kind,cp=castPose(o.kind,o,m,f.t),E=castPainted(cp.rig,cp.key,s,null,null,CAST_LAST.get(cid));CAST_LAST.set(cid,E);if(CAST_LAST.size>200)CAST_LAST.clear();const hy=at&&o.attack.name==="hop"?at.dy:0,Yc=(o.y==null?f.gy(x):o.y)+(o.kind==="hatmaw"?2+CAST_RIG.hatmaw.SINK:2)+dy-hy;
         const c=f.ctx,Xs=Math.round(X*s)/s;if(fc===1){c.save();c.translate(Xs,0);c.scale(-1,1);c.translate(-Xs,0);}
-        if(o.defeat==null)c.drawImage(E.cv,Math.round((Xs+E.x0)*s)/s,Math.round((Yc+E.y0)*s)/s,E.cv.width/s,E.cv.height/s);
+        if(o.defeat==null){c.drawImage(E.cv,Math.round((Xs+E.x0)*s)/s,Math.round((Yc+E.y0)*s)/s,E.cv.width/s,E.cv.height/s);
+          if(cp.flash)castFlash(c,E,Math.round((Xs+E.x0)*s)/s,Math.round((Yc+E.y0)*s)/s,E.cv.width/s,E.cv.height/s,cp.flash);}   // kit 0.56.8: struck, at Fastest
         else{const d=defeatCanvas("M",260,250,s);d.c.drawImage(E.cv,Math.round((130+E.x0)*s),Math.round((230+E.y0)*s));   // its picture broken up as a monster's is
           drawDefeat(c,d.M,s,X,Yc,[Math.max(-130,E.x0),Math.max(-230,E.y0),Math.min(130,E.x1),Math.min(20,E.y1)],clamp(o.defeat,0,1),"cardwisp",o.seed||0);}
         if(fc===1)c.restore();
@@ -8627,6 +8637,7 @@ function makeTools(env){
           const hp=shPoseKit(name,u,f.t,!!md,!!r.st.flare),E=castPainted(hp.rig,hp.key,s,CAST_BOSS,QUICK?SH_FAST.keep:CAST_BOSS_N,CAST_LAST.get("boss"));CAST_LAST.set("boss",E);const X1=r.X+(r.st.dx||0),Y1=f.gy(X0)+2+(r.st.dy||0);
           if(r.st.clipY!=null){c.save();c.beginPath();c.rect(X1-400,-2000,800,2000+r.st.clipY);c.clip();}   // rising out of the ground as it arrives, as the tree does
           c.drawImage(E.cv,X1+E.x0,Y1+E.y0,E.cv.width/s,E.cv.height/s);
+          if(QUICK&&r.st.flare&&o.hit!=null)castFlash(c,E,X1+E.x0,Y1+E.y0,E.cv.width/s,E.cv.height/s,1-o.hit/0.13);   // kit 0.56.8: struck, at Fastest
           if(md&&md.light>0){c.save();c.globalAlpha=Math.min(1,0.48*md.light);c.drawImage(castTinted(E,MANA),X1+E.x0,Y1+E.y0,E.cv.width/s,E.cv.height/s);c.restore();}   // the mend: mana's colour laid over it
           if(r.st.clipY!=null)c.restore();
           if(name==="roots")r.fx=shClawsFx(u,r.targets||[],f.gy,f.t);}
