@@ -15492,7 +15492,17 @@ function monsterUpdate(m, g, lb, dt, busy, camX) {
     const gap = halfW(m) + halfW(o) + 8, lim = o.bx - s * gap;
     if ((nx - lim) * s > 0) { nx = (m.bx - lim) * s > 0 ? m.bx : lim; bumped = true; }
   }
-  if (m.patrol && bumped && Math.abs(nx - m.bx) < 0.5) m.pdir = -s;   // walking its stretch and meeting another, it turns round
+  if (m.patrol && bumped && Math.abs(nx - m.bx) < 0.5) {   // walking its stretch and meeting another, it turns round, if it has room behind it:
+    // Barney, 26 November 2026 (two present crawlers flickering, "stuck queuing behind another monster and stationary"): hemmed in on both sides
+    // (another monster or its stretch's end behind it too), it turned every frame, and its picture was drawn turned one way and the other in
+    // turn. Now, with 16 lines or less to go back, it stands facing the way it was going until one side opens
+    let room = s > 0 ? m.bx - (m.patch[0] + 6) : m.patch[1] - 6 - m.bx;
+    for (const o of g.mons) {
+      if (o === m || !alive(o) || !MON[o.kind].ground || (o.bx - m.bx) * s >= 0) continue;
+      room = Math.min(room, Math.abs(o.bx - m.bx) - (halfW(m) + halfW(o) + 8));
+    }
+    if (room > 16) m.pdir = -s;
+  }
   m.bx = nx;
   place(m, g, m.bx, 0);
 }

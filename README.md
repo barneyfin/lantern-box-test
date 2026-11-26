@@ -45,3 +45,5 @@ Since kit 0.56.1 the Snowbound Hamlet has no big bats close to the screen, only 
 Since kit 0.56.2 the Snowbound Hamlet's Christmas bulbs are at their brightest (3 of the design's 1 to 3).
 
 Since kit 0.56.3 the Snowbound Hamlet's walking puppets reuse their pictures: each stride's poses are painted once and kept, not a new picture at every step (the gingerbread man's legs now step 8 times a stride).
+
+Since 0.56.3-r1 a monster hemmed in on both sides stands still instead of turning round every frame (the present crawlers' flicker).
