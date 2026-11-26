@@ -41,3 +41,5 @@ Since kit 0.55.0 the Snowbound Hamlet's sky is brighter, and in The Wretched Noe
 Since kit 0.56.0 The Wretched Noel plays its own soundtrack, Iron Solstice, and Settings, Testing has "Hamlet: sky" (Brighter, Brightest, Original).
 
 Since kit 0.56.1 the Snowbound Hamlet has no big bats close to the screen, only the sleigh (25% smaller) with the bat swarm chasing it.
+
+Since kit 0.56.2 the Snowbound Hamlet's Christmas bulbs are at their brightest (3 of the design's 1 to 3).

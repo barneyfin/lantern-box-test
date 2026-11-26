@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.56.1';
+  const VERSION = '0.56.2';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -3160,7 +3160,9 @@ const HAMLET_SKY={brighter:["#040837","#291e8f","#904cbd","#eabfd1"],brightest:[
 const HAMLET_HAZE=0.4;
 /* how bright the coloured bulbs are: 1 is the approved look and the default; 2 and 3 are there to try, with nothing in between (Barney, 24 November 2026, 13:38 and 16:11; a switch on the test link's Testing panel). Above 1 a bulb gains a soft glow, a paler and slightly
    larger core and a wider halo. Measured over the nearest layer's tone a bulb gives about 1.8 times the light at 2 and 3 times at 3. Above 1 each bulb costs one more gradient a frame. */
-let BULB_BRIGHT=1;
+// kit 0.56.2 (Barney, 26 November 2026: "turn this up to their max setting from the kit design please"): 3 is the default now. The kit paints
+// the bulbs into the scenery's tiles, so the brighter glow costs only when a tile is painted, not every frame
+let BULB_BRIGHT=3;
 function drawBulb(x,px,py,r,bc,blur){const b=BULB_BRIGHT;x.save();
   if(b>1){const R=r*(3+(b-1)),g=x.createRadialGradient(px,py,0,px,py,R);g.addColorStop(0,rgba(bc,0.1*(b-1)));g.addColorStop(1,rgba(bc,0));x.globalCompositeOperation="lighter";x.fillStyle=g;x.fillRect(px-R,py-R,R*2,R*2);x.globalCompositeOperation="source-over";}
   x.fillStyle=b>1?mixc(bc,"#ffffff",0.16*(b-1)):rgba(bc,0.92);x.shadowColor=bc;x.shadowBlur=blur*(1+0.35*(b-1));x.beginPath();x.arc(px,py,r*(1+0.12*(b-1)),0,Math.PI*2);x.fill();x.restore();}
@@ -8213,7 +8215,7 @@ function makeTools(env){
     PLACES:["night","storm","dawn","mist"],
     hamlet:{ // design system 31: The Snowbound Hamlet's two switches, for the test link's Testing panel only (never the players' Settings)
       tones(v){if(!HAMLET_TONES[v])throw new Error('Lantern Box: the hamlet\'s tones are "forest" or "near".');LV.yule.tints=HAMLET_TONES[v];},   // "forest" (option 2) is the approved default
-      bulbs(v){BULB_BRIGHT=Math.round(clamp(v,1,3));},   // 1 (the default), 2 or 3
+      bulbs(v){BULB_BRIGHT=Math.round(clamp(v,1,3));},   // 1, 2 or 3 (the default since kit 0.56.2; it was 1)
       sky(v){const k=HAMLET_SKY[v];if(!k)throw new Error('Lantern Box: the hamlet\'s sky is "brighter", "brightest" or "original".');   // kit 0.56.0
         if(SKY.yule.join()!==k.join()){SKY.yule=k.slice();scene=null;sceneScale=0;}},   // a new scene, so every picture with the sky in it is painted again
     },
