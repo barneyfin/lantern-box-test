@@ -61,3 +61,5 @@ Since kit 0.56.7 The Sprung Horror's head shows whole at its spring's full stret
 Since kit 0.56.8, at Picture: Fastest a struck monster or boss in the Snowbound Hamlet gets an orange flash laid over it, so fights paint no new pictures.
 
 Since 0.56.8-r1 the Hamlet's speed test leaves its two comparison parts (the old monsters, the old Gaping Tree) out of its verdict, marking them "for comparison, not counted".
+
+Since kit 0.56.9 the Snowbound Hamlet's puppets at Picture: Faster are drawn the Fastest way (painted ahead, the hit flash laid over, the wind-up toy's key in quarter-second steps, the gonk's cloak still moving), and at Best the boss's sway loops.

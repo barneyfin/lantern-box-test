@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.56.8';
+  const VERSION = '0.56.9';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -8070,21 +8070,25 @@ function mvDrawKitRot(x,s,X,Y,P,tq,f,edge,k,o,rot){const F=mvFigure(s,P,tq,k,edg
 
 // kit 0.48.0 (design system 31, step K2a): a puppet's pose painted once by drawCastRig into a kept picture, the kit's way: drawn in a working canvas,
 // then only the box it reached (and room for its rim and glow) kept. The most recently used are kept, CAST_KEEP_N of them, the oldest going first
-const CAST_KEPT=new Map(),CAST_KEEP_N=120;let CAST_SCR=null;   // kit 0.49.2: 120 (was 60: four kinds walking and attacking turned them over)
+const CAST_KEPT=new Map(),CAST_KEEP_N=120,CAST_KEEP_FASTER=200;let CAST_SCR=null;   // kit 0.49.2: 120 (was 60: four kinds walking and attacking turned them over)
 // kit 0.49.2 (Barney's Pixel, 25 November 2026: the hamlet's whole scene 19 fps at Fastest, its page work 10.8 ms, slowest frames 75 to 150 ms):
 // at Fastest a frame paints at most CAST_BUDGET new puppet pictures; a puppet whose new pose isn't painted yet shows its own last picture (CAST_LAST,
 // by its id) for the frame or two until its turn, so when a pose is drawn changes, never what it looks like. At Best and Faster every pose at once
 const CAST_BUDGET=1,CAST_LAST=new Map(),CAST_STATS={};
 // kit 0.50.2, test only (the test page's Hamlet breakdown, after the Fire's Hamlet check): each of the hamlet's costs can be left out, one at a time
 const HAM_OFF={moon:false,snow:false,sleigh:false,eyes:false,cast:false};   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
+// kit 0.56.9 (Barney, 26 November 2026: "Faster's puppets follow Fastest's rules ... keeping Faster's sharper picture and glows"): the hamlet's
+// puppets drawn the Fastest way at Faster too (set by world.begin with QUICK; the rest of Faster is as it was); CAST_KEEP_FASTER, 200 kept
+// there (its wind-up toy's key turns: 172 pictures to paint ahead)
+let CAST_LITE=false;
 let CAST_PAINTS={frame:-1,n:0};
 // kit 0.56.4 (Barney's Pixel, 26 November 2026: a gonk and a present crawler "too large and off the path", after the Picture setting changed):
 // a kept picture is painted at the picture's scale then (s, device pixels a line) and drawn at the scale now, so when the scale changes (Picture
 // chosen, Automatic stepping down in play, the window resized or turned) every puppet's kept picture is let go and painted again at the new one.
 // Before, they were drawn from their top left corner at the new scale: from Best to Faster on the Pixel, half as big again and sunk into the path
 let CAST_S=0;
-function castPainted(rig,key,s,M,N,last){if(s!==CAST_S){CAST_KEPT.clear();CAST_BOSS.clear();CAST_LAST.clear();CAST_S=s;last=null;}M=M||CAST_KEPT;N=N||CAST_KEEP_N;let E=M.get(key);if(E){M.delete(key);M.set(key,E);return E;}
-  if(QUICK){if(CAST_PAINTS.frame!==KIT.frame)CAST_PAINTS={frame:KIT.frame,n:0};if(CAST_PAINTS.n>=CAST_BUDGET&&last)return last;CAST_PAINTS.n++;}   // kit 0.49.2: the budget, at Fastest
+function castPainted(rig,key,s,M,N,last){if(s!==CAST_S){CAST_KEPT.clear();CAST_BOSS.clear();CAST_LAST.clear();CAST_S=s;last=null;}M=M||CAST_KEPT;N=N||(CAST_LITE&&!QUICK?CAST_KEEP_FASTER:CAST_KEEP_N);let E=M.get(key);if(E){M.delete(key);M.set(key,E);return E;}
+  if(CAST_LITE){if(CAST_PAINTS.frame!==KIT.frame)CAST_PAINTS={frame:KIT.frame,n:0};if(CAST_PAINTS.n>=CAST_BUDGET&&last)return last;CAST_PAINTS.n++;}   // kit 0.49.2: the budget, at Fastest (kit 0.56.9: and Faster)
   // kit 0.56.7 (Barney's Fire, the speed test: The Sprung Horror's head missing at its spring's full stretch): the working canvas reaches 470 lines
   // ahead of the foot (was 310; the head reaches 424 with the room for its rim, the farthest of any puppet; the wind-up toy's sweep 148)
   const W0=780,H0=560,OX=470,OY=460;if(!CAST_SCR||CAST_SCR.s!==s)CAST_SCR={s,cv:mk(W0*s,H0*s)};
@@ -8112,8 +8116,9 @@ function castTinted(E,col){if(E.tint&&E.tintC===col)return E.tint;const T=mk(E.c
 // seconds into the game's move): the claws (roots), the head at head height (branch), the fan (splinters; Barney, 25 November 2026: the splinters
 // burst from its box, where the game's fly, so the fan's pose and its mouth's gathering glow are kept and the kit's splinters drawn), the
 // knock-back (the kit's own light), the mend (one picture, as the bosses' mends never repaint) and its sway. Times stepped to 12 a second, the sway's to 8
-function shPoseKit(name,u,t,mending,hit){const R=CAST_RIG.boss,k=R.k,mix=R.mixP,MR=QUICK?SH_FAST.moves:MV_RATE,st=q=>Math.floor((q||0)*MR+1e-9)/MR,sr=QUICK?TREE16.sway:8,
-    ti=QUICK?(name?0:Math.floor(posmod(t,SH_FAST.loop)*sr)/sr):Math.floor(t*sr)/sr,idle=()=>R.idle(ti);   // kit 0.49.2: at Fastest its sway at the Gaping Tree's 2.4 a second (design system 16); kit 0.50.3: there a loop, and held through a move
+function shPoseKit(name,u,t,mending,hit){const R=CAST_RIG.boss,k=R.k,mix=R.mixP,MR=CAST_LITE?SH_FAST.moves:MV_RATE,st=q=>Math.floor((q||0)*MR+1e-9)/MR,sr=CAST_LITE?TREE16.sway:8,
+    // kit 0.56.9: Faster as Fastest; at Best its sway loops too (Barney: "only its boss sway loops instead of never repeating"; it had a new picture every eighth of a second)
+    ti=CAST_LITE&&name?0:Math.floor(posmod(t,SH_FAST.loop)*sr)/sr,idle=()=>R.idle(ti);   // kit 0.49.2: at Fastest its sway at the Gaping Tree's 2.4 a second (design system 16); kit 0.50.3: there a loop, and held through a move
   const outAt=v=>{const B0=[R.BASE[0]*k,R.BASE[1]*k],T=[B0[0]+R.HEAD[0]*v,lerpN(B0[1]-R.L0*k,R.HEAD[1],v)];return{L:0,top:[T[0]-B0[0],T[1]-B0[1]],C:[B0[0]+R.HEAD[0]*0.35*v,B0[1]-R.L0*k*(1+0.9*v)],lean:0.25*v,arms:[0.45+0.6*v,0.45+0.6*v],hot:1};};
   let P,sparks=null,trail=null,q=st(u);
   if(mending)P={lean:0.18,top:[0.08*k,0.04*k],L:0.5,arms:[0.15,0.15],hot:0};
@@ -8129,10 +8134,10 @@ function shPoseKit(name,u,t,mending,hit){const R=CAST_RIG.boss,k=R.k,mix=R.mixP,
     else if(q<1.13)P=mix({L:0.95,bsy:1.04,arms:[1.6,1.6],lean:-0.06,lid:0.5,hot:1,bdy:-6},{L:0.75,bsy:1,arms:[1.0,1.0],lid:0.2,hot:0.6,bdy:0},ease((q-0.78)/0.35));
     else if(q<1.58)P=mix({L:0.75,arms:[1.0,1.0],lid:0.2,hot:0.6},idle(),ease((q-1.13)/0.45));else P=idle();}
   else P=idle();
-  const r=R.rig(P).rig;if(trail)r.trail={pts:trail,w:6,a:1};if(sparks)r.sparks=sparks;if(hit&&!QUICK)r.hot=1;   // kit 0.56.8: at Fastest its flash is laid over (castFlash)
+  const r=R.rig(P).rig;if(trail)r.trail={pts:trail,w:6,a:1};if(sparks)r.sparks=sparks;if(hit&&!CAST_LITE)r.hot=1;   // kit 0.56.8: at Fastest its flash is laid over (castFlash); kit 0.56.9: and Faster
   // kit 0.56.6: a move it has no pose for (its arrival) draws its sway (idle), so it is named as the sway is: one picture, not one for each step
   const kn=name&&SH_POSED[name]?name:null;
-  return{rig:r,key:"boss|"+(FX?1:0)+"|"+(mending?"mend":(kn||"sway")+"|"+(kn?q:"")+"|"+ti)+(hit&&!QUICK?"|hit":"")};}
+  return{rig:r,key:"boss|"+(FX?1:0)+"|"+(mending?"mend":(kn||"sway")+"|"+(kn?q:"")+"|"+ti)+(hit&&!CAST_LITE?"|hit":"")};}
 const SH_POSED={roots:1,branch:1,splinters:1,knock:1};   // the moves shPoseKit poses
 // kit 0.56.6 (step 4b; the Fire's Hamlet check on 0.56.5: the path smooth once its pictures were painted, its first seconds and the boss's still
 // catching as each pose was painted the first time it showed; Barney: "Yes, paint ahead"): world.hamlet.warm(list, ms) paints puppet pictures
@@ -8148,18 +8153,18 @@ function warmItems(list){const out=[],R=MV_RATE;
     const kind=it.kind;if(!CAST_RIG[kind])continue;
     if(it.walk){if(kind==="crawler")for(let i=0;i<8;i++)out.push({kind,o:{kind,x:i*3.5},m:{}});
       else if(kind==="hatmaw"){out.push({kind,o:{kind,x:0,id:"warm"},m:{}});for(let k=1;k<=6;k++)out.push({kind,o:{kind,x:0,id:"warm",attack:{name:"hop",t:(k+0.5)/R}},m:{}});}
-      else{const L=CAST_RIG[kind].stride;for(let i=0;i<8;i++)out.push({kind,o:{kind,x:0},m:{walk:i*L/8}});}}
+      else{const L=CAST_RIG[kind].stride,K=kind==="walker"&&!QUICK?8:1;for(let i=0;i<8;i++)for(let j=0;j<K;j++)out.push({kind,o:{kind,x:0},m:{walk:i*L/8},t:(j+0.5)/4});}}   // (kit 0.56.9: at Faster the key's eight places)
     else if(it.attack)for(let k=0;k<(+it.len||0)*R-1e-9;k++)out.push({kind,o:{kind,x:0,id:"warm",attack:{name:it.attack,t:(k+0.5)/R}},m:{walk:null}});}
   return out;}
 // paints the list's pictures not yet kept, at least one a call (if any are left) and on while ms have not gone; returns how many poses are
 // left to look at (0: all kept). Only at Fastest in the hamlet (elsewhere it returns 0 and paints nothing). The kit remembers how far each
 // list got, and starts it again when the picture's scale changes (the kept pictures are let go then)
-function warmCast(list,ms,f){const s=f.s;if(f.level!=="yule"||!QUICK||HAM_OFF.cast||!Array.isArray(list))return 0;
-  let W=WARM.get(list);if(!W||W.s!==s){W={items:warmItems(list),i:0,s};WARM.set(list,W);}
+function warmCast(list,ms,f){const s=f.s;if(f.level!=="yule"||!CAST_LITE||HAM_OFF.cast||!Array.isArray(list))return 0;   // kit 0.56.9: at Faster too
+  const lv=QUICK?2:1;let W=WARM.get(list);if(!W||W.s!==s||W.lv!==lv){W={items:warmItems(list),i:0,s,lv};WARM.set(list,W);}
   const t0=performance.now();let n=0;
   while(W.i<W.items.length){if(n>0&&performance.now()-t0>=ms)break;const it=W.items[W.i++];let rig,key,M,N;
     if(it.boss!==undefined){const hp=it.boss==="mend"?shPoseKit(null,0,0,true,false):shPoseKit(it.boss,it.u,it.t,false,false);rig=hp.rig;key=hp.key;M=CAST_BOSS;N=SH_FAST.keep;}
-    else{const cp=castPose(it.kind,it.o,it.m,0);rig=cp.rig;key=cp.key;M=CAST_KEPT;N=CAST_KEEP_N;}
+    else{const cp=castPose(it.kind,it.o,it.m,it.t||0);rig=cp.rig;key=cp.key;M=CAST_KEPT;N=QUICK?CAST_KEEP_N:CAST_KEEP_FASTER;}
     if(M.has(key))continue;
     castPainted(rig,key,s,M,N,null);n++;}
   return W.items.length-W.i;}
@@ -8184,7 +8189,7 @@ function castGonkSwing(id,P,fwd,t){const R=CAST_RIG.hatmaw;let g=CAST_GK.get(id)
   return[Math.round(g.pL*25)/25,Math.round(g.c*100)/100];}
 // a puppet's pose from the game's monster at this moment (the rigs' P), and the key of its kept picture. Its time is stepped to 12 a second
 // (MV_RATE, the puppets' own rate) and its walk to 8 poses a stride, so a pose is painted once and shared
-function castPose(kind,o,m,t){const R=CAST_RIG[kind],a=o.attack,st=u=>Math.floor((u||0)*MV_RATE+1e-9)/MV_RATE,hot=o.hit!=null&&o.hit>=0&&o.hit<0.13,QK=QUICK;
+function castPose(kind,o,m,t){const R=CAST_RIG[kind],a=o.attack,st=u=>Math.floor((u||0)*MV_RATE+1e-9)/MV_RATE,hot=o.hit!=null&&o.hit>=0&&o.hit<0.13,QK=CAST_LITE;   // kit 0.56.9: QK, Fastest's rules, at Faster too (QUICK: Fastest itself)
   // kit 0.49.2, at Fastest only, as the kit's monsters there (kit 0.34.3): attacking, a puppet stands in its standing stance (no walk), so its attack's
   // pictures depend on the attack alone and are shared; the wind-up toy's key turns in quarters of a second (eighths at Best and Faster), the gonk's
   // lantern and cloak hold still (as a waiting mouth-hat's hop is stepped there, kit 0.20.13, and the Gaping Tree's sway held, kit 0.20.12), and while
@@ -8205,14 +8210,14 @@ function castPose(kind,o,m,t){const R=CAST_RIG[kind],a=o.attack,st=u=>Math.floor
     // kit 0.56.5 (step 4b; the Fire's Hamlet check, 26 November 2026: the puppets needed 171 pictures in a minute at Fastest, the wind-up toy 94 of
     // them, its key's eight places times its legs' eight, more than the 120 kept, so they were painted again and again; Barney: "Key still, lighter
     // snow"): at Fastest its key holds still, as the gonk's lantern and cloak do there, so its walk has eight pictures. At Best and Faster it turns
-    const w=a&&QK?null:wq(m.walk),u=a?st(a.t):null,kr=QK?4:8,kq=QK?0:(Math.floor(t*kr)%(2*kr))/kr;P=Object.assign({walk:w,key:kq*Math.PI},a?(a.name==="low"?R.low(u):R.high(u)):{});key="w|"+w+"|"+(a?a.name+u:"")+"|"+kq%2;rig=R.rig(P).rig;}
+    const w=a&&QK?null:wq(m.walk),u=a?st(a.t):null,kr=QK?4:8,kq=QUICK||(a&&QK)?0:(Math.floor(t*kr)%(2*kr))/kr;P=Object.assign({walk:w,key:kq*Math.PI},a?(a.name==="low"?R.low(u):R.high(u)):{});key="w|"+w+"|"+(a?a.name+u:"")+"|"+kq%2;rig=R.rig(P).rig;}
   else{ // the gonk: the mouth-hat's hop drawn as a scurry (moving while its hop is up), its spit as the lob and its bite as the staff blow
     let feet=null;
     if(a&&a.name==="hop"){const u=st(a.t),mv=Math.sin(u*R.HOPW)>0,n=Math.round(u*MV_RATE)%(MV_RATE/2),q=R.scurry(n/MV_RATE,mv);P=q.P;feet=q.feet;key="h|"+(mv?"r"+n:"s");}   // kit 0.56.3: its scurry repeats every half second, six steps, so it is counted round within that (its key had been the time in 0.6 s laps: 36 names, and more from rounding)
     else if(a&&a.name==="spit"){const u=st(a.t),q=R.spit(u);P=Object.assign({},q);delete P.dx;key="h|S"+u;}
     else if(a&&a.name==="bite"){const u=st(a.t),q=R.leap(u);P=Object.assign({},q);delete P.dx;delete P.dy;if(q.tuck)feet=[{dx:-0.03,up:-0.06*q.tuck},{dx:0.03,up:-0.06*q.tuck}];key="h|B"+u;}
     else{P={};key="h|s";}
-    const fwd=(o.facing===1?1:-1)*-o.x,sw0=castGonkSwing(o.id||"gonk",P,fwd,t),sw=QK?[0,0]:sw0;   // kit 0.49.2: at Fastest the lantern hangs and the cloak falls still (the Pixel: its swing painted about 50 new pictures a second), as the Gaping Tree's sway is held therekey+="|"+sw[0].toFixed(2)+"|"+sw[1].toFixed(2);
+    const fwd=(o.facing===1?1:-1)*-o.x,sw0=castGonkSwing(o.id||"gonk",P,fwd,t),sw=QUICK?[0,0]:QK?[0,sw0[1]]:sw0;   // kit 0.49.2: at Fastest the lantern hangs and the cloak falls still (the Pixel: its swing painted about 50 new pictures a second), as the Gaping Tree's sway is held therekey+="|"+sw[0].toFixed(2)+"|"+sw[1].toFixed(2);
     rig=R.rigFull(P,sw[0],sw[1],feet).rig;}
   if(hot&&!QK){rig.hot=1;key+="|hit";}   // kit 0.56.8: at Fastest no glowing picture; its flash is laid over (castFlash), flash its strength
   return{rig,key:kind+"|"+(FX?1:0)+"|"+key,flash:hot&&QK?1-o.hit/0.13:0};}
@@ -8270,7 +8275,7 @@ function makeTools(env){
   return{
     PLACES:["night","storm","dawn","mist"],
     hamlet:{ // design system 31: The Snowbound Hamlet's two switches, for the test link's Testing panel only (never the players' Settings)
-      // kit 0.56.6: and warm(list, ms), for play, between world.begin and world.end: at Picture: Fastest in the hamlet, paints the puppets' pictures
+      // kit 0.56.6: and warm(list, ms), for play, between world.begin and world.end: at Picture: Fastest (kit 0.56.9: or Faster) in the hamlet, paints the puppets' pictures
       // before they are wanted, at least one a call and on until ms milliseconds have gone; returns how many poses are left (0: all kept). list:
       // [{ kind, walk: true } | { kind, attack: name, len: seconds } | { boss: true }], kind 'crawler', 'ghoul2', 'walker' or 'hatmaw'. Pass the same
       // list each frame (the kit remembers how far it got). Elsewhere it paints nothing and returns 0
@@ -8328,7 +8333,7 @@ function makeTools(env){
     begin(ctx,o){
       o=o||{};repaintDue(ctx);   // kit 0.45.0
       const L=o.level&&o.level._T?o.level:null,S=env.k(),level=L?L.place:(o.place||"night");
-      FX=env.fx();QUICK=!!(env.quick&&env.quick());
+      FX=env.fx();QUICK=!!(env.quick&&env.quick());CAST_LITE=QUICK||!!(env.lite&&env.lite());   // kit 0.56.9: Faster's puppets as Fastest's
       setPicture(QUICK?(LOOK_ASK?"fastest":"bare"):"",env.fxSet?!!env.fxSet():FX);   // kit 0.43.0: the looks' picture (see LOOK_ASK)
       const rm=env.rm();KB_N=rm||QUICK?0.5:1;KB_SP=rm?0.5:1;MD_N=QUICK?0.5:1;MD_SOFT=FX;   // kit 0.36.0: what the settings change for the knock-back and the mend
       const t=o.t==null?env.t():o.t,sc=sceneFor(S),W=env.W(),camX=o.camX||0;
@@ -8634,10 +8639,10 @@ function makeTools(env){
         const md=o.mend&&name!=="knock"?mdKit(lv,o.mend,(o.glance||[]).map(g=>({t:g.t,x:m(g.x),y:g.y})),{bx:X0,G:f.gy,t:f.t,st:r.st,rm:f.rm}):null;
         c.save();place(c);if(md)md.pre.forEach(fn=>fn(c));
         if(f.level==="yule"&&!HAM_OFF.cast){ // kit 0.49.0 (design system 31, step K2b): The Sprung Horror in the tree's place, its foot at the cast's foot line; the tree's branch and signals not drawn
-          const hp=shPoseKit(name,u,f.t,!!md,!!r.st.flare),E=castPainted(hp.rig,hp.key,s,CAST_BOSS,QUICK?SH_FAST.keep:CAST_BOSS_N,CAST_LAST.get("boss"));CAST_LAST.set("boss",E);const X1=r.X+(r.st.dx||0),Y1=f.gy(X0)+2+(r.st.dy||0);
+          const hp=shPoseKit(name,u,f.t,!!md,!!r.st.flare),E=castPainted(hp.rig,hp.key,s,CAST_BOSS,CAST_LITE?SH_FAST.keep:CAST_BOSS_N,CAST_LAST.get("boss"));CAST_LAST.set("boss",E);const X1=r.X+(r.st.dx||0),Y1=f.gy(X0)+2+(r.st.dy||0);
           if(r.st.clipY!=null){c.save();c.beginPath();c.rect(X1-400,-2000,800,2000+r.st.clipY);c.clip();}   // rising out of the ground as it arrives, as the tree does
           c.drawImage(E.cv,X1+E.x0,Y1+E.y0,E.cv.width/s,E.cv.height/s);
-          if(QUICK&&r.st.flare&&o.hit!=null)castFlash(c,E,X1+E.x0,Y1+E.y0,E.cv.width/s,E.cv.height/s,1-o.hit/0.13);   // kit 0.56.8: struck, at Fastest
+          if(CAST_LITE&&r.st.flare&&o.hit!=null)castFlash(c,E,X1+E.x0,Y1+E.y0,E.cv.width/s,E.cv.height/s,1-o.hit/0.13);   // kit 0.56.8: struck, at Fastest
           if(md&&md.light>0){c.save();c.globalAlpha=Math.min(1,0.48*md.light);c.drawImage(castTinted(E,MANA),X1+E.x0,Y1+E.y0,E.cv.width/s,E.cv.height/s);c.restore();}   // the mend: mana's colour laid over it
           if(r.st.clipY!=null)c.restore();
           if(name==="roots")r.fx=shClawsFx(u,r.targets||[],f.gy,f.t);}
@@ -11763,6 +11768,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       rm: () => !!settings.reduceMotion,
       fx: () => !!settings.effects && pictureLevel() !== 'fastest',
       fxSet: () => !!settings.effects,   // kit 0.43.0: the Effects setting by itself, so the World can tell Picture Fastest from Effects off
+      lite: () => pictureLevel() !== 'best',   // kit 0.56.9: Faster or Fastest (the puppets' Fastest rules)
       quick: () => pictureLevel() === 'fastest',   // kit 0.17.4: attacking monsters' poses kept (world.monster); kit 0.18.0: at Fastest only (design system 14, Barney)
       socket: (k) => {   // kit 0.9.0: a potion socket's centre in picture lines, or null without one
         const b = hudNodes && hudNodes.full && hudNodes.full.querySelector('.lb-potion.is-' + k);
