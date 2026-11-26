@@ -37,3 +37,5 @@ Since kit 0.54.0 The Wretched Noel has its present (it grows at each lantern, dr
 Since 0.54.0-r1 The Wretched Noel's monsters are 35% present crawlers, 20% gonks, 25% gingerbread men and 20% wind-up toys, and its play checks count the puppet pictures painted a second.
 
 Since kit 0.55.0 the Snowbound Hamlet's sky is brighter, and in The Wretched Noel the wind-up toys are 10% faster, the gingerbread men 20% faster, and the monsters get tougher at each lantern.
+
+Since kit 0.56.0 The Wretched Noel plays its own soundtrack, Iron Solstice, and Settings, Testing has "Hamlet: sky" (Brighter, Brightest, Original).

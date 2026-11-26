@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.55.0';
+  const VERSION = '0.56.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2050,16 +2050,23 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
      track with each new game, fades out when the game ends, and follows the Volume setting and the sound tile. On a
      switch the old track fades over 2 s and the new one starts from its beginning. */
   function makeMusic(audio, settings, opts) {
-    const list = (Array.isArray(opts) ? opts : [opts]).filter((o) => o && typeof o === 'object').slice(0, 2);
+    // kit 0.56.0 (ARCADE.md: a third, seasonal soundtrack while a time-limited level is in; Barney, 26 November 2026): up to three tracks.
+    // A track marked seasonal (o.seasonal) is unpacked only when the game asks for it, and never with the others: while it is wanted
+    // the others are let go, and when another is wanted it is let go (an unpacked track is tens of megabytes; the Fire HD 8 runs short)
+    const list = (Array.isArray(opts) ? opts : [opts]).filter((o) => o && typeof o === 'object').slice(0, 3);
     const lead = list[0] || {};
     const share = lead.level == null ? 0.525 : clamp(+lead.level || 0, 0, 1);   // against the sound effects; 1 = the file's full level
-    const tracks = list.map((o) => ({ data: o.data, state: 'idle', buf: null, loopStart: 0, loopEnd: 0, offset: 0, src: null, voice: null, t0: 0 }));
+    const tracks = list.map((o) => ({ data: o.data, seasonal: !!o.seasonal, state: 'idle', buf: null, loopStart: 0, loopEnd: 0, offset: 0, src: null, voice: null, t0: 0 }));
+    // kit 0.56.0: a track let go: its sound is dropped (a voice still fading keeps its own until it stops), or, still unpacking, dropped when done
+    const release = (tr) => { if (tr.state === 'ready') { tr.buf = null; tr.state = 'idle'; } else if (tr.state === 'loading') tr.unwanted = true; };
+    const keepOnly = (want) => tracks.forEach((t) => { if (t !== want && (want.seasonal || t.seasonal)) release(t); });
     const m = { out: null, level: -1, cur: 0, want: 0, tracks: tracks };
     const fail = (tr) => {
       tr.state = 'none';
       console.warn('Lantern Box: a soundtrack could not be loaded, so the game plays without it.');
     };
     function ready(tr, buf) {
+      if (tr.unwanted) { tr.unwanted = false; tr.state = 'idle'; return; }   // kit 0.56.0: let go while it unpacked
       // MP3 files carry a moment of silence at each end. Loop between the first and last real sound.
       const ch = buf.getChannelData(0);
       let a = 0;
@@ -2086,7 +2093,7 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
     m.load = function (only) {
       const Decoder = window.OfflineAudioContext || window.webkitOfflineAudioContext;
       let waiting = false;
-      const which = only && tracks.indexOf(only) >= 0 ? [only] : [tracks.find((t) => t.state === 'idle') || tracks[0]];   // one at a time
+      const which = only && tracks.indexOf(only) >= 0 ? [only] : [tracks.find((t) => t.state === 'idle' && !t.seasonal) || tracks[0]];   // one at a time (kit 0.56.0: never a seasonal one unasked)
       which.forEach((tr) => {
         if (tr.state !== 'idle') return;
         let data = tr.data;
@@ -2152,6 +2159,7 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
       tracks.forEach((tr) => { stop(tr, 0.08); tr.offset = 0; });
       m.cur = 0;
       m.want = 0;
+      if (tracks[0]) keepOnly(tracks[0]);   // kit 0.56.0: a seasonal track played last is let go
     };
     // Called every frame: makes the music match the screen the player is on, the sound settings and the track the game wants.
     m.sync = function (inGame, screen, ending, quiet) {   // kit 0.28.1: quiet, a moment out of play when a track can be unpacked unseen
@@ -2175,9 +2183,10 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
         tracks[m.cur].offset = 0;
         m.cur = m.want;
         tracks[m.cur].offset = 0;
+        keepOnly(tracks[m.cur]);           // kit 0.56.0: a seasonal track never kept beside the others
       }
       const tr = tracks[m.cur];
-      if (quiet && !settings.muted) { const next = tracks.find((t) => t.state === 'idle'); if (next) m.load(next); }   // kit 0.28.1: one a frame, out of play
+      if (quiet && !settings.muted && !tr.seasonal) { const next = tracks.find((t) => t.state === 'idle' && !t.seasonal); if (next) m.load(next); }   // kit 0.28.1: one a frame, out of play (kit 0.56.0: not a seasonal one, nor beside it)
       if (playing && level > 0) {
         if (tr.state === 'idle') m.load(tr);   // kit 0.28.1: in play, only the track that is wanted
         if (!tr.src && tr.buf && m.out && audio.ctx.state === 'running') start(tr);
@@ -3143,6 +3152,8 @@ function pitIce(x,pl,pr,camX,col,G){const gY2=G||gY,r=rng32(hsh(77,Math.round(pl
     const n=3+Math.floor(r()*2);for(let i=0;i<n;i++){const ix=x0+d*(1+i*3.2+r()*1.5),w=1.6+r()*1.4,L=7+r()*11+(i===0?5:0),iy=gY2(ix)+1.5;x.beginPath();x.moveTo(ix-w-camX,iy);x.lineTo(ix+w-camX,iy);x.lineTo(ix+d*0.6-camX,iy+L);x.closePath();x.fill();}}
   x.restore();}
 const HAMLET_TONES={forest:[0.9,0.77,0.57,0.42],near:[0.82,0.66,0.5,0.34]};
+// kit 0.56.0 (Barney, 26 November 2026: "Can I see brightest"): the hamlet's sky for the test link's Testing switch; brighter is the sky as built
+const HAMLET_SKY={brighter:["#040837","#291e8f","#904cbd","#eabfd1"],brightest:["#010643","#281aac","#a362cd","#f6dfe9"],original:["#070a2c","#2a2274","#7c479f","#d79bb4"]};
 // kit 0.51.0 (Barney, 25 November 2026: "tone down the haze in the hamlet as it looks too strong when seen by eye; it does not get your attention in the
 // other places"): the hamlet's backdrop layers' haze glow at this share of design system 32's (its haze is a pale lilac, so round the near firs it read
 // as a white glow). A change to the approved look, kept in NOTES-hamlet-for-design.md to take back to the design system
@@ -8200,6 +8211,8 @@ function makeTools(env){
     hamlet:{ // design system 31: The Snowbound Hamlet's two switches, for the test link's Testing panel only (never the players' Settings)
       tones(v){if(!HAMLET_TONES[v])throw new Error('Lantern Box: the hamlet\'s tones are "forest" or "near".');LV.yule.tints=HAMLET_TONES[v];},   // "forest" (option 2) is the approved default
       bulbs(v){BULB_BRIGHT=Math.round(clamp(v,1,3));},   // 1 (the default), 2 or 3
+      sky(v){const k=HAMLET_SKY[v];if(!k)throw new Error('Lantern Box: the hamlet\'s sky is "brighter", "brightest" or "original".');   // kit 0.56.0
+        if(SKY.yule.join()!==k.join()){SKY.yule=k.slice();scene=null;sceneScale=0;}},   // a new scene, so every picture with the sky in it is painted again
     },
     places:LV,
     bossNames:BOSS_NAME,
