@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.53.0';
+  const VERSION = '0.54.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -1947,6 +1947,8 @@ const FX={
   mendEnd:()=>{[392,494,587].forEach((f,i)=>tone({f,to:f*0.891,glide:0.5,dur:1.0,a:0.04,vol:0.05,wet:0.75,at:i*0.02}));},
   placeCard:()=>bell({f:98,dur:3,vol:0.16,partials:[[1,1,1],[2.0,0.4,0.6],[2.9,0.25,0.45],[4.1,0.12,0.3]]}),
   win:()=>{bell({f:196,dur:4,vol:0.16});bell({f:247,dur:4,vol:0.12,at:0.7});bell({f:294,dur:4.5,vol:0.12,at:1.4});tone({f:392,dur:3,a:1.2,vol:0.05,wet:0.8,at:1.4});},
+  // kit 0.54.0 (design system 32, WinCard): The Wretched Noel's win, two lines, each with one of the win's bells, the last held as the third is
+  winTwo:()=>{bell({f:196,dur:4,vol:0.16});bell({f:247,dur:4.5,vol:0.12,at:0.7});tone({f:392,dur:3,a:1.2,vol:0.05,wet:0.8,at:0.7});},
   select:()=>tone({type:"triangle",f:620,dur:0.05,lp:2000,vol:0.15,wet:0.15}),
   confirm:()=>bell({f:523,dur:0.6,vol:0.1,partials:[[1,1,1],[2,0.3,0.5]]}),
   // version 13: the run's end's own tone, as its plaque appears (0.8 s after the last life falls): one low, muted toll
@@ -8159,6 +8161,10 @@ function forgetKept(){
   for(const o of[BOSS_CACHE,SH,MV_SH,CPK,BSK,MDK,_lvP,_hamP,YULE_KEPT])for(const k of Object.keys(o))delete o[k];   // kit 0.46.0: and the hamlet's props
   _bossCache=new WeakMap();RESETS++;
 }
+// kit 0.54.0 (design system 32: RunEnd, WinCard, PlaqueLine): the present's picture on a screen, closed and glowing, filling w by h CSS pixels
+// (drawn at twice that), as the WretchedNoel preview draws it (presentPic). With Effects off, drawPresent leaves its glow out, as in play
+function presentPic(cv,w,h){cv.width=Math.round(w*2);cv.height=Math.round(h*2);const c=cv.getContext("2d");c.setTransform(2,0,0,2,0,0);c.clearRect(0,0,w,h);
+  drawPresent(c,w/2,h-6,0.6,{size:h*0.72,hov:0,bob:0,pool:0.6,glint:false});return cv;}
 function makeTools(env){
   if(TRIAL.fl!=null)trialLook();             // kit 0.43.0: a timing trial's look, from the first frame
   const PLACE_SET={night:"village5",storm:"town",dawn:"moor",mist:"forest",yule:"hamlet"};   // design system 31: the hamlet
@@ -8596,7 +8602,7 @@ function makeTools(env){
     get _legs(){return{legs:moLegs,gait:MO_GAIT,stoop:MO_STOOP,hand:moWalkerHandAt,room:MON_ROOM,box:MON_BOX,scene};},   // test only (kit 0.34.0): the walker's and the ghoul's legs, the stoop and the painter, for measuring where their feet and the stooped arm are and how far each reaches
   };
 }
-  return { makeTools: makeTools };
+  return { makeTools: makeTools, presentPic: presentPic };
   })();
 
   /* ---------- The game shell ---------- */
@@ -8702,7 +8708,11 @@ function picFor(svg,kind){const g=!!kind&&typeof kind==="object";   /* kit 0.17.
 function setLine(ln,line){const on=!!line;if(ln.hidden===on)ln.hidden=!on;if(!on)return;
   setOnce(ln,"t",line.text+"|"+(line.sub||""),()=>{figText(ln.querySelector(".lb-line-text"),line.text);ln.setAttribute("aria-label",line.text+(line.sub?". "+line.sub:""));
     const sb=ln.querySelector(".lb-line-sub");if(sb){sb.textContent=line.sub||"";sb.hidden=!line.sub;}ln.classList.toggle("is-gain",!!line.gain);});   /* kit 0.24.0: a life gained's two lines (version 18) */
-  ln.classList.toggle("no-pic",!line.kind);if(line.kind)picFor(ln.querySelector(".pic"),line.kind);
+  ln.classList.toggle("no-pic",!line.kind);const lsv=ln.querySelector(".pic");let lpc=ln.querySelector(".lb-line-present");
+  if(line.kind==="present"){   /* kit 0.54.0 (design system 32, PlaqueLine): "The present grows", the present's picture in place of the icon */
+    if(!lpc&&lsv){lpc=World.presentPic(document.createElement("canvas"),30,30);lpc.className="lb-line-present";lpc.setAttribute("aria-hidden","true");lsv.before(lpc);}
+    if(lsv&&lsv.style.display!=="none")lsv.style.display="none";if(lpc&&lpc.style.display)lpc.style.display="";}
+  else{if(lpc&&lpc.style.display!=="none")lpc.style.display="none";if(lsv&&lsv.style.display)lsv.style.display="";if(line.kind)picFor(lsv,line.kind);}
   const u=line.u,long=ln.classList.contains("is-name"),T=long?2.6:2,a=u<0.22?u/0.22:u>T-0.4?Math.max(0,(T-u)/0.4):1,dy=-8*(1-ease(Math.min(1,u/0.25)));ln.style.opacity=String(a);ln.style.transform=`translate(-50%,${dy.toFixed(2)}px)`;}
 /* kit 0.24.0 (design system version 18, Vitals): a life gained. The new lantern appears and lights in one go, u seconds in (1.4 s), as
    bundle.css's lbGain keyframes time it on their 3 s loop: it grows in from half its size in steps (to 0.36 s), its glass flares from dark
@@ -8769,7 +8779,7 @@ function set(hud,st){const q=s=>hq(hud,s);
   const cast=q(".b-cast");if(cast){cast.classList.toggle("is-empty",!n);cast.classList.toggle("is-short",!!short);cast.classList.toggle("is-called",!!st.called);picFor(hq(cast,".ic"),kind);}
   setOnce(q(".lb-vitals"),"lab",`Health ${hp} per cent, armour ${st.pips} of 3, mana ${mp} per cent, ${st.lives} ${st.lives===1?"life":"lives"} left`,v=>q(".lb-vitals").setAttribute("aria-label",v));
   hqa(hud,".lb-potion").forEach(b=>setPotion(b,st));
-  const ctr=q(".lb-counter");if(ctr){const lab=st.counter||"Echo";setOnce(ctr,"cl",lab,v=>{ctr.querySelector(".lb-counter-label").textContent=v;ctr._w=undefined;});   // version 23: the label from the state
+  const ctr=q(".lb-counter");if(ctr&&ctr.hidden!==!!st.noCounter)ctr.hidden=!!st.noCounter;if(ctr){const lab=st.counter||"Echo";setOnce(ctr,"cl",lab,v=>{ctr.querySelector(".lb-counter-label").textContent=v;ctr._w=undefined;});   // version 23: the label from the state
     if(st.wisps!=null)setOnce(ctr,"w",st.wisps,v=>{const s=String(v).padStart(4,"0");ctr.querySelector(".lb-counter-num").textContent=s;ctr.setAttribute("aria-label",v+" "+lab.toLowerCase());});}   // kit 0.30.0: play.js 1.10.0's, word for word
   const ha=st.hudA==null?1:st.hudA;[".lb-hud-left",".lb-hud-right",".lb-touch"].forEach(sl=>{const e=q(sl);if(e)setOnce(e,"ha",ha.toFixed(2),v=>e.style.opacity=v);});
   const ln=q(".lb-line:not(.is-name)");if(ln)setLine(ln,st.line);const nm=q(".lb-line.is-name");if(nm)setLine(nm,st.name&&st.name.u<2.6?{kind:null,text:st.name.name,sub:st.name.sub,gain:st.name.gain,u:st.name.u}:null);const cd=q(".lb-card");if(cd)setCard(cd,st.card);
@@ -9557,6 +9567,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       const cn = h8.counter, cnN = cn ? cn.n : state.score, cnL = cn ? cn.label : 'Echo';   // kit 0.30.0: lb.hud.counter's label and count
       if (hudNodes.lab !== cnL) { hudNodes.lab = cnL; const le = hudNodes.counter.querySelector('.lb-counter-label'); if (le) le.textContent = cnL; }
       hudNodes.num.textContent = pad4(cnN);
+      if (hudNodes.counter.hidden !== (h8.counter === false)) hudNodes.counter.hidden = h8.counter === false;   // kit 0.54.0
       hudNodes.counter.setAttribute('aria-label', cnN + ' ' + cnL.toLowerCase());
     }
     // version 8: the full HUD's moments, timed on the kit's clock as the design system times them: a pip cracks (0.4 s) or fills (0.5 s), a
@@ -9566,6 +9577,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
     function h8State() {
       const T = state.time, fx = (f) => (f && T - f.t0 < f.len ? f : null), st = { hp: state.health, mp: state.mana, pips: h8.pips, lives: h8.lives, spells: h8.spells, sel: h8.sel, cost: h8.cost, wisps: state.score, hudA: h8.hudA };
       if (h8.counter) { st.counter = h8.counter.label; st.wisps = h8.counter.n; }   // kit 0.30.0 (version 23, HUD): the counter's own label and count
+      else if (h8.counter === false) st.noCounter = true;   // kit 0.54.0 (design system 32, WispCounter): lb.hud.counter(false), no counter
       // kit 0.10.2: a moment for each pip changing, so several can crack together (one waiting to start shows whole)
       const pfs = (h8.pipFx || []).filter((f) => T - f.t0 < f.len); if (pfs.length) st.pipFx = pfs.map((f) => ({ i: f.i, kind: f.kind, u: Math.max(0, (T - f.t0) / f.len) }));
       const lf = fx(h8.lifeFx); if (lf) st.lifeFx = { i: lf.i, u: T - lf.t0 };
@@ -9684,7 +9696,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       // kit 0.30.0 (design system version 23, HUD and WispCounter): counter(label, n) shows n on the counter under that label, in place of the
       // run's echo ("Felled": "41 felled" to a screen reader); counter(null) gives it back to echo. Each run starts with echo. The echo is
       // still kept (lb.addWisps, lb.wisps), only out of sight
-      counter(label, n) { h8.counter = label == null ? null : { label: String(label), n: Math.max(0, n | 0) }; syncHud(); },
+      counter(label, n) { h8.counter = label === false ? false : label == null ? null : { label: String(label), n: Math.max(0, n | 0) }; syncHud(); },   // kit 0.54.0: false leaves the counter out
       // kit 0.9.0 (design system version 11; potions: true in the config): one health and one mana potion kept, in two sockets under the plaque
       // kit 0.11.0 (version 12): potions(health, mana) takes counts (true is 1); potCap(health, mana) the sockets bought, 1 to 3 (a pip for each
       // once there are two); keep fills one more socket, drink empties one
@@ -10660,14 +10672,19 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       const { panel, face } = plaque('lb-wn-t', 470, 700, phone ? 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:22px;align-items:center;padding:' + (v13 ? '16px 20px' : '18px 20px') : (v13 ? 'gap:8px;padding:18px 22px 14px' : 'gap:9px;padding:20px 22px 16px'), phone ? '' : 'is-centred');
       markFace(face);                  // kit 0.35.0 (version 25, WinCard): the run's setting in the corner, there from the first
       const at = (e, t) => { e.dataset.at = String(t); return e; };
-      const h = at(heading('lb-wn-t', ww.heading), 0); h.classList.add('is-win');
-      const lead = at(txt('p', 'lb-win-line is-lead', ww.lead), 0.7);
-      const line = at(txt('p', 'lb-win-line', ww.line || ''), 1.4);
-      const rule = at(el('div', '', RULE).firstChild, 2.1);
-      const result = at(el('div', 'lb-result'), 2.1);
+      // kit 0.54.0 (design system 32, WinCard: The Wretched Noel's win): with o.gift { n }, the heading (28, is-long) and the line, a bell each
+      // (0 and 0.7 s), the present's picture beside the big number, its echo (1.4 s), the echo stolen line (2 s), no Lives left; the buttons at 2.4 s
+      const gift = W.o.gift ? asObject(W.o.gift) : null, gt = (a, b) => (gift ? b : a);
+      const h = at(heading('lb-wn-t', ww.heading), 0); h.classList.add('is-win'); if (gift) h.classList.add('is-long');
+      const lead = gift ? null : at(txt('p', 'lb-win-line is-lead', ww.lead), 0.7);
+      const line = at(txt('p', 'lb-win-line', ww.line || ''), gt(1.4, 0.7));
+      const rule = at(el('div', '', RULE).firstChild, gt(2.1, 1.4));
+      const result = at(el('div', 'lb-result'), gt(2.1, 1.4));
       if (W.newBest) result.append(txt('p', 'lb-flag', 'New best'));
-      const num = txt('p', 'lb-num lb-score-xl', String(W.base + W.n * bonus));
+      const num = txt('p', 'lb-num lb-score-xl', String(gift ? Math.max(0, Math.round(+gift.n || 0)) : W.base + W.n * bonus));
       result.append(num, txt('p', 'lb-unit', 'echo'));
+      const shown = gift ? at(el('div', 'lb-gift'), 1.4) : result;
+      if (gift) { const pic = World.presentPic(document.createElement('canvas'), phone ? 56 : 64, phone ? 56 : 64); pic.className = 'lb-gift-pic'; pic.setAttribute('aria-hidden', 'true'); shown.append(pic, result); }
       const lanterns = el('span', 'lanterns');
       for (let i = 0; i < Math.max(3, h8.slots, W.lives); i++) { const l = el('span', '', HUD8.ICON.life()).firstChild; if (i >= W.lives) l.classList.add('is-out'); lanterns.append(l); }   // kit 0.24.0: the run's row, up to five
       const plus = txt('span', 'plus', '+' + W.n * bonus);
@@ -10675,11 +10692,11 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       bon.append(lanterns, plus);
       const stolen = [];   // kit 0.17.0 (version 13): the echo stolen, after the lanterns are counted (3.3 s), with the day's ×2
       // kit 0.35.0 (version 25): stolen.share, the setting's share as the game writes it ("\u00d71.5"): the tag with it leads the line
-      if (W.o.stolen) { const so = asObject(W.o.stolen), sh = shareOf(so.share); stolen.push(at(sh ? stolenLine(sh, !!so.daily, '', so.n, 'lb-stolen') : el('p', 'lb-daily lb-stolen', (so.daily ? '<span class="lb-daily-mark">\u00d72</span>' : '') + '<span class="lb-num">' + Math.round(+so.n || 0) + '</span> echo stolen'), 3.3)); }
+      if (W.o.stolen) { const so = asObject(W.o.stolen), sh = shareOf(so.share); stolen.push(at(sh ? stolenLine(sh, !!so.daily, '', so.n, 'lb-stolen') : el('p', 'lb-daily lb-stolen', (so.daily ? '<span class="lb-daily-mark">\u00d72</span>' : '') + '<span class="lb-num">' + Math.round(+so.n || 0) + '</span> echo stolen'), gt(3.3, 2))); }
       // what follows the count: the offer, or the end's buttons
       const items = [], tail = [], opts = {};
       let hint = null;
-      const endAt = W.finished ? 0 : 3.6;
+      const endAt = W.finished ? 0 : gt(3.6, 2.4);
       if (W.stage === 'offer') {
         const loopLine = at(txt('p', 'lb-win-loop', winWords.loop || ''), 3.6);
         // kit 0.45.1 (design system version 30): the button's words are "Go round again (harder)" (Barney's, the brackets and the
@@ -10708,12 +10725,12 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       const hintEl = !touch && !phone && hint ? at(el('p', 'lb-hint', hint), W.stage === 'offer' ? 3.6 : endAt) : null;
       if (hintEl) hintEl.style.textAlign = 'center';
       if (phone) {
-        const a = el('div'); a.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center'; a.append(h, lead, line, rule);
-        const b = el('div'); b.style.cssText = 'display:flex;flex-direction:column;gap:' + (v13 ? 8 : 9) + 'px'; b.append(result, bon, ...stolen, ...tail);   // kit 0.17.0: 8 in version 13
+        const a = el('div'); a.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center'; a.append(...[h, lead, line, rule].filter(Boolean));
+        const b = el('div'); b.style.cssText = 'display:flex;flex-direction:column;gap:' + (v13 ? 8 : 9) + 'px'; b.append(shown, ...(gift ? [] : [bon]), ...stolen, ...tail);   // kit 0.17.0: 8 in version 13
         face.append(a, b);
-      } else { face.append(h, lead, line, rule, result, bon, ...stolen, ...tail); if (hintEl) face.append(hintEl); }
+      } else { face.append(...[h, lead, line, rule].filter(Boolean), shown, ...(gift ? [] : [bon]), ...stolen, ...tail); if (hintEl) face.append(hintEl); }
       // the buttons wait until 3.6 s; each part shows at its moment, and the lanterns count in from 2.6 s
-      opts.until = W.finished ? 0 : W.t0 + 3600;
+      opts.until = W.finished ? 0 : W.t0 + gt(3600, 2400);
       const back = opts.back;
       if (back) opts.back = () => { if (performance.now() >= opts.until) back(); };
       const lit = [...lanterns.children].slice(0, W.lives);
@@ -10729,8 +10746,8 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
         return u;
       };
       clearTimeout(W.timer);
-      const step = () => { if (winInfo !== W || !panel.isConnected) return; if (paint() < 4) W.timer = setTimeout(step, 40); };
-      if (paint() < 4) W.timer = setTimeout(step, 40);   // painted now, before the plaque is on the page, so nothing shows early
+      const step = () => { if (winInfo !== W || !panel.isConnected) return; if (paint() < gt(4, 2.8)) W.timer = setTimeout(step, 40); };
+      if (paint() < gt(4, 2.8)) W.timer = setTimeout(step, 40);   // painted now, before the plaque is on the page, so nothing shows early
       return { panel: panel, items: items, opts: opts };
     }
     function winAgain() {   // Go round again: the run carries on, its score with the lives counted in
@@ -10759,9 +10776,9 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       state.screen = 'over';
       state.over = true;
       state.ending = false;
-      sfx('win');   // three bells
+      sfx(o.gift ? 'winTwo' : 'win');   // three bells (kit 0.54.0: two, with the present)
       winBonus = o.lifeBonus != null ? +o.lifeBonus : winWords.lifeBonus == null ? 10 : winWords.lifeBonus;   // kit 0.18.0 (WinCard: the second loop's 20)
-      const lives = h8.lives, base = state.score, total = base + lives * winBonus;
+      const lives = o.gift ? 0 : h8.lives, base = state.score, total = base + lives * winBonus;   // kit 0.54.0: with the present, no Lives left
       const scored = o.scored !== false, table = readScores(), prevBest = table.length ? table[0].s : 0;
       const newBest = scored && total > 0 && total > prevBest;
       const qualifies = scored && total > 0 && (table.length < 10 || total > table[table.length - 1].s);
@@ -10886,10 +10903,13 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       // o.near.wave the wave he fell in ("Fell in Wave 5", its bar the share of its monsters still to fall, near.count how many); o.stolen the
       // echo the run stole, on its own line ("22 echo stolen"); and, for a run in Personal bests whose config says yours, "Your best: ..."
       // when it fell short. With any of them the plaque is drawn tighter, as version 23 draws it
-      const cnt = o.count ? asObject(o.count) : null, shownN = cnt ? Math.max(0, Math.round(+cnt.n || 0)) : state.score, unit = cnt && cnt.unit ? String(cnt.unit) : 'echo';
+      // kit 0.54.0 (design system 32, RunEnd: The Wretched Noel): o.gift { n, line }, the present's echo as the big number with its picture beside it;
+      // at 0 (before the first lantern along the way), no picture, and gift.line under it ("Reach the first lantern for a present.")
+      const gift = o.gift ? asObject(o.gift) : null;
+      const cnt = o.count ? asObject(o.count) : null, shownN = gift ? Math.max(0, Math.round(+gift.n || 0)) : cnt ? Math.max(0, Math.round(+cnt.n || 0)) : state.score, unit = cnt && cnt.unit ? String(cnt.unit) : 'echo';
       const near = asObject(o.near), runCfg = R.bestId ? bestRun(R.bestRun) : null;
       const yours = runCfg && runCfg.yours && !R.bestNew && R.bestPrev ? R.bestPrev : null, stolen = o.stolen != null ? Math.max(0, Math.round(+o.stolen || 0)) : null;
-      const v23 = !!(cnt || near.wave || R.bestNew || yours || stolen != null);
+      const v23 = !!(cnt || gift || near.wave || R.bestNew || yours || stolen != null);
       const sg = !first && !(R.qualifies || R.bestAsk) && o.suggest && asObject(o.suggest).button ? asObject(o.suggest) : null;
       // (with a suggestion the day's doubled run keeps the usual spacing, as version 25 draws its tallest run's end: 512 tall on 540)
       const faceCss = phone ? 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:22px;align-items:center;padding:' + (v23 ? '16px 20px' : '18px 20px')
@@ -10902,7 +10922,9 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
       const result = el('div', 'lb-result');
       if (R.newBest || R.bestNew) result.append(txt('p', 'lb-flag', 'New best'));
       result.append(txt('p', 'lb-num lb-score-xl', String(shownN)), txt('p', 'lb-unit', unit));
-      parts.push(result);
+      if (gift && shownN > 0) { const box = el('div', 'lb-gift'), pic = World.presentPic(document.createElement('canvas'), phone ? 56 : 64, phone ? 56 : 64); pic.className = 'lb-gift-pic'; pic.setAttribute('aria-hidden', 'true'); box.append(pic, result); parts.push(box); }
+      else parts.push(result);
+      if (gift && !shownN && gift.line) parts.push(txt('p', 'lb-best-line', String(gift.line)));
       // the near-miss line: the boss he fell to and how much of it was left, or the wave he fell in, or the furthest place yet, or nothing
       if (near.wave && !near.boss) {   // kit 0.31.0: "Fell in Wave 5 {bar} 3 left", always true, so always shown (version 23)
         const pc = Math.round(clamp(Math.ceil(clamp(+near.left || 0, 0, 1) * 100), 0, 100));

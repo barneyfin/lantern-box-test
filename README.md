@@ -31,3 +31,5 @@ Since kit 0.52.1 the backlit bats look the same but their pictures are made befo
 Since kit 0.52.2 `?trial=cloudref` (timing) draws design system 34's Fastest flyers: no darken, from the bare sky and the baked clouds.
 
 Since kit 0.53.0, at Picture: Fastest the backlit bats are drawn the faster way (design system 34, as `cloudref` timed); Best and Faster unchanged.
+
+Since kit 0.54.0 The Wretched Noel has its present (it grows at each lantern, drops from The Sprung Horror's box, then the win), and the menu has the Hamlet's parts play check for the Fire.
