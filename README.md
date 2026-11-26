@@ -65,3 +65,5 @@ Since 0.56.8-r1 the Hamlet's speed test leaves its two comparison parts (the old
 Since kit 0.56.9 the Snowbound Hamlet's puppets at Picture: Faster are drawn the Fastest way (painted ahead, the hit flash laid over, the wind-up toy's key in quarter-second steps, the gonk's cloak still moving), and at Best the boss's sway loops.
 
 Since kit 0.57.0 two trial words time the Snowbound Hamlet's snow and sleigh drawn a cheaper way: trial=snowstamp and trial=sleighkept (off unless asked for).
+
+Since kit 0.57.1 the Snowbound Hamlet's sleigh is always drawn from kept pictures, its snow stamped at Best and Faster, and its opening card gives the pictures painted ahead more time while it is black.
