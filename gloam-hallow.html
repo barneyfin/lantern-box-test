@@ -13287,7 +13287,7 @@ const NOEL_PARTS = [
   { part: 'no falling snow', off: { snow: true } },
   { part: 'no sleigh', off: { sleigh: true } },
   { part: "no snowmen's eyes", off: { eyes: true } },
-  { part: 'the old monsters, not puppets', off: { cast: true } },
+  { part: 'the old monsters, not puppets', off: { cast: true }, compare: true },   // (compare: for comparison only, not in the game, so not in the verdict)
   { boss: true, part: 'everything', off: {} },
   // the boss fight's own breakdown (Barney, 26 November 2026, "add it": on 0.56.6 the Fire's fight ran 28 fps with the puppet and 29 with the old
   // tree, its arena the cost, not the boss)
@@ -13295,7 +13295,7 @@ const NOEL_PARTS = [
   { boss: true, part: 'no falling snow', off: { snow: true } },
   { boss: true, part: 'no sleigh', off: { sleigh: true } },
   { boss: true, part: "no snowmen's eyes", off: { eyes: true } },
-  { boss: true, part: 'the Gaping Tree, not the puppet', off: { cast: true } },
+  { boss: true, part: 'the Gaping Tree, not the puppet', off: { cast: true }, compare: true },
 ];
 const wantNoelCheck = (lb) => NOEL && (CHECK_NOEL || CHECK_NOELPARTS || !!(lb.test && lb.test.check && lb.test.noel));
 // the play check's figures (see the play check, at the end): seconds to settle, to time a leg's frames and to time its drawing, as the
@@ -15795,7 +15795,7 @@ function startCheck(g, lb) {
   } else if (noel) {                   // The Wretched Noel's: the hamlet's busiest stretch, then The Sprung Horror alone, with what its run starts with
     g.run = 'noel'; g.p = NOEL_P;
     g.spells = { heal: 1 }; g.spells[g.attack] = 1; g.spellList = ['heal', g.attack];
-    if (CHECK_NOELPARTS) { g.check.parts = true; NOEL_PARTS.forEach((q) => g.check.legs.push({ p: NOEL_P, boss: !!q.boss, n: 0, noel: true, part: q.part, off: q.off })); }   // step 4b
+    if (CHECK_NOELPARTS) { g.check.parts = true; NOEL_PARTS.forEach((q) => g.check.legs.push({ p: NOEL_P, boss: !!q.boss, n: 0, noel: true, part: q.part, off: q.off, compare: !!q.compare })); }   // step 4b
     else g.check.legs.push({ p: NOEL_P, boss: false, n: 0, noel: true }, { p: NOEL_P, boss: true, n: 0, noel: true });
     withSeed(1, () => loadPlace(g, lb, NOEL_P, 0));
   } else {
@@ -15976,7 +15976,7 @@ function checkDraw(ctx, g, lb) {
     C.t += gap;
     if (C.t >= CHECK.load * 1000 || C.loadPlay >= CHECK.loadPlay) {
       const c = C.cur, leg = C.legs[C.i], sum = c.gaps.reduce((a, b) => a + b, 0), per = (now - C.loadStart) / Math.max(1, C.loadN);
-      C.res.push({ place: leg.p, noel: !!leg.noel, part: leg.part, boss: leg.boss, n: leg.wave ? c.most || 0 : leg.n, fps: c.gaps.length * 1000 / sum, slow: pct95(c.gaps), max: Math.max(...c.gaps),
+      C.res.push({ place: leg.p, noel: !!leg.noel, part: leg.part, compare: leg.compare || undefined, boss: leg.boss, n: leg.wave ? c.most || 0 : leg.n, fps: c.gaps.length * 1000 / sum, slow: pct95(c.gaps), max: Math.max(...c.gaps),
         drawn: per / CHECK.reps, keptUp: per < 18, work: c.work.reduce((a, b) => a + b, 0) / c.work.length, level: c.level, painted: c.paints != null ? c.paints * 1000 / sum : undefined });   // kept up: eight frames inside one refresh, so the time is an upper limit
       if (leg.wave) C.res[C.res.length - 1].wave = leg.wave;   // The Endless Rot's: the wave timed
       nextLeg(g, lb);
@@ -16036,7 +16036,7 @@ function readCheck(o) {
   const legs = [];
   for (const q of o.legs) {
     if (!q || typeof q !== 'object') return null;
-    const r = { place: num(q.place, 0, 3), noel: q.noel === true, part: typeof q.part === 'string' ? q.part.slice(0, 40) : undefined, boss: q.boss === true, n: num(q.n, 0, 99) || 0, fps: num(q.fps, 0, 1000), slow: num(q.slow, 0, 1e5), max: num(q.max, 0, 1e5),
+    const r = { place: num(q.place, 0, 3), noel: q.noel === true, part: typeof q.part === 'string' ? q.part.slice(0, 40) : undefined, compare: q.compare === true, boss: q.boss === true, n: num(q.n, 0, 99) || 0, fps: num(q.fps, 0, 1000), slow: num(q.slow, 0, 1e5), max: num(q.max, 0, 1e5),
       drawn: num(q.drawn, 0, 1e5), keptUp: q.keptUp === true, work: num(q.work, 0, 1e5) || 0, level: ['best', 'faster', 'fastest'].indexOf(q.level) >= 0 ? q.level : '' };
     const pd = num(q.painted, 0, 1e5); if (pd != null) r.painted = pd;   // The Wretched Noel's: puppet pictures painted a second
     if (r.place == null || r.fps == null || r.slow == null || r.max == null || r.drawn == null) return null;
@@ -16061,11 +16061,14 @@ function checkShown(lb) {
   if (res) lb.ui.open((ui) => checkPlaque(lb, ui, res));
   return !!res;
 }
-const legName = (lb, r) => r.noel ? 'Noel' + (r.boss ? ', The Sprung Horror' : ', the path (' + r.n + (r.n === 1 ? ' monster)' : ' monsters)')) + (r.part ? ', ' + r.part : '') : PLACE_SHORT[r.place] + (r.wave ? ', wave ' + r.wave + ' (at most ' + r.n + (r.n === 1 ? ' monster)' : ' monsters)') :   // The Endless Rot's
+const legName = (lb, r) => r.noel ? 'Noel' + (r.boss ? ', The Sprung Horror' : ', the path (' + r.n + (r.n === 1 ? ' monster)' : ' monsters)')) + (r.part ? ', ' + r.part + (r.compare ? ' (for comparison, not counted)' : '') : '') : PLACE_SHORT[r.place] + (r.wave ? ', wave ' + r.wave + ' (at most ' + r.n + (r.n === 1 ? ' monster)' : ' monsters)') :   // The Endless Rot's
   r.boss ? ', ' + lb.world.bossNames[PLACES[r.place]] : ', the path (' + r.n + (r.n === 1 ? ' monster)' : ' monsters)'));
 const drawnIn = (r) => (r.keptUp ? 'under ' : '') + r.drawn.toFixed(1) + ' ms';
-const phonePass = (res) => res.legs.every((r) => r.fps >= 29.5 && r.drawn <= 25);
-const computerPass = (res) => res.legs.every((r) => r.fps >= 58);
+// (Barney, 26 November 2026: the Hamlet's speed test read "does not pass" on the Fire only for its two comparison legs, which are not in the game;
+// those are left out of the verdict)
+const playLegs = (res) => { const g = res.legs.filter((r) => !r.compare); return g.length ? g : res.legs; };
+const phonePass = (res) => playLegs(res).every((r) => r.fps >= 29.5 && r.drawn <= 25);
+const computerPass = (res) => playLegs(res).every((r) => r.fps >= 58);
 // the result as text, for Email, WhatsApp and Copy
 function checkText(lb, res) {
   const lvl = res.legs[res.legs.length - 1].level;

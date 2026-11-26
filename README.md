@@ -59,3 +59,5 @@ Since 0.56.6-r1 the Hamlet's speed test (check=noelparts) also times the boss fi
 Since kit 0.56.7 The Sprung Horror's head shows whole at its spring's full stretch, and the Hamlet's twelve-part speed test shows its result at the end.
 
 Since kit 0.56.8, at Picture: Fastest a struck monster or boss in the Snowbound Hamlet gets an orange flash laid over it, so fights paint no new pictures.
+
+Since 0.56.8-r1 the Hamlet's speed test leaves its two comparison parts (the old monsters, the old Gaping Tree) out of its verdict, marking them "for comparison, not counted".
