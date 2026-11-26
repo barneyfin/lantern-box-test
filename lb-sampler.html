@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.56.3';
+  const VERSION = '0.56.4';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -8077,7 +8077,12 @@ const CAST_BUDGET=1,CAST_LAST=new Map(),CAST_STATS={};
 // kit 0.50.2, test only (the test page's Hamlet breakdown, after the Fire's Hamlet check): each of the hamlet's costs can be left out, one at a time
 const HAM_OFF={moon:false,snow:false,sleigh:false,eyes:false,cast:false};   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
 let CAST_PAINTS={frame:-1,n:0};
-function castPainted(rig,key,s,M,N,last){M=M||CAST_KEPT;N=N||CAST_KEEP_N;let E=M.get(key);if(E){M.delete(key);M.set(key,E);return E;}
+// kit 0.56.4 (Barney's Pixel, 26 November 2026: a gonk and a present crawler "too large and off the path", after the Picture setting changed):
+// a kept picture is painted at the picture's scale then (s, device pixels a line) and drawn at the scale now, so when the scale changes (Picture
+// chosen, Automatic stepping down in play, the window resized or turned) every puppet's kept picture is let go and painted again at the new one.
+// Before, they were drawn from their top left corner at the new scale: from Best to Faster on the Pixel, half as big again and sunk into the path
+let CAST_S=0;
+function castPainted(rig,key,s,M,N,last){if(s!==CAST_S){CAST_KEPT.clear();CAST_BOSS.clear();CAST_LAST.clear();CAST_S=s;last=null;}M=M||CAST_KEPT;N=N||CAST_KEEP_N;let E=M.get(key);if(E){M.delete(key);M.set(key,E);return E;}
   if(QUICK){if(CAST_PAINTS.frame!==KIT.frame)CAST_PAINTS={frame:KIT.frame,n:0};if(CAST_PAINTS.n>=CAST_BUDGET&&last)return last;CAST_PAINTS.n++;}   // kit 0.49.2: the budget, at Fastest
   const W0=620,H0=560,OX=310,OY=460;if(!CAST_SCR||CAST_SCR.s!==s)CAST_SCR={s,cv:mk(W0*s,H0*s)};
   const sc=CAST_SCR.cv,x=sc.getContext("2d");x.setTransform(1,0,0,1,0,0);x.globalCompositeOperation="source-over";x.globalAlpha=1;x.shadowBlur=0;x.shadowColor="transparent";x.clearRect(0,0,sc.width,sc.height);x.setTransform(s,0,0,s,OX*s,OY*s);
