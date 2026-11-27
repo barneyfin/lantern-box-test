@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.68.1';
+  const VERSION = '0.69.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2289,9 +2289,9 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // cloudref (kit 0.52.2, for the Fire's timing): design system 34's Fastest flyers; retired in kit 0.53.0, where they are Fastest's own look.
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),snowsheet:w.includes("snowsheet"),moonbox:w.includes("moonbox"),moonhalf:w.includes("moonhalf"),tilecrop:w.includes("tilecrop"),ripple:w.includes("ripple"),foretrim:w.includes("foretrim"),auto33:w.includes("auto33"),sky:w.includes("sky"),bestlite:w.includes("bestlite"),paintfirst:w.includes("paintfirst"),leanpaint:w.includes("leanpaint"),leanedge:w.includes("leanedge"),autonote:w.includes("autonote"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
+  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),snowsheet:w.includes("snowsheet"),moonbox:w.includes("moonbox"),moonhalf:w.includes("moonhalf"),thru:(()=>{const t=w.find((x)=>/^thru[1-3]$/.test(x));return t?+t.slice(4):0;})(),tilecrop:w.includes("tilecrop"),ripple:w.includes("ripple"),foretrim:w.includes("foretrim"),auto33:w.includes("auto33"),sky:w.includes("sky"),bestlite:w.includes("bestlite"),paintfirst:w.includes("paintfirst"),leanpaint:w.includes("leanpaint"),leanedge:w.includes("leanedge"),autonote:w.includes("autonote"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
 const TRIAL_FL=["look timing T0: Fastest as it is, a plain belt and the gold glass","look timing T1: his light kept, a plain belt and the gold glass","look timing T2: the strong glow and the red glass, its light added","look timing T3: the strong glow and the red glass, its light laid over"];   // kit 0.43.0
-const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.snowsheet&&"the snow stamped from one sheet",TRIAL.moonbox&&"the moonlight only where it reaches",TRIAL.moonhalf&&"the moonlight made at half size",TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.foretrim&&"the foreground layers trimmed",TRIAL.auto33&&"Automatic's line at 33 fps, with a note",TRIAL.sky&&"the sky's work each frame cut",TRIAL.bestlite&&"Best paints as Faster does (timing only)",TRIAL.paintfirst&&"pictures painted before a frame draws",TRIAL.leanpaint&&"one picture for puppets drawn the same",TRIAL.leanedge&&"the puppets' edge canvases used again",TRIAL.autonote&&!TRIAL.auto33&&"Automatic says when it steps down",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
+const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.snowsheet&&"the snow stamped from one sheet",TRIAL.moonbox&&"the moonlight only where it reaches",TRIAL.moonhalf&&"the moonlight made at half size",TRIAL.thru&&("the light through the clouds, way "+TRIAL.thru),TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.foretrim&&"the foreground layers trimmed",TRIAL.auto33&&"Automatic's line at 33 fps, with a note",TRIAL.sky&&"the sky's work each frame cut",TRIAL.bestlite&&"Best paints as Faster does (timing only)",TRIAL.paintfirst&&"pictures painted before a frame draws",TRIAL.leanpaint&&"one picture for puppets drawn the same",TRIAL.leanedge&&"the puppets' edge canvases used again",TRIAL.autonote&&!TRIAL.auto33&&"Automatic says when it steps down",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -4860,23 +4860,39 @@ Object.assign(Scene.prototype,{
       const R1=r1.length?one(Math.min(...r1.map(r=>r.x0)),Math.min(...r1.map(r=>r.y0)),Math.max(...r1.map(r=>r.x1))):[],R2=r2.length?one(Math.min(...r2.map(r=>r.x0)),Math.min(...r2.map(r=>r.y0)),Math.max(...r2.map(r=>r.x1))):[];
       const all=R1.concat(R2);   // design system 33: the swarm no longer has its own part here (it is backlit: kitBacklit)
       if(all.length){
-        const CF=this._cf=fitCanvas(this._cf,ctx.canvas.width,cbH),cf=CF.getContext("2d"),U=bound(all);
-        cf.save();cf.setTransform(1,0,0,1,0,0);cf.beginPath();cf.rect(U[0],U[1],U[2],U[3]);cf.clip();cf.clearRect(U[0],U[1],U[2],U[3]);
-        for(const [,ox,k,cb] of clp){cf.setTransform(s,0,0,s,0,off(k));for(let n=cb.dbl?1:0;n<2;n++){cf.drawImage(cb,-ox,0,W2,LH);cf.drawImage(cb,-ox+W2,0,W2,LH);}}cf.restore(); // version 11: the blurred copies, twice (kit 0.62.0: once, from a doubled copy)
+        // Kit 0.69.0 (Barney, 27 November 2026: "Yes build"), the trial words thru1, thru2 and thru3 (and the speed test's world._thruWay):
+        // three cheaper ways of making this light, each a step on the last. His Pixel at Best: the hamlet's path 45 fps with the light and
+        // 60 without, 3.9 ms of a 17.6 ms frame, for a light that shows in 0.4% of the screen's pixels. It is made every frame in three
+        // canvases the screen's width and the clouds' band deep (CF and one overlay a layer), each cleared only inside its rectangle, so
+        // the graphics chip has to keep what the frame before left in them, and the frame turns to another picture three times.
+        // Way 1: each canvas is wiped whole before anything is drawn in it (nothing kept from the frame before; nothing outside the
+        // rectangles is ever used, so the same picture). Way 2, and: the canvases are only as deep as the work (the rectangles all end at
+        // the band's foot and reach up 75 to 147 pixels of its 439 on a phone; Hc, in steps of 32 and never smaller again, their rows
+        // moved up by T). Way 3, and: both layers' overlays in one canvas, layer 2's below layer 1's, so two canvases where there were three
+        const U=bound(all),way=THRU_WAY!=null?THRU_WAY:TRIAL.thru;let Hc=cbH,T=0;
+        if(way>=2){Hc=Math.min(cbH,Math.max(this._thH||0,Math.ceil(U[3]/32)*32));this._thH=Hc;T=cbH-Hc;}
+        const CF=this._cf=fitCanvas(this._cf,ctx.canvas.width,Hc),cf=CF.getContext("2d");
+        if(way>=1){cf.setTransform(1,0,0,1,0,0);cf.globalCompositeOperation="source-over";cf.globalAlpha=1;cf.clearRect(0,0,CF.width,CF.height);}
+        cf.save();cf.setTransform(1,0,0,1,0,0);cf.beginPath();cf.rect(U[0],U[1]-T,U[2],U[3]);cf.clip();if(way<1)cf.clearRect(U[0],U[1],U[2],U[3]);
+        for(const [,ox,k,cb] of clp){cf.setTransform(s,0,0,s,0,off(k)-T);for(let n=cb.dbl?1:0;n<2;n++){cf.drawImage(cb,-ox,0,W2,LH);cf.drawImage(cb,-ox+W2,0,W2,LH);}}cf.restore(); // version 11: the blurred copies, twice (kit 0.62.0: once, from a doubled copy)
+        const one=way>=3,wipe=cv=>{const v=cv.getContext("2d");v.setTransform(1,0,0,1,0,0);v.globalCompositeOperation="source-over";v.globalAlpha=1;v.clearRect(0,0,cv.width,cv.height);};
+        if(one)wipe(this._ov1=fitCanvas(this._ov1,CF.width,Hc*2));
         // one part into its own picture: painted, kept only where a cloud is (source-in, in one step over the part's area, since source-in clears
         // whatever its own drawing doesn't cover), taken from the cloud's colour towards ink by 1 - mix (source-atop), all inside its rectangles
-        const comp=(key,R,paint,mix)=>{if(!R.length)return null;const OV=this[key]=fitCanvas(this[key],CF.width,CF.height),v=OV.getContext("2d"),B=bound(R);
-          v.save();v.setTransform(1,0,0,1,0,0);v.beginPath();for(const r of R)v.rect(r[0],r[1],r[2],r[3]);v.clip();v.clearRect(B[0],B[1],B[2],B[3]);
-          v.globalCompositeOperation="source-over";v.globalAlpha=1;paint(v);
-          v.setTransform(1,0,0,1,0,0);v.globalCompositeOperation="source-in";v.drawImage(CF,B[0],B[1],B[2],B[3],B[0],B[1],B[2],B[3]);
-          v.globalCompositeOperation="source-atop";v.globalAlpha=1-mix;v.fillStyle=INK;v.fillRect(B[0],B[1],B[2],B[3]);v.restore();KIT.thruN++;return{OV,R};};
+        // (dy: where the part's rows lie in its canvas; row: 0 for layer 1, 1 for layer 2)
+        const comp=(key,R,paint,mix,row)=>{if(!R.length)return null;const dy=(one?row*Hc:0)-T,OV=one?this._ov1:(this[key]=fitCanvas(this[key],CF.width,Hc)),v=OV.getContext("2d"),B=bound(R);
+          if(way>=1&&!one)wipe(OV);
+          v.save();v.setTransform(1,0,0,1,0,0);v.beginPath();for(const r of R)v.rect(r[0],r[1]+dy,r[2],r[3]);v.clip();if(way<1)v.clearRect(B[0],B[1],B[2],B[3]);
+          v.globalCompositeOperation="source-over";v.globalAlpha=1;paint(v,dy);
+          v.setTransform(1,0,0,1,0,0);v.globalCompositeOperation="source-in";v.drawImage(CF,B[0],B[1]-T,B[2],B[3],B[0],B[1]+dy,B[2],B[3]);
+          v.globalCompositeOperation="source-atop";v.globalAlpha=1-mix;v.fillStyle=INK;v.fillRect(B[0],B[1]+dy,B[2],B[3]);v.restore();KIT.thruN++;return{OV,R,dy};};
         const tilesOf=runs=>{const q=[];for(const r of runs)for(const e of r.q)if(!q.some(g=>g[0]===e[0]))q.push(e);return q;};
         const q1=tilesOf(r1),q2=tilesOf(r2);
-        lit.L1=comp("_ov1",R1,v=>{v.setTransform(1,0,0,1,0,L1y);for(const [q,tx] of q1)v.drawImage(q.thru,tx,0);},tn[0]*THRU_CLOUD);
-        lit.L2=comp("_ov2",R2,v=>{v.setTransform(1,0,0,1,0,L2y);for(const [q,tx] of q2)v.drawImage(q.thru,tx,0);},tn[1]*THRU_CLOUD);
+        lit.L1=comp("_ov1",R1,(v,dy)=>{v.setTransform(1,0,0,1,0,L1y+dy);for(const [q,tx] of q1)v.drawImage(q.thru,tx,0);},tn[0]*THRU_CLOUD,0);
+        lit.L2=comp("_ov2",R2,(v,dy)=>{v.setTransform(1,0,0,1,0,L2y+dy);for(const [q,tx] of q2)v.drawImage(q.thru,tx,0);},tn[1]*THRU_CLOUD,1);
       }
     }
-    const layOn=(p,al)=>{if(!p)return;ctx.save();ctx.setTransform(1,0,0,1,0,0);if(al!=null)ctx.globalAlpha=al;for(const r of p.R)ctx.drawImage(p.OV,r[0],r[1],r[2],r[3],r[0],r[1],r[2],r[3]);ctx.restore();};
+    const layOn=(p,al)=>{if(!p)return;ctx.save();ctx.setTransform(1,0,0,1,0,0);if(al!=null)ctx.globalAlpha=al;for(const r of p.R)ctx.drawImage(p.OV,r[0],r[1]+p.dy,r[2],r[3],r[0],r[1],r[2],r[3]);ctx.restore();};
     // design system 33 (kit 0.52.1): the backlit flyers' pictures, made before the frame's own drawing begins (kitBacklitPrep)
     // design system 34 (kit 0.52.2; on since 0.53.0, Barney: "we go with fix 2"): at Picture: Fastest, the flyers' reference: each cloud layer's picture, slide, rise and rest offset
     const cr=QUICK&&clp.length&&L.fly==="bats"?{W2,layers:clp.map(([cv,ox,k])=>({d:cv===this.cache.cl1?1:0,ox,ty:off(k),D:Math.round(-up(k)*s)-Math.round(-up(0)*s)}))}:null;
@@ -8279,7 +8295,7 @@ const CAST_KEPT=new Map(),CAST_KEEP_N=120,CAST_KEEP_FASTER=200;let CAST_SCR=null
 // by its id) for the frame or two until its turn, so when a pose is drawn changes, never what it looks like. At Best and Faster every pose at once
 const CAST_BUDGET=1,CAST_LAST=new Map(),CAST_STATS={};
 // kit 0.50.2, test only (the test page's Hamlet breakdown, after the Fire's Hamlet check): each of the hamlet's costs can be left out, one at a time
-const HAM_OFF={moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false};   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
+const HAM_OFF={moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false};let THRU_WAY=null;   // kit 0.69.0, test only: the way the light through the clouds is made (0 to 3), or null for the trial word's   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
 // kit 0.56.9 (Barney, 26 November 2026: "Faster's puppets follow Fastest's rules ... keeping Faster's sharper picture and glows"): the hamlet's
 // puppets drawn the Fastest way at Faster too (set by world.begin with QUICK; the rest of Faster is as it was); CAST_KEEP_FASTER, 200 kept
 // there (its wind-up toy's key turns: 172 pictures to paint ahead)
@@ -8911,6 +8927,7 @@ function makeTools(env){
     // for the test page's readout
     get stats(){return{cast:Object.assign({},CAST_STATS),tileBytes:KIT.bytes,poses:KIT.poses,first:KIT.first||0,firstOff:!!KIT.dryOff,twins:KIT.twins||0,builds:KIT.builds,thru:KIT.thruN,tints:KIT.tints||0,mdReads:KIT.mdReads||0};},   // kit 0.36.0: tints, mana's colour laid on (a fill, not a repaint); mdReads, a boss's outline read
     _thruCloud(on){KIT.thru=on!==false;},
+    _thruWay(n){THRU_WAY=n==null?null:Math.max(0,Math.min(3,n|0));},   // kit 0.69.0, test only: the light through the clouds made the nth way (kitBegin), whatever the trial word; null gives it back
     _hamletOff(o){Object.assign(HAM_OFF,{moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false},o||{});},   // kit 0.50.2, test only: the Hamlet breakdown's switches (cast: the old monsters and the tree; kit 0.68.0: far, the four far layers and the light through the clouds on them; clouds, the two cloud layers on the screen; fore, the foreground; vig, the dark edges; kit 0.68.1: thru, the light through the clouds alone; far12, far layers 1 and 2 and that light; far34, far layers 3 and 4)   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
     get _looks(){return{sil:mvSil,det:mvDet,draw:mvDraw,move:mvMove,rm(v){MV_RM=!!v;},state(){return{red:MV_RED,glass:MV_GLASS,pool:MV_POOL,op:MV_POOLOP,x:MV_POOLX,glow:MV_GLOW,halo:MV_GLOWC,blur:MV_GLOWB,n:MV_GLOWN,strength:GLOW_STRENGTH,lightX:LIGHT_X,ask:LOOK_ASK,pic:LOOK_PIC,fx:LOOK_FX,laid:FAST_LAID,laidX:FAST_LAID_X,lines:MV_GLOWL,kept:MV_LIT.size};}};},   // test only (kit 0.41.0): the wanderer's painting, to set beside the design system's own
     get _legs(){return{legs:moLegs,gait:MO_GAIT,stoop:MO_STOOP,hand:moWalkerHandAt,room:MON_ROOM,box:MON_BOX,scene};},   // test only (kit 0.34.0): the walker's and the ghoul's legs, the stoop and the painter, for measuring where their feet and the stooped arm are and how far each reaches

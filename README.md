@@ -99,3 +99,5 @@ Since kit 0.68.0 the trial words moonbox and moonhalf: the moonlight on the Snow
 0.68.0-r1: the speed test's result is read with up to 40 parts (with seventeen, 0.68.0's test ended in a pause with no result).
 
 Since kit 0.68.1 the speed test (?check=noelparts) has its twelve parts again, and the Hamlet's layers have a short test of their own (?check=noellayers, nine parts, about two minutes, the card the Hamlet's layers): seventeen parts in one run was too long for a phone at Best.
+
+Since kit 0.69.0 the trial words thru1, thru2 and thru3: the light through the clouds made three cheaper ways (the same picture), and a test that times them side by side (?check=noelthru, six parts, about a minute, the card the Hamlet's light through the clouds).
