@@ -93,3 +93,5 @@ Since kit 0.65.0 the trial word ripple loops the wanderer's ripple at Picture Be
 Since kit 0.66.0 two trial words for the puppets' painting: leanpaint (one kept picture for poses that are drawn the same; the same pictures) and leanedge (their edge working canvases used again; nearly the same picture, for timing).
 
 Since kit 0.67.0 the trial word snowsheet: the falling snow stamped from one sheet of flakes (the same picture as snowstamp), for timing on a phone.
+
+Since kit 0.68.0 the trial words moonbox and moonhalf: the moonlight on the Snowbound Hamlet's clouds made only where its glow reaches (the same picture) and at half size (a shade or two different), for timing on a phone. The speed test (?check=noelparts) has five more parts at its end, for comparison only.
