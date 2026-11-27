@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.59.0';
+  const VERSION = '0.60.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2289,9 +2289,9 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // cloudref (kit 0.52.2, for the Fire's timing): design system 34's Fastest flyers; retired in kit 0.53.0, where they are Fastest's own look.
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),tilecrop:w.includes("tilecrop"),ripple:w.includes("ripple"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
+  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),tilecrop:w.includes("tilecrop"),ripple:w.includes("ripple"),foretrim:w.includes("foretrim"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
 const TRIAL_FL=["look timing T0: Fastest as it is, a plain belt and the gold glass","look timing T1: his light kept, a plain belt and the gold glass","look timing T2: the strong glow and the red glass, its light added","look timing T3: the strong glow and the red glass, its light laid over"];   // kit 0.43.0
-const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
+const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.foretrim&&"the foreground layers trimmed to what is in them",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -4623,10 +4623,11 @@ Object.assign(Scene.prototype,{
     return this.scr;
   },
   tileStart(sc,s){const b=sc.b.getContext("2d");b.setTransform(1,0,0,1,0,0);b.globalCompositeOperation="source-over";b.globalAlpha=1;b.shadowBlur=0;b.shadowColor="transparent";b.clearRect(0,0,sc.w,sc.h);b.setTransform(s,0,0,s,-sc.d,0);this.tdx=sc.d;return b;},   /* kit 0.20.0: shifted by d */
-  tileFinish(sc,i,t0,extra){ // keep the middle of the working canvas: that's the tile (kit 0.58.0: cropped to its band two frames on, tileCrop)
-    const cv=copyInto(poolTake(TWP,sc.h),sc.b,sc.m,TWP,sc.h);
+  tileFinish(sc,i,t0,extra,band){ // keep the middle of the working canvas: that's the tile (kit 0.58.0: cropped to its band two frames on, tileCrop)
+    // (kit 0.60.0: band, [top, height] in pixels: only those rows are kept, known as the tile was drawn; height 0, nothing is kept or drawn)
+    const cv=band?(band[1]?copyBand(poolTake(TWP,band[1]),sc.b,sc.m,band[0],TWP,band[1]):null):copyInto(poolTake(TWP,sc.h),sc.b,sc.m,TWP,sc.h);
     KIT.builds++;KIT.buildMs+=performance.now()-t0;KIT.built=true;this.tdx=0;
-    return Object.assign({cv,i,y0:0,crop:TRIAL.tilecrop?KIT.frame+2:null,bytes:TWP*sc.h*4,fairies:[],eyes:[]},extra||{});
+    return Object.assign({cv,i,y0:band?band[0]:0,crop:TRIAL.tilecrop&&!band?KIT.frame+2:null,bytes:TWP*(band?band[1]:sc.h)*4,fairies:[],eyes:[]},extra||{});
   },
   buildLayerTile(L,i,s,t,tint,o){
     const t0=performance.now(),sc=this.scratch(s),TW=TWP/s,TM=TMP/s,Ws=TW+2*TM,lx=i*TW-TM,b=this.tileStart(sc,s);
@@ -4668,10 +4669,22 @@ Object.assign(Scene.prototype,{
     if(pits0.length){a.setTransform(s,0,0,s,-d,0);for(const q of pits0)pitIce(a,q[0],q[1],lx,cap,G||undefined);}
     b.setTransform(1,0,0,1,0,0);b.globalCompositeOperation="copy";b.drawImage(sc.a,0,0);b.globalCompositeOperation="source-over";
   },
-  fs(ctx,kind,sp,X,Y,k,flip){if(!this.forePass||this.forePass===kind)drawSprite(ctx,sp,X,Y,k,flip);}, // a front-layer sprite: 'g' ground plants, 't' branches from the top
+  // (kit 0.60.0: while a front layer's tile is built with the trial word foretrim, foreB takes the rows its sprites cover: each is one picture
+  // drawn at a known place and size, so nothing need be read back; only sprites that reach into the tile itself count, not its margins)
+  fs(ctx,kind,sp,X,Y,k,flip){if(!this.forePass||this.forePass===kind){drawSprite(ctx,sp,X,Y,k,flip);   // a front-layer sprite: 'g' ground plants, 't' branches from the top
+    const B=this.foreB;if(B){const xa=flip?X-(sp.w-sp.ox)*k:X-sp.ox*k,ya=Y-sp.oy*k;if(xa+sp.w*k>B.x0&&xa<B.x1){if(ya<B.top)B.top=ya;if(ya+sp.h*k>B.bot)B.bot=ya+sp.h*k;}}}},
+  // Kit 0.60.0 (the review's A1, what was left of it; Barney, 27 November 2026: "Yes build trial now"), for now only with the trial word
+  // foretrim: the two front layers, the plants along the bottom and the branches from the top, use 9 to 11% and 0 to 5% of a tile's rows, yet
+  // every tile was kept, and drawn every frame, the screen's whole height. Kit 0.58.0's tilecrop found any tile's rows by reading it back, and
+  // the game waited on the graphics chip (the Pixel: frames of 87 to 131 ms). Here the rows are known as the tile is drawn (foreB), a pixel
+  // spare each side, the height a whole number of 64 as tileBand's (so the pool's canvases fit again); a tile with nothing in it is not kept
   buildForeTile(i,s,t,o,kind){
     const t0=performance.now(),sc=this.scratch(s),TW=TWP/s,TM=TMP/s,b=this.tileStart(sc,s);
-    this.forePass=kind;this.fore(b,s,TW+2*TM,t,i*TW-TM,o);this.forePass=null;
+    const B=this.foreB=TRIAL.foretrim?{x0:TM,x1:TM+TW,top:Infinity,bot:-Infinity}:null;
+    this.forePass=kind;this.fore(b,s,TW+2*TM,t,i*TW-TM,o);this.forePass=null;this.foreB=null;
+    if(B){let y0=0,H=0;const a=Math.max(0,Math.floor(B.top*s)-1),e=Math.min(sc.h,Math.ceil(B.bot*s)+1);
+      if(B.bot>B.top&&e>a){H=Math.min(sc.h,Math.ceil((e-a)/64)*64);y0=Math.min(a,sc.h-H);}
+      return this.tileFinish(sc,i,t0,null,[y0,H]);}
     return this.tileFinish(sc,i,t0);
   },
   kitTiles(key,lx,W,s,build){ // the tiles on screen, built if missing; one more is built ahead when the frame has room

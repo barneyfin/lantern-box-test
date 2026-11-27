@@ -75,3 +75,5 @@ Since kit 0.58.1 the Snowbound Hamlet's snow is drawn as it always was at every 
 Since 0.58.1-r1 the Snowbound Hamlet's speed test runs its two comparison parts (the old monsters, the Gaping Tree) last, so no counted part follows one.
 
 Since kit 0.59.0 the trial word ripple (trial=ripple) makes the wanderer's cloak and belt ripple in a 2-second loop at Fastest and Faster, so his pictures are painted once and kept (off unless asked for), for timing on slow devices.
+
+Since kit 0.60.0 the trial word foretrim (trial=foretrim) keeps the two foreground scenery layers only as tall as their plants and branches (off unless asked for), for timing on slow devices.
