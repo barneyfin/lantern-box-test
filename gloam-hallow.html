@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.68.0';
+  const VERSION = '0.68.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -4839,7 +4839,7 @@ Object.assign(Scene.prototype,{
     // FAR_THRU (0.55); the swarm still goes all the way
     const clp=[];KIT.thruN=0;
     if(this.cache.cl0)for(const d of [0,1]){const cv=this.cache["cl"+d],sp=(d?11:5)*(rm?0.4:1),k=d?0.06:0.03,ox=posmod(t*sp+camX*k,W2);clp.push([cv,ox,k,this.cache["cl"+d+"b"]]);}   // version 11: and its blurred copy
-    const cbH=this.cache.clB&&KIT.thru&&!HAM_OFF.far?Math.max(0,Math.min(ctx.canvas.height,Math.ceil(Math.max(...clp.map(q=>(this.cache.clB+CLOUD_SOFT*2)*s+off(q[2]))))+2)):0;   // version 11: 18 lines deeper, so the blur's lower edge is kept
+    const cbH=this.cache.clB&&KIT.thru&&!HAM_OFF.far&&!HAM_OFF.far12&&!HAM_OFF.thru?Math.max(0,Math.min(ctx.canvas.height,Math.ceil(Math.max(...clp.map(q=>(this.cache.clB+CLOUD_SOFT*2)*s+off(q[2]))))+2)):0;   // version 11: 18 lines deeper, so the blur's lower edge is kept
     const L1x=camX*f(0.12),L1y=off(f(0.12),0.12),L2x=camX*f(0.28),L2y=off(f(0.28),0.28);
     const lit={L1:null,L2:null};
     if(cbH){
@@ -4914,21 +4914,21 @@ Object.assign(Scene.prototype,{
     }
     mb(0);
     if(L.light==="sun"){at(f(0.05),0.05);drawFarRanges(ctx,W,camX,rm,lv);}
-    if(!HAM_OFF.far){this.kitLayer(ctx,s,W,t,L1x,1,tn[0],o,L1y);layOn(lit.L1,FAR_THRU);} /* version 10; version 11: at 0.55 */mb(1);
+    if(!HAM_OFF.far&&!HAM_OFF.far12){this.kitLayer(ctx,s,W,t,L1x,1,tn[0],o,L1y);layOn(lit.L1,FAR_THRU);} /* version 10; version 11: at 0.55 */mb(1);
     if(lv==="storm"){at(0,1);drawRain(ctx,W,t,0,rm);}   // the rain stays put
     if(L.snow&&!HAM_OFF.snow){at(0,1);drawSnow(ctx,W,t,0,rm,SNOW.white.flakeFar);}   // design system 31: the far snow, the same
-    if(!HAM_OFF.far){this.kitLayer(ctx,s,W,t,L2x,2,tn[1],o,L2y);layOn(lit.L2,FAR_THRU);} /* version 10; version 11: at 0.55 */mb(2);
+    if(!HAM_OFF.far&&!HAM_OFF.far12){this.kitLayer(ctx,s,W,t,L2x,2,tn[1],o,L2y);layOn(lit.L2,FAR_THRU);} /* version 10; version 11: at 0.55 */mb(2);
     if(L.light==="sun"){at(0);drawRays(ctx,W,t,rm);}
     at(f(0.34),0.34);KIT.fly=s;
     if(L.fly==="bats")this.kitBacklitLay(ctx,bl.sw);   // design system 33: backlit (was the air colour, and version 10's lit-through-a-cloud)
     else if(L.fly==="crows")drawCrowFlocks(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],0.25)); /* version 9: a quarter towards the air, was tn[1]*0.9 */else drawCrowsAlone(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],tn[1]*0.9),3,false);if(lv==="mist")drawLeaves(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],tn[1]*0.9),0); // version 8
     if(L.sleigh&&!HAM_OFF.sleigh)this.kitBacklitLay(ctx,bl.sl);   // design system 31: the sleigh, ahead of the swarm; 33: backlit
-    KIT.fly=null;if(!HAM_OFF.far)this.kitLayer(ctx,s,W,t,camX*f(0.5),3,tn[2],o,off(f(0.5),0.5));mb(3);KIT.fly=s;
+    KIT.fly=null;if(!HAM_OFF.far&&!HAM_OFF.far34)this.kitLayer(ctx,s,W,t,camX*f(0.5),3,tn[2],o,off(f(0.5),0.5));mb(3);KIT.fly=s;
     at(f(0.62),0.62);
     if(L.fly==="bats")this.kitBacklitLay(ctx,bl.bb);   // kit 0.56.1: none in the hamlet (bigBats:false; Barney, 26 November 2026: "My intention was just to have the sleigh with bats chasing it")   // design system 33: backlit (was the air colour)
     else if(L.fly==="crows")drawCrowsAlone(ctx,W,t,camX*f(0.62),rm,mixc(INK,AIR[lv],tn[2]*0.7),3,true);if(lv==="mist")drawLeaves(ctx,W,t,camX*f(0.62),rm,mixc(INK,AIR[lv],tn[2]*0.78),1); // version 8
     KIT.fly=null;
-    if(!HAM_OFF.far)this.kitLayer(ctx,s,W,t,camX*f(0.76),4,tn[3],o,off(f(0.76),0.76));
+    if(!HAM_OFF.far&&!HAM_OFF.far34)this.kitLayer(ctx,s,W,t,camX*f(0.76),4,tn[3],o,off(f(0.76),0.76));
     // the path: its still parts from tiles, then everything that moves on it (a level's tiles are its own: version 8)
     const pk=o.lvl?"play@"+o.lvl.key:"play";
     if(this.playKey!==pk){for(const k in this.tiles)if(k.startsWith("play"))delete this.tiles[k];this.playKey=pk;}
@@ -8279,7 +8279,7 @@ const CAST_KEPT=new Map(),CAST_KEEP_N=120,CAST_KEEP_FASTER=200;let CAST_SCR=null
 // by its id) for the frame or two until its turn, so when a pose is drawn changes, never what it looks like. At Best and Faster every pose at once
 const CAST_BUDGET=1,CAST_LAST=new Map(),CAST_STATS={};
 // kit 0.50.2, test only (the test page's Hamlet breakdown, after the Fire's Hamlet check): each of the hamlet's costs can be left out, one at a time
-const HAM_OFF={moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false};   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
+const HAM_OFF={moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false};   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
 // kit 0.56.9 (Barney, 26 November 2026: "Faster's puppets follow Fastest's rules ... keeping Faster's sharper picture and glows"): the hamlet's
 // puppets drawn the Fastest way at Faster too (set by world.begin with QUICK; the rest of Faster is as it was); CAST_KEEP_FASTER, 200 kept
 // there (its wind-up toy's key turns: 172 pictures to paint ahead)
@@ -8911,7 +8911,7 @@ function makeTools(env){
     // for the test page's readout
     get stats(){return{cast:Object.assign({},CAST_STATS),tileBytes:KIT.bytes,poses:KIT.poses,first:KIT.first||0,firstOff:!!KIT.dryOff,twins:KIT.twins||0,builds:KIT.builds,thru:KIT.thruN,tints:KIT.tints||0,mdReads:KIT.mdReads||0};},   // kit 0.36.0: tints, mana's colour laid on (a fill, not a repaint); mdReads, a boss's outline read
     _thruCloud(on){KIT.thru=on!==false;},
-    _hamletOff(o){Object.assign(HAM_OFF,{moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false},o||{});},   // kit 0.50.2, test only: the Hamlet breakdown's switches (cast: the old monsters and the tree; kit 0.68.0: far, the four far layers and the light through the clouds on them; clouds, the two cloud layers on the screen; fore, the foreground; vig, the dark edges)   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
+    _hamletOff(o){Object.assign(HAM_OFF,{moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false},o||{});},   // kit 0.50.2, test only: the Hamlet breakdown's switches (cast: the old monsters and the tree; kit 0.68.0: far, the four far layers and the light through the clouds on them; clouds, the two cloud layers on the screen; fore, the foreground; vig, the dark edges; kit 0.68.1: thru, the light through the clouds alone; far12, far layers 1 and 2 and that light; far34, far layers 3 and 4)   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
     get _looks(){return{sil:mvSil,det:mvDet,draw:mvDraw,move:mvMove,rm(v){MV_RM=!!v;},state(){return{red:MV_RED,glass:MV_GLASS,pool:MV_POOL,op:MV_POOLOP,x:MV_POOLX,glow:MV_GLOW,halo:MV_GLOWC,blur:MV_GLOWB,n:MV_GLOWN,strength:GLOW_STRENGTH,lightX:LIGHT_X,ask:LOOK_ASK,pic:LOOK_PIC,fx:LOOK_FX,laid:FAST_LAID,laidX:FAST_LAID_X,lines:MV_GLOWL,kept:MV_LIT.size};}};},   // test only (kit 0.41.0): the wanderer's painting, to set beside the design system's own
     get _legs(){return{legs:moLegs,gait:MO_GAIT,stoop:MO_STOOP,hand:moWalkerHandAt,room:MON_ROOM,box:MON_BOX,scene};},   // test only (kit 0.34.0): the walker's and the ghoul's legs, the stoop and the painter, for measuring where their feet and the stooped arm are and how far each reaches
   };
@@ -13507,8 +13507,9 @@ const wantRotCheck = (lb) => CHECK_ROT || !!(lb.test && lb.test.check && lb.test
 const CHECK_NOEL = /[?&]check=noel\b/.test(location.search);   // The Wretched Noel's play check (the test link's card; step G1, Barney, 25 November 2026)
 // step 4b (Barney, 26 November 2026: the Fire is a target again; "prepare the speed tests and I will do all the tests tonight"): ?check=noelparts,
 // The Wretched Noel's play check with the hamlet's costs left out one at a time, so one run on the Fire shows what each costs in play (the
-// kit's test-only world._hamletOff; the test page's Hamlet breakdown times the scene, this times the game as it is played). Eight legs (twelve since the fight's own breakdown, seventeen since kit 0.68.0; the result's reader took 16 until 0.68.0-r1: see readCheck)
+// kit's test-only world._hamletOff; the test page's Hamlet breakdown times the scene, this times the game as it is played). Eight legs (twelve since the fight's own breakdown; seventeen in kit 0.68.0, twelve again since 0.68.1: see NOEL_LAYERS)
 const CHECK_NOELPARTS = /[?&]check=noelparts\b/.test(location.search);
+const CHECK_NOELLAYERS = /[?&]check=noellayers\b/.test(location.search);   // kit 0.68.1: the hamlet's layers left out one at a time, a short test of its own (NOEL_LAYERS)
 const CHECK_LEGS_MAX = 40, CHECK_TRIALS_MAX = 16;   // 0.68.0-r1: the most legs and trial words a check's result is read with (readCheck)
 // and in each of its legs, how many puppet pictures were painted a second while timed (the kit's count, world.stats.cast): many means the
 // puppets are being painted again and again, few that their cost is in drawing them
@@ -13552,19 +13553,29 @@ const NOEL_PARTS = [
   // monsters paint about 500 pictures of their own, and on the Fire's 0.58.1 run the part straight after them, the boss fight with everything,
   // was the one part that did not pass (38.4 ms drawn in, the next four boss parts 20 to 23). Now nothing that counts follows a comparison;
   // the path's comparison still replays the same stretch (busiest loads the place afresh)
-  // kit 0.68.0 (Barney, 27 November 2026: "Yes build"): where the rest of a frame goes. On his Pixel at Best the four parts above account
-  // for about 7 ms of a 17 ms frame; these leave out the scene's other full-width layers one at a time, on the path, each for comparison
-  // only (not in the game, not in the verdict). After the ten parts that count, so those stay where every earlier run had them, and
-  // first the path with everything once more, timed beside them: by then the device is warmer than it was for the first part
-  { part: 'everything, again', off: {}, compare: true },
+  // (kit 0.68.0 put five more parts here, the scene's layers left out one at a time. Seventeen parts was too long for Barney's Pixel at
+  // Best: from the thirteenth, three and a half minutes in, it slowed with heat and the last five could not be read. Twelve again since
+  // kit 0.68.1, as every run before; the layers have a short test of their own, NOEL_LAYERS)
+  { part: 'the old monsters, not puppets', off: { cast: true }, compare: true },
+  { boss: true, part: 'the Gaping Tree, not the puppet', off: { cast: true }, compare: true },
+];
+// kit 0.68.1 (Barney, 27 November 2026: "Yes build"): ?check=noellayers, where the rest of a frame goes. On his Pixel at Best the path
+// with everything ran 46 fps and without its far layers 62 (drawn in 17.7 and 14.1 ms). Nine parts on the path, about two minutes, to
+// run from cool: everything first and last (they count, and show whether the device slowed in between), and between them the scene's
+// layers left out one at a time, each for comparison only (the kit's test-only world._hamletOff: thru, far12, far34, far, clouds, fore,
+// vig). No light through the clouds leaves the far layers themselves; no far layers 1 and 2 leaves out those two and the light on them
+const NOEL_LAYERS = [
+  { part: 'everything', off: {} },
+  { part: 'no light through the clouds', off: { thru: true }, compare: true },
+  { part: 'no far layers 1 and 2', off: { far12: true }, compare: true },
+  { part: 'no far layers 3 and 4', off: { far34: true }, compare: true },
   { part: 'no far layers', off: { far: true }, compare: true },
   { part: 'no clouds', off: { clouds: true }, compare: true },
   { part: 'no foreground', off: { fore: true }, compare: true },
   { part: 'no dark edges', off: { vig: true }, compare: true },
-  { part: 'the old monsters, not puppets', off: { cast: true }, compare: true },
-  { boss: true, part: 'the Gaping Tree, not the puppet', off: { cast: true }, compare: true },
+  { part: 'everything, again', off: {} },
 ];
-const wantNoelCheck = (lb) => NOEL && (CHECK_NOEL || CHECK_NOELPARTS || !!(lb.test && lb.test.check && lb.test.noel));
+const wantNoelCheck = (lb) => NOEL && (CHECK_NOEL || CHECK_NOELPARTS || CHECK_NOELLAYERS || !!(lb.test && lb.test.check && lb.test.noel));
 // the play check's figures (see the play check, at the end): seconds to settle, to time a leg's frames and to time its drawing, as the
 // test page's speed check (WARM, RUN, LOAD), and at most 6 s of play while its drawing is timed; eight frames a refresh then; 30 ways for
 // each place's encounters to fall; the picture settled once at one level for 3.2 s (10 s at most); 150 walked before a stretch's timing;
@@ -16065,7 +16076,7 @@ function startCheck(g, lb) {
   } else if (noel) {                   // The Wretched Noel's: the hamlet's busiest stretch, then The Sprung Horror alone, with what its run starts with
     g.run = 'noel'; g.p = NOEL_P;
     g.spells = { heal: 1 }; g.spells[g.attack] = 1; g.spellList = ['heal', g.attack];
-    if (CHECK_NOELPARTS) { g.check.parts = true; NOEL_PARTS.forEach((q) => g.check.legs.push({ p: NOEL_P, boss: !!q.boss, n: 0, noel: true, part: q.part, off: q.off, compare: !!q.compare })); }   // step 4b
+    if (CHECK_NOELPARTS || CHECK_NOELLAYERS) { g.check.parts = true; g.check.layers = CHECK_NOELLAYERS; (CHECK_NOELLAYERS ? NOEL_LAYERS : NOEL_PARTS).forEach((q) => g.check.legs.push({ p: NOEL_P, boss: !!q.boss, n: 0, noel: true, part: q.part, off: q.off, compare: !!q.compare })); }   // step 4b; kit 0.68.1: or its layers
     else g.check.legs.push({ p: NOEL_P, boss: false, n: 0, noel: true }, { p: NOEL_P, boss: true, n: 0, noel: true });
     withSeed(1, () => loadPlace(g, lb, NOEL_P, 0));
   } else {
@@ -16264,7 +16275,7 @@ function finishCheck(g, lb) {
     picture: s.picture, effects: !!s.effects, rm: !!s.reduceMotion, slips: C.slips, picLost: C.picLost, legs: C.res, trials: lb.trials || [] };   // trials: kit 0.20.2
   if (C.rot) res.rot = true;           // The Endless Rot's
   if (C.noel) res.noel = true;         // The Wretched Noel's
-  if (C.parts) { res.parts = true; if (lb.world._hamletOff) lb.world._hamletOff({}); }   // step 4b: and its parts, every part back on
+  if (C.parts) { res.parts = true; if (C.layers) res.layers = true; if (lb.world._hamletOff) lb.world._hamletOff({}); }   // step 4b: and its parts, every part back on
   C.result = readCheck(res);
   // 0.68.0-r1: a result its own reader refuses is said on the screen, again every 4 s, and the scene left as it is: before, the run
   // ended in the pause plaque with nothing to say why
@@ -16328,6 +16339,7 @@ function readCheck(o) {
   if (o.rot === true) out.rot = true;
   if (o.noel === true) out.noel = true;
   if (o.parts === true) out.parts = true;
+  if (o.layers === true) out.layers = true;   // kit 0.68.1: the layers' test
   return out;
 }
 function checkShown(lb) {
@@ -16351,7 +16363,7 @@ const computerPass = (res) => playLegs(res).every((r) => r.fps >= 58);
 function checkText(lb, res) {
   const lvl = res.legs[res.legs.length - 1].level;
   const lines = [
-    'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : res.noel ? ', ' + NOEL_RUN.name + (res.parts ? ', its parts' : '') : '') + ', ' + res.day + ', kit ' + res.kit,
+    'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : res.noel ? ', ' + NOEL_RUN.name + (res.layers ? ', its layers' : res.parts ? ', its parts' : '') : '') + ', ' + res.day + ', kit ' + res.kit,
     res.device + ' · ' + res.width + ' × ' + res.height + ' at ' + res.k.toFixed(2) + '× · ' + res.lines + ' lines wide · Picture ' + PICTURE_NAMES[res.picture] +
       (lvl ? ' (' + PICTURE_NAMES[lvl] + ')' : '') + (res.effects ? '' : ' · effects off') + (res.rm ? ' · reduce motion' : '') + (res.slips ? ' · ' + res.slips + ' falls' : '') +
       (res.picLost ? ' · the picture was lost ' + res.picLost + (res.picLost === 1 ? ' time' : ' times') : '') +
@@ -16365,7 +16377,7 @@ function checkText(lb, res) {
 }
 // the result on the title (the plaque built from the kit's parts): each place's path and boss, the targets, and the ways to send it
 function checkPlaque(lb, ui, res, inRun) {   // inRun (5f-2): over the paused scene, so Close leaves the run
-  const phone = ui.phone, text = checkText(lb, res), subject = 'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : res.noel ? ', ' + NOEL_RUN.name + (res.parts ? ', its parts' : '') : '');
+  const phone = ui.phone, text = checkText(lb, res), subject = 'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : res.noel ? ', ' + NOEL_RUN.name + (res.layers ? ', its layers' : res.parts ? ', its parts' : '') : '');
   const { panel, face } = ui.plaque('gh-ck', 560, 640, phone ? 'gap:6px;padding:12px 16px 12px' : 'gap:10px;padding:18px 20px 14px');
   const head = ui.heading('gh-ck', PLAYTEST ? 'Speed test' : 'Play check');
   const t = ui.el('table', 'lb-scores');

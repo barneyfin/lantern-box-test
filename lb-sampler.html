@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.68.0';
+  const VERSION = '0.68.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -4839,7 +4839,7 @@ Object.assign(Scene.prototype,{
     // FAR_THRU (0.55); the swarm still goes all the way
     const clp=[];KIT.thruN=0;
     if(this.cache.cl0)for(const d of [0,1]){const cv=this.cache["cl"+d],sp=(d?11:5)*(rm?0.4:1),k=d?0.06:0.03,ox=posmod(t*sp+camX*k,W2);clp.push([cv,ox,k,this.cache["cl"+d+"b"]]);}   // version 11: and its blurred copy
-    const cbH=this.cache.clB&&KIT.thru&&!HAM_OFF.far?Math.max(0,Math.min(ctx.canvas.height,Math.ceil(Math.max(...clp.map(q=>(this.cache.clB+CLOUD_SOFT*2)*s+off(q[2]))))+2)):0;   // version 11: 18 lines deeper, so the blur's lower edge is kept
+    const cbH=this.cache.clB&&KIT.thru&&!HAM_OFF.far&&!HAM_OFF.far12&&!HAM_OFF.thru?Math.max(0,Math.min(ctx.canvas.height,Math.ceil(Math.max(...clp.map(q=>(this.cache.clB+CLOUD_SOFT*2)*s+off(q[2]))))+2)):0;   // version 11: 18 lines deeper, so the blur's lower edge is kept
     const L1x=camX*f(0.12),L1y=off(f(0.12),0.12),L2x=camX*f(0.28),L2y=off(f(0.28),0.28);
     const lit={L1:null,L2:null};
     if(cbH){
@@ -4914,21 +4914,21 @@ Object.assign(Scene.prototype,{
     }
     mb(0);
     if(L.light==="sun"){at(f(0.05),0.05);drawFarRanges(ctx,W,camX,rm,lv);}
-    if(!HAM_OFF.far){this.kitLayer(ctx,s,W,t,L1x,1,tn[0],o,L1y);layOn(lit.L1,FAR_THRU);} /* version 10; version 11: at 0.55 */mb(1);
+    if(!HAM_OFF.far&&!HAM_OFF.far12){this.kitLayer(ctx,s,W,t,L1x,1,tn[0],o,L1y);layOn(lit.L1,FAR_THRU);} /* version 10; version 11: at 0.55 */mb(1);
     if(lv==="storm"){at(0,1);drawRain(ctx,W,t,0,rm);}   // the rain stays put
     if(L.snow&&!HAM_OFF.snow){at(0,1);drawSnow(ctx,W,t,0,rm,SNOW.white.flakeFar);}   // design system 31: the far snow, the same
-    if(!HAM_OFF.far){this.kitLayer(ctx,s,W,t,L2x,2,tn[1],o,L2y);layOn(lit.L2,FAR_THRU);} /* version 10; version 11: at 0.55 */mb(2);
+    if(!HAM_OFF.far&&!HAM_OFF.far12){this.kitLayer(ctx,s,W,t,L2x,2,tn[1],o,L2y);layOn(lit.L2,FAR_THRU);} /* version 10; version 11: at 0.55 */mb(2);
     if(L.light==="sun"){at(0);drawRays(ctx,W,t,rm);}
     at(f(0.34),0.34);KIT.fly=s;
     if(L.fly==="bats")this.kitBacklitLay(ctx,bl.sw);   // design system 33: backlit (was the air colour, and version 10's lit-through-a-cloud)
     else if(L.fly==="crows")drawCrowFlocks(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],0.25)); /* version 9: a quarter towards the air, was tn[1]*0.9 */else drawCrowsAlone(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],tn[1]*0.9),3,false);if(lv==="mist")drawLeaves(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],tn[1]*0.9),0); // version 8
     if(L.sleigh&&!HAM_OFF.sleigh)this.kitBacklitLay(ctx,bl.sl);   // design system 31: the sleigh, ahead of the swarm; 33: backlit
-    KIT.fly=null;if(!HAM_OFF.far)this.kitLayer(ctx,s,W,t,camX*f(0.5),3,tn[2],o,off(f(0.5),0.5));mb(3);KIT.fly=s;
+    KIT.fly=null;if(!HAM_OFF.far&&!HAM_OFF.far34)this.kitLayer(ctx,s,W,t,camX*f(0.5),3,tn[2],o,off(f(0.5),0.5));mb(3);KIT.fly=s;
     at(f(0.62),0.62);
     if(L.fly==="bats")this.kitBacklitLay(ctx,bl.bb);   // kit 0.56.1: none in the hamlet (bigBats:false; Barney, 26 November 2026: "My intention was just to have the sleigh with bats chasing it")   // design system 33: backlit (was the air colour)
     else if(L.fly==="crows")drawCrowsAlone(ctx,W,t,camX*f(0.62),rm,mixc(INK,AIR[lv],tn[2]*0.7),3,true);if(lv==="mist")drawLeaves(ctx,W,t,camX*f(0.62),rm,mixc(INK,AIR[lv],tn[2]*0.78),1); // version 8
     KIT.fly=null;
-    if(!HAM_OFF.far)this.kitLayer(ctx,s,W,t,camX*f(0.76),4,tn[3],o,off(f(0.76),0.76));
+    if(!HAM_OFF.far&&!HAM_OFF.far34)this.kitLayer(ctx,s,W,t,camX*f(0.76),4,tn[3],o,off(f(0.76),0.76));
     // the path: its still parts from tiles, then everything that moves on it (a level's tiles are its own: version 8)
     const pk=o.lvl?"play@"+o.lvl.key:"play";
     if(this.playKey!==pk){for(const k in this.tiles)if(k.startsWith("play"))delete this.tiles[k];this.playKey=pk;}
@@ -8279,7 +8279,7 @@ const CAST_KEPT=new Map(),CAST_KEEP_N=120,CAST_KEEP_FASTER=200;let CAST_SCR=null
 // by its id) for the frame or two until its turn, so when a pose is drawn changes, never what it looks like. At Best and Faster every pose at once
 const CAST_BUDGET=1,CAST_LAST=new Map(),CAST_STATS={};
 // kit 0.50.2, test only (the test page's Hamlet breakdown, after the Fire's Hamlet check): each of the hamlet's costs can be left out, one at a time
-const HAM_OFF={moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false};   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
+const HAM_OFF={moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false};   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
 // kit 0.56.9 (Barney, 26 November 2026: "Faster's puppets follow Fastest's rules ... keeping Faster's sharper picture and glows"): the hamlet's
 // puppets drawn the Fastest way at Faster too (set by world.begin with QUICK; the rest of Faster is as it was); CAST_KEEP_FASTER, 200 kept
 // there (its wind-up toy's key turns: 172 pictures to paint ahead)
@@ -8911,7 +8911,7 @@ function makeTools(env){
     // for the test page's readout
     get stats(){return{cast:Object.assign({},CAST_STATS),tileBytes:KIT.bytes,poses:KIT.poses,first:KIT.first||0,firstOff:!!KIT.dryOff,twins:KIT.twins||0,builds:KIT.builds,thru:KIT.thruN,tints:KIT.tints||0,mdReads:KIT.mdReads||0};},   // kit 0.36.0: tints, mana's colour laid on (a fill, not a repaint); mdReads, a boss's outline read
     _thruCloud(on){KIT.thru=on!==false;},
-    _hamletOff(o){Object.assign(HAM_OFF,{moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false},o||{});},   // kit 0.50.2, test only: the Hamlet breakdown's switches (cast: the old monsters and the tree; kit 0.68.0: far, the four far layers and the light through the clouds on them; clouds, the two cloud layers on the screen; fore, the foreground; vig, the dark edges)   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
+    _hamletOff(o){Object.assign(HAM_OFF,{moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false},o||{});},   // kit 0.50.2, test only: the Hamlet breakdown's switches (cast: the old monsters and the tree; kit 0.68.0: far, the four far layers and the light through the clouds on them; clouds, the two cloud layers on the screen; fore, the foreground; vig, the dark edges; kit 0.68.1: thru, the light through the clouds alone; far12, far layers 1 and 2 and that light; far34, far layers 3 and 4)   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
     get _looks(){return{sil:mvSil,det:mvDet,draw:mvDraw,move:mvMove,rm(v){MV_RM=!!v;},state(){return{red:MV_RED,glass:MV_GLASS,pool:MV_POOL,op:MV_POOLOP,x:MV_POOLX,glow:MV_GLOW,halo:MV_GLOWC,blur:MV_GLOWB,n:MV_GLOWN,strength:GLOW_STRENGTH,lightX:LIGHT_X,ask:LOOK_ASK,pic:LOOK_PIC,fx:LOOK_FX,laid:FAST_LAID,laidX:FAST_LAID_X,lines:MV_GLOWL,kept:MV_LIT.size};}};},   // test only (kit 0.41.0): the wanderer's painting, to set beside the design system's own
     get _legs(){return{legs:moLegs,gait:MO_GAIT,stoop:MO_STOOP,hand:moWalkerHandAt,room:MON_ROOM,box:MON_BOX,scene};},   // test only (kit 0.34.0): the walker's and the ghoul's legs, the stoop and the painter, for measuring where their feet and the stooped arm are and how far each reaches
   };

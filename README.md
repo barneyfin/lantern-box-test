@@ -97,3 +97,5 @@ Since kit 0.67.0 the trial word snowsheet: the falling snow stamped from one she
 Since kit 0.68.0 the trial words moonbox and moonhalf: the moonlight on the Snowbound Hamlet's clouds made only where its glow reaches (the same picture) and at half size (a shade or two different), for timing on a phone. The speed test (?check=noelparts) has five more parts at its end, for comparison only.
 
 0.68.0-r1: the speed test's result is read with up to 40 parts (with seventeen, 0.68.0's test ended in a pause with no result).
+
+Since kit 0.68.1 the speed test (?check=noelparts) has its twelve parts again, and the Hamlet's layers have a short test of their own (?check=noellayers, nine parts, about two minutes, the card the Hamlet's layers): seventeen parts in one run was too long for a phone at Best.
