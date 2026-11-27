@@ -71,3 +71,5 @@ Since kit 0.57.1 the Snowbound Hamlet's sleigh is always drawn from kept picture
 Since kit 0.58.0 the trial word tilecrop keeps each scenery tile only as tall as what is drawn in it (off unless asked for), for timing on slow devices.
 
 Since kit 0.58.1 the Snowbound Hamlet's snow is drawn as it always was at every setting (stamped only with trial=snowstamp), and its speed test finishes painting the puppets ahead before its first part is timed.
+
+Since 0.58.1-r1 the Snowbound Hamlet's speed test runs its two comparison parts (the old monsters, the Gaping Tree) last, so no counted part follows one.

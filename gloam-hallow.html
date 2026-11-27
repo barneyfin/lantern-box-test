@@ -13361,7 +13361,6 @@ const NOEL_PARTS = [
   { part: 'no falling snow', off: { snow: true } },
   { part: 'no sleigh', off: { sleigh: true } },
   { part: "no snowmen's eyes", off: { eyes: true } },
-  { part: 'the old monsters, not puppets', off: { cast: true }, compare: true },   // (compare: for comparison only, not in the game, so not in the verdict)
   { boss: true, part: 'everything', off: {} },
   // the boss fight's own breakdown (Barney, 26 November 2026, "add it": on 0.56.6 the Fire's fight ran 28 fps with the puppet and 29 with the old
   // tree, its arena the cost, not the boss)
@@ -13369,6 +13368,11 @@ const NOEL_PARTS = [
   { boss: true, part: 'no falling snow', off: { snow: true } },
   { boss: true, part: 'no sleigh', off: { sleigh: true } },
   { boss: true, part: "no snowmen's eyes", off: { eyes: true } },
+  // (compare: for comparison only, not in the game, so not in the verdict.) Both last since 27 November 2026 (Barney: "Yes, both"): the old
+  // monsters paint about 500 pictures of their own, and on the Fire's 0.58.1 run the part straight after them, the boss fight with everything,
+  // was the one part that did not pass (38.4 ms drawn in, the next four boss parts 20 to 23). Now nothing that counts follows a comparison;
+  // the path's comparison still replays the same stretch (busiest loads the place afresh)
+  { part: 'the old monsters, not puppets', off: { cast: true }, compare: true },
   { boss: true, part: 'the Gaping Tree, not the puppet', off: { cast: true }, compare: true },
 ];
 const wantNoelCheck = (lb) => NOEL && (CHECK_NOEL || CHECK_NOELPARTS || !!(lb.test && lb.test.check && lb.test.noel));
