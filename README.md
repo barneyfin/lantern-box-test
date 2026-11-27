@@ -83,3 +83,5 @@ Since kit 0.61.0 two trial words for Picture: Automatic: auto33 (trial=auto33) s
 Since kit 0.62.0 the trial word sky (trial=sky) cuts the sky's drawing each frame where nothing shows: the clouds over their own rows only, their soft edge from a copy made once, and the Snowbound Hamlet's moonlight kept until a cloud has moved a pixel.
 
 Kit 0.62.1: the sky trial reads each cloud picture back once as a place is made ready, not twice; the same picture.
+
+Since kit 0.63.0 the trial word bestlite (trial=bestlite), for timing only: at Picture Best the Snowbound Hamlet's monsters and boss are painted as at Faster (their simpler moves show), to see what painting costs a phone at Best.
