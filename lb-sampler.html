@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.58.0';
+  const VERSION = '0.58.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -3457,9 +3457,10 @@ function snowFlakes(layer,n,S){if(S.F&&S.F.length===n)return S.F;const H=LH+20,F
 function drawSnow(x,W,t,layer,rm,col){ // falling snow in two depths, as the rain is; sparser and straight down under Reduce motion
   // kit 0.56.5 (step 4b; the Fire's Hamlet check: the snow about 3 ms a frame; Barney: "lighter snow"): half as many flakes at Fastest, falling and drifting as before
   const n=Math.round(W*(layer?0.07:0.16)*(rm||QUICK?0.5:1)),sp=(layer?62:34)*(rm?0.6:1),H=LH+20,span=W+140;
-  // kit 0.57.1: stamped at Best and Faster (the computer: the hamlet's drawing a quarter quicker there); at Fastest, where half the flakes fall, as
-  // before (the Fire's check: stamping them saved nothing there), unless the trial word snowstamp asks
-  if(TRIAL.snowstamp||!QUICK){const M=x.getTransform(),S=snowSprites(col,layer,M.a),F=snowFlakes(layer,n,S);x.save();x.setTransform(1,0,0,1,0,0);x.globalAlpha=layer?0.9:0.62;   // kit 0.57.0: stamped
+  // kit 0.58.1: only with the trial word snowstamp. Kit 0.57.1 stamped it at Best and Faster on the computer's timing alone (a quarter quicker
+  // there); the Fire's two checks, read again, have every part with snow about 2 ms of work slower stamped and both parts without it unchanged,
+  // and Best and Faster fall twice the flakes. Drawn as it always was, at every setting
+  if(TRIAL.snowstamp){const M=x.getTransform(),S=snowSprites(col,layer,M.a),F=snowFlakes(layer,n,S);x.save();x.setTransform(1,0,0,1,0,0);x.globalAlpha=layer?0.9:0.62;   // kit 0.57.0: stamped
     const sw=rm?0:layer?10:6,dr=rm?0:layer?26:14;
     for(let i=0;i<n;i++){const q=F[i],y=posmod(t*sp*q.v+q.y0,H)-10,x0=posmod(q.x0*span+(sw?Math.sin(t*q.w+q.p)*sw:0)+dr*(y/H),span)-70,B=q.B;
       x.drawImage(B.cv,M.a*x0+M.e-B.P,M.d*y+M.f-B.P);}

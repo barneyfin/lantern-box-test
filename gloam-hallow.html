@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.58.0';
+  const VERSION = '0.58.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -3457,9 +3457,10 @@ function snowFlakes(layer,n,S){if(S.F&&S.F.length===n)return S.F;const H=LH+20,F
 function drawSnow(x,W,t,layer,rm,col){ // falling snow in two depths, as the rain is; sparser and straight down under Reduce motion
   // kit 0.56.5 (step 4b; the Fire's Hamlet check: the snow about 3 ms a frame; Barney: "lighter snow"): half as many flakes at Fastest, falling and drifting as before
   const n=Math.round(W*(layer?0.07:0.16)*(rm||QUICK?0.5:1)),sp=(layer?62:34)*(rm?0.6:1),H=LH+20,span=W+140;
-  // kit 0.57.1: stamped at Best and Faster (the computer: the hamlet's drawing a quarter quicker there); at Fastest, where half the flakes fall, as
-  // before (the Fire's check: stamping them saved nothing there), unless the trial word snowstamp asks
-  if(TRIAL.snowstamp||!QUICK){const M=x.getTransform(),S=snowSprites(col,layer,M.a),F=snowFlakes(layer,n,S);x.save();x.setTransform(1,0,0,1,0,0);x.globalAlpha=layer?0.9:0.62;   // kit 0.57.0: stamped
+  // kit 0.58.1: only with the trial word snowstamp. Kit 0.57.1 stamped it at Best and Faster on the computer's timing alone (a quarter quicker
+  // there); the Fire's two checks, read again, have every part with snow about 2 ms of work slower stamped and both parts without it unchanged,
+  // and Best and Faster fall twice the flakes. Drawn as it always was, at every setting
+  if(TRIAL.snowstamp){const M=x.getTransform(),S=snowSprites(col,layer,M.a),F=snowFlakes(layer,n,S);x.save();x.setTransform(1,0,0,1,0,0);x.globalAlpha=layer?0.9:0.62;   // kit 0.57.0: stamped
     const sw=rm?0:layer?10:6,dr=rm?0:layer?26:14;
     for(let i=0;i<n;i++){const q=F[i],y=posmod(t*sp*q.v+q.y0,H)-10,x0=posmod(q.x0*span+(sw?Math.sin(t*q.w+q.p)*sw:0)+dr*(y/H),span)-70,B=q.B;
       x.drawImage(B.cv,M.a*x0+M.e-B.P,M.d*y+M.f-B.P);}
@@ -13343,10 +13344,14 @@ function noelWarm(g, w, lb) {
   // kit 0.57.1 (Barney, 26 November 2026: "Yes, go ahead"; the Fire's check: its first part still painting 2.5 a second, the card over before the
   // 116 pictures were): while the card is black (0.5 to 1.9 s into it) up to 400 ms a frame, unseen; a slow frame moves the card's clock at most
   // 0.25 s, so on a slow device its black lasts a little longer instead of the painting spilling into play. 40 ms a frame either side of that
+  // kit 0.58.1 (Barney, 27 November 2026: "Yes, both"): the speed test has no place card, so its painting ahead ran one picture a frame into its
+  // first part's timing (its "puppets painted" there, and its long frames, were the test's own). Before a part is timed (settling, the lead in,
+  // the warm up) it paints up to 400 ms a frame, and the test waits for it (checkDraw, g.warmLeft), so its first part is as play after the card
   if (g.mode === 'card') { if (g.cardT0 == null) g.cardT0 = lb.time; } else g.cardT0 = null;
-  const ct = g.cardT0 == null ? -1 : lb.time - g.cardT0, ms = ct < 0 ? 0 : ct >= 0.5 && ct < 1.9 ? 400 : 40, t0 = performance.now();
+  const C = g.check, quiet = !!C && !C.done && (C.phase === 'settle' || C.phase === 'lead' || C.phase === 'warm');
+  const ct = g.cardT0 == null ? -1 : lb.time - g.cardT0, ms = quiet ? 400 : ct < 0 ? 0 : ct >= 0.5 && ct < 1.9 ? 400 : 40, t0 = performance.now();
   const left = w.hamlet.warm(NOEL_WARM, ms);
-  if (g.lastCp >= 3 && (g.mode === 'card' || !left)) w.hamlet.warm(NOEL_BOSS_WARM, ms);
+  g.warmLeft = left + (g.lastCp >= 3 && (g.mode === 'card' || quiet || !left) ? w.hamlet.warm(NOEL_BOSS_WARM, ms) : 0);
   if (performance.now() - t0 > 4) lb.pictureSkip();   // a frame that painted ahead is not one for Picture: Automatic to time
 }
 const castPaints = (lb) => { const st = lb.world.stats; return st && st.cast ? Object.values(st.cast).reduce((a, b) => a + (+b || 0), 0) : 0; };
@@ -16032,10 +16037,11 @@ function checkDraw(ctx, g, lb) {
     const lv = lb.picture.level;
     if (lv !== C.lvl || (C.rot && !rotFull(g))) { C.lvl = lv; C.stable = 0; } else C.stable += gap;   // The Endless Rot's: counted once its arena is full
     C.t += gap;
-    if (C.stable >= (C.rot ? ROT_CHECK.settle : CHECK.settle) * 1000 || C.t >= (C.rot ? ROT_CHECK.settleMax : CHECK.settleMax) * 1000) nextLeg(g, lb);
+    // (kit 0.58.1: The Wretched Noel's waits for its pictures painted ahead too, g.warmLeft, to the same limit)
+    if ((C.stable >= (C.rot ? ROT_CHECK.settle : CHECK.settle) * 1000 && !(C.noel && g.warmLeft)) || C.t >= (C.rot ? ROT_CHECK.settleMax : CHECK.settleMax) * 1000) nextLeg(g, lb);
   } else if (C.phase === 'warm') {
     C.t += gap;
-    if (C.t >= CHECK.warm * 1000) { C.phase = 'run'; C.t = 0; C.cur = { gaps: [], work: [], paint0: C.noel ? castPaints(lb) : null }; }
+    if (C.t >= CHECK.warm * 1000 && (!(C.noel && g.warmLeft) || C.t >= 8000)) { C.phase = 'run'; C.t = 0; C.cur = { gaps: [], work: [], paint0: C.noel ? castPaints(lb) : null }; }   // (kit 0.58.1: not while pictures are still being painted ahead, 8 s at most)
   } else if (C.phase === 'run') {
     C.cur.gaps.push(gap); C.cur.work.push(work); C.t += gap;
     if (C.rot) C.cur.most = Math.max(C.cur.most || 0, rotOut(g));   // The Endless Rot's: the most monsters on screen while timed

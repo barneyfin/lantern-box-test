@@ -69,3 +69,5 @@ Since kit 0.57.0 two trial words time the Snowbound Hamlet's snow and sleigh dra
 Since kit 0.57.1 the Snowbound Hamlet's sleigh is always drawn from kept pictures, its snow stamped at Best and Faster, and its opening card gives the pictures painted ahead more time while it is black.
 
 Since kit 0.58.0 the trial word tilecrop keeps each scenery tile only as tall as what is drawn in it (off unless asked for), for timing on slow devices.
+
+Since kit 0.58.1 the Snowbound Hamlet's snow is drawn as it always was at every setting (stamped only with trial=snowstamp), and its speed test finishes painting the puppets ahead before its first part is timed.
