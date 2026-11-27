@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.70.0';
+  const VERSION = '0.70.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -4958,18 +4958,34 @@ Object.assign(Scene.prototype,{
     const ML=MB0?this.kitMoon(ctx,s,W,W2,key,clp,off,MB0,mw,SH):null;   // kit 0.68.0: the moonlight, made here (kit 0.70.0: in one canvas, or in the light's)
     // kit 0.70.0, test only (world._probe): so many empty working canvases drawn into this frame, each then laid on the screen as one clear
     // pixel, to time what a working canvas costs a device by itself (512 by 256: large enough that the browser draws it with the graphics chip)
-    if(PROBE){const pb=this._pb=this._pb||[];for(let i=0;i<PROBE;i++){const cv=pb[i]=pb[i]||mk(512,256),v=cv.getContext("2d");v.setTransform(1,0,0,1,0,0);v.globalCompositeOperation="source-over";v.globalAlpha=1;v.clearRect(0,0,512,256);v.fillStyle="#fff";v.fillRect(200,100,64,32);}}
+    // Kit 0.70.1 (Barney, 27 November 2026: "Yes build"): his Pixel showed four empty working canvases cost almost nothing, so more probes,
+    // each one thing by itself, to learn what a device charges for. empty: n working canvases of 512 by 256, cleared and a little drawn
+    // in each. big: one working canvas the screen's size, a small part of it cleared and drawn in (does a canvas's size cost?). full:
+    // one the screen's size, cleared and drawn all over (the dark edges' picture: a screen of pixels in a working canvas). over: a clear
+    // picture laid over the whole screen (a screen of pixels on the screen itself; laid below). calls: so many one-pixel drawings on
+    // the screen (the calls themselves; below). None changes the picture: each is laid, or drawn, from clear pixels
+    if(PROBE.empty||PROBE.big||PROBE.full||PROBE.over||PROBE.calls){const cw=ctx.canvas.width,ch=ctx.canvas.height,pv=cv=>{const v=cv.getContext("2d");v.setTransform(1,0,0,1,0,0);v.globalCompositeOperation="source-over";v.globalAlpha=1;return v;};
+      if(PROBE.empty){const pb=this._pb=this._pb||[];for(let i=0;i<PROBE.empty;i++){const cv=pb[i]=pb[i]||mk(512,256),v=pv(cv);v.clearRect(0,0,512,256);v.fillStyle="#fff";v.fillRect(200,100,64,32);}}
+      if(PROBE.big){const v=pv(this._pbB=fitCanvas(this._pbB,cw,ch));v.clearRect(200,100,64,32);v.fillStyle="#fff";v.fillRect(216,108,32,16);}
+      if(PROBE.full){const v=pv(this._pbF=fitCanvas(this._pbF,cw,ch));v.clearRect(0,0,cw,ch);v.drawImage(this.vig,0,0);v.clearRect(0,0,2,2);}
+      if((PROBE.over||PROBE.calls)&&(!this._pbO||this._pbO.width!==cw||this._pbO.height!==ch)){const v=pv(this._pbO=fitCanvas(this._pbO,cw,ch));v.fillStyle="#fff";v.fillRect(0,0,1,1);}}   // (one white pixel in its corner, so it is a painted picture; never laid)
     const bl=this.kitBacklitPrep(ctx,s,lv,off(0),[
-      L.fly==="bats"&&{k:"sw",ty:off(f(0.34),0.34),B:swarmBoxes(W,t,camX*f(0.34),rm),paint:x=>drawSwarm(x,W,t,camX*f(0.34),rm,INK),share:tn[1]*0.9},
-      L.sleigh&&!HAM_OFF.sleigh&&(()=>{const span=W+760,v=rm?26:68,cx=W+380-posmod(t*v+camX*f(0.34),span),cy=205+Math.sin(t*0.45)*18;return{k:"sl",ty:off(f(0.34),0.34),B:[sleighBox(cx-165,cy-2,SLEIGH_K)],paint:x=>sleighKept(x,cx-165,cy-2,SLEIGH_K,INK,t,rm),share:tn[1]*0.9};})(),
-      L.fly==="bats"&&L.bigBats!==false&&{k:"bb",ty:off(f(0.62),0.62),B:bigBatBoxes(W,t,camX*f(0.62),rm),paint:x=>drawBigBats(x,W,t,camX*f(0.62),rm,INK),share:tn[2]*0.7}],cr);
+      L.fly==="bats"&&!HAM_OFF.fly&&{k:"sw",ty:off(f(0.34),0.34),B:swarmBoxes(W,t,camX*f(0.34),rm),paint:x=>drawSwarm(x,W,t,camX*f(0.34),rm,INK),share:tn[1]*0.9},
+      L.sleigh&&!HAM_OFF.sleigh&&!HAM_OFF.fly&&(()=>{const span=W+760,v=rm?26:68,cx=W+380-posmod(t*v+camX*f(0.34),span),cy=205+Math.sin(t*0.45)*18;return{k:"sl",ty:off(f(0.34),0.34),B:[sleighBox(cx-165,cy-2,SLEIGH_K)],paint:x=>sleighKept(x,cx-165,cy-2,SLEIGH_K,INK,t,rm),share:tn[1]*0.9};})(),
+      L.fly==="bats"&&L.bigBats!==false&&!HAM_OFF.fly&&{k:"bb",ty:off(f(0.62),0.62),B:bigBatBoxes(W,t,camX*f(0.62),rm),paint:x=>drawBigBats(x,W,t,camX*f(0.62),rm,INK),share:tn[2]*0.7}],cr);
     ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation="source-over";ctx.drawImage(this.sky,0,off(0));
     const mb=after=>{if(!L.mist)return;L.mist.bands.forEach((b,i)=>{if(b[0]!==after)return;const cv=this.cache.mist[i],k=[0.03,0.12,0.28,0.5][after]*(rm?0.4:1),ox=posmod(t*b[3]*(rm?0.4:1)+camX*k,W2);
       at(k,[0.03,0.12,0.28,0.5][after]);ctx.save();ctx.globalAlpha=b[2];ctx.drawImage(cv,-ox,b[1]-100,W2,200);ctx.drawImage(cv,-ox+W2,b[1]-100,W2,200);ctx.restore();});};
     if(!HAM_OFF.clouds)for(const [cv,ox,k] of clp){at(k);
       if(cv.rows){const hl=cv.rows*LH/cv.height;ctx.drawImage(cv,0,0,cv.width,cv.rows,-ox,0,W2,hl);ctx.drawImage(cv,0,0,cv.width,cv.rows,-ox+W2,0,W2,hl);}   // kit 0.62.0: down to its last row
       else{ctx.drawImage(cv,-ox,0,W2,LH);ctx.drawImage(cv,-ox+W2,0,W2,LH);}}
-    if(PROBE&&this._pb){ctx.save();ctx.setTransform(1,0,0,1,0,0);for(let i=0;i<PROBE&&i<this._pb.length;i++)ctx.drawImage(this._pb[i],0,0,1,1,i,0,1,1);ctx.restore();}   // kit 0.70.0, test only: each probe's clear corner
+    if(PROBE.empty||PROBE.big||PROBE.full||PROBE.over||PROBE.calls){const cw=ctx.canvas.width,ch=ctx.canvas.height;ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalCompositeOperation="source-over";ctx.globalAlpha=1;   // kit 0.70.0, 0.70.1, test only: the probes, each from clear pixels
+      if(PROBE.empty&&this._pb)for(let i=0;i<PROBE.empty&&i<this._pb.length;i++)ctx.drawImage(this._pb[i],0,0,1,1,i,0,1,1);
+      if(PROBE.big&&this._pbB)ctx.drawImage(this._pbB,0,0,1,1,0,0,1,1);
+      if(PROBE.full&&this._pbF)ctx.drawImage(this._pbF,0,0,1,1,0,0,1,1);
+      if(PROBE.over&&this._pbO)ctx.drawImage(this._pbO,1,0,cw-1,ch,1,0,cw-1,ch);
+      if(PROBE.calls&&this._pbO)for(let i=0;i<PROBE.calls;i++)ctx.drawImage(this._pbO,1,1,1,1,i&7,0,1,1);
+      ctx.restore();}
     if(ML){ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalCompositeOperation="screen";   // kit 0.68.0 (moonbox, moonhalf): made before the frame's drawing began (kitMoon), laid here
       if(ML.sh){if(ML.hq<1)ctx.imageSmoothingEnabled=true;ctx.drawImage(ML.MV,ML.sx,0,ML.w,ML.h,ML.x/ML.hq,ML.y/ML.hq,ML.w/ML.hq,ML.h/ML.hq);}   // kit 0.70.0: from its part of the shared canvas
       else if(ML.hq<1){ctx.imageSmoothingEnabled=true;ctx.drawImage(ML.MV,ML.x/ML.hq,ML.y/ML.hq,ML.MV.width/ML.hq,ML.MV.height/ML.hq);}else ctx.drawImage(ML.MV,ML.x,ML.y);ctx.restore();}
@@ -8359,7 +8375,7 @@ const CAST_KEPT=new Map(),CAST_KEEP_N=120,CAST_KEEP_FASTER=200;let CAST_SCR=null
 // by its id) for the frame or two until its turn, so when a pose is drawn changes, never what it looks like. At Best and Faster every pose at once
 const CAST_BUDGET=1,CAST_LAST=new Map(),CAST_STATS={};
 // kit 0.50.2, test only (the test page's Hamlet breakdown, after the Fire's Hamlet check): each of the hamlet's costs can be left out, one at a time
-const HAM_OFF={moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false};let THRU_WAY=null,MOON_WAY=null,PROBE=0;   // kit 0.69.0, test only: the way the light through the clouds is made (0 to 4), or null for the trial word's; kit 0.70.0: the moonlight's (0 to 2), and how many empty working canvases a frame draws into   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
+const HAM_OFF={moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false,fly:false};let THRU_WAY=null,MOON_WAY=null,PROBE={empty:0,big:0,full:0,over:0,calls:0};   // kit 0.69.0, test only: the way the light through the clouds is made (0 to 4), or null for the trial word's; kit 0.70.0: the moonlight's (0 to 2), and how many empty working canvases a frame draws into   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
 // kit 0.56.9 (Barney, 26 November 2026: "Faster's puppets follow Fastest's rules ... keeping Faster's sharper picture and glows"): the hamlet's
 // puppets drawn the Fastest way at Faster too (set by world.begin with QUICK; the rest of Faster is as it was); CAST_KEEP_FASTER, 200 kept
 // there (its wind-up toy's key turns: 172 pictures to paint ahead)
@@ -8993,8 +9009,8 @@ function makeTools(env){
     _thruCloud(on){KIT.thru=on!==false;},
     _thruWay(n){THRU_WAY=n==null?null:Math.max(0,Math.min(4,n|0));},
     _moonWay(n){MOON_WAY=n==null?null:Math.max(0,Math.min(2,n|0));},   // kit 0.70.0, test only: the moonlight in two canvases (0), one (1) or the light's (2), whatever the trial words; null gives it back
-    _probe(n){PROBE=Math.max(0,Math.min(16,n|0));},   // kit 0.70.0, test only: so many empty working canvases a frame (kitBegin)   // kit 0.69.0, test only: the light through the clouds made the nth way (kitBegin), whatever the trial word; null gives it back
-    _hamletOff(o){Object.assign(HAM_OFF,{moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false},o||{});},   // kit 0.50.2, test only: the Hamlet breakdown's switches (cast: the old monsters and the tree; kit 0.68.0: far, the four far layers and the light through the clouds on them; clouds, the two cloud layers on the screen; fore, the foreground; vig, the dark edges; kit 0.68.1: thru, the light through the clouds alone; far12, far layers 1 and 2 and that light; far34, far layers 3 and 4)   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
+    _probe(v){PROBE=Object.assign({empty:0,big:0,full:0,over:0,calls:0},typeof v==="number"?{empty:Math.max(0,Math.min(16,v|0))}:v||{});},   // kit 0.70.0, test only: so many empty working canvases a frame (kitBegin); kit 0.70.1: or {empty, big, full, over, calls}   // kit 0.69.0, test only: the light through the clouds made the nth way (kitBegin), whatever the trial word; null gives it back
+    _hamletOff(o){Object.assign(HAM_OFF,{moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false,fly:false},o||{});},   // kit 0.50.2, test only: the Hamlet breakdown's switches (cast: the old monsters and the tree; kit 0.68.0: far, the four far layers and the light through the clouds on them; clouds, the two cloud layers on the screen; fore, the foreground; vig, the dark edges; kit 0.68.1: thru, the light through the clouds alone; far12, far layers 1 and 2 and that light; far34, far layers 3 and 4; kit 0.70.1: fly, every backlit flyer, the sleigh and the bats, so their three working canvases are not drawn into)   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
     get _looks(){return{sil:mvSil,det:mvDet,draw:mvDraw,move:mvMove,rm(v){MV_RM=!!v;},state(){return{red:MV_RED,glass:MV_GLASS,pool:MV_POOL,op:MV_POOLOP,x:MV_POOLX,glow:MV_GLOW,halo:MV_GLOWC,blur:MV_GLOWB,n:MV_GLOWN,strength:GLOW_STRENGTH,lightX:LIGHT_X,ask:LOOK_ASK,pic:LOOK_PIC,fx:LOOK_FX,laid:FAST_LAID,laidX:FAST_LAID_X,lines:MV_GLOWL,kept:MV_LIT.size};}};},   // test only (kit 0.41.0): the wanderer's painting, to set beside the design system's own
     get _legs(){return{legs:moLegs,gait:MO_GAIT,stoop:MO_STOOP,hand:moWalkerHandAt,room:MON_ROOM,box:MON_BOX,scene};},   // test only (kit 0.34.0): the walker's and the ghoul's legs, the stoop and the painter, for measuring where their feet and the stooped arm are and how far each reaches
   };
@@ -13594,6 +13610,7 @@ const CHECK_NOEL = /[?&]check=noel\b/.test(location.search);   // The Wretched N
 const CHECK_NOELPARTS = /[?&]check=noelparts\b/.test(location.search);
 const CHECK_NOELLAYERS = /[?&]check=noellayers\b/.test(location.search);   // kit 0.68.1: the hamlet's layers left out one at a time, a short test of its own (NOEL_LAYERS)
 const CHECK_NOELTHRU = /[?&]check=noelthru\b/.test(location.search);   // kit 0.69.0: the light through the clouds made three cheaper ways, side by side (NOEL_THRU)
+const CHECK_NOELCOST = /[?&]check=noelcost\b/.test(location.search);   // kit 0.70.1: what a device charges for, one thing a part (NOEL_COST)
 const CHECK_LEGS_MAX = 40, CHECK_TRIALS_MAX = 16;   // 0.68.0-r1: the most legs and trial words a check's result is read with (readCheck)
 // and in each of its legs, how many puppet pictures were painted a second while timed (the kit's count, world.stats.cast): many means the
 // puppets are being painted again and again, few that their cost is in drawing them
@@ -13675,7 +13692,21 @@ const NOEL_THRU = [
   { part: 'no light through the clouds', off: { thru: true }, way: 0, moon: 0, compare: true },
   { part: 'everything, again', off: {}, way: 0, moon: 0 },
 ];
-const wantNoelCheck = (lb) => NOEL && (CHECK_NOEL || CHECK_NOELPARTS || CHECK_NOELLAYERS || CHECK_NOELTHRU || !!(lb.test && lb.test.check && lb.test.noel));
+// kit 0.70.1 (Barney, 27 November 2026: "Yes build"): ?check=noelcost, what a device charges for. His Pixel's run of 0.70.0 showed
+// Claude's reading (a millisecond for each working canvas) wrong: four empty ones cost 0.2 ms together. So probes, each adding one thing
+// to everything on the same stretch (the kit's test-only world._probe; none changes the picture), and one real part: no backlit
+// flyers at all, the sleigh and its bats, whose three screen-sized working canvases no part has taken away before. Everything first
+// and last, as it is made now; the five between are for comparison only. To run from cool
+const NOEL_COST = [
+  { part: 'everything', off: {}, way: 0, moon: 0 },
+  { part: 'a screen-sized canvas, a small drawing', off: {}, way: 0, moon: 0, probe: { big: 1 }, compare: true },
+  { part: 'a screen-sized canvas drawn all over', off: {}, way: 0, moon: 0, probe: { full: 1 }, compare: true },
+  { part: 'a clear picture over the whole screen', off: {}, way: 0, moon: 0, probe: { over: 1 }, compare: true },
+  { part: 'four hundred tiny drawings', off: {}, way: 0, moon: 0, probe: { calls: 400 }, compare: true },
+  { part: 'no sleigh or bats', off: { fly: true }, way: 0, moon: 0, compare: true },
+  { part: 'everything, again', off: {}, way: 0, moon: 0 },
+];
+const wantNoelCheck = (lb) => NOEL && (CHECK_NOEL || CHECK_NOELPARTS || CHECK_NOELLAYERS || CHECK_NOELTHRU || CHECK_NOELCOST || !!(lb.test && lb.test.check && lb.test.noel));
 // the play check's figures (see the play check, at the end): seconds to settle, to time a leg's frames and to time its drawing, as the
 // test page's speed check (WARM, RUN, LOAD), and at most 6 s of play while its drawing is timed; eight frames a refresh then; 30 ways for
 // each place's encounters to fall; the picture settled once at one level for 3.2 s (10 s at most); 150 walked before a stretch's timing;
@@ -16176,7 +16207,7 @@ function startCheck(g, lb) {
   } else if (noel) {                   // The Wretched Noel's: the hamlet's busiest stretch, then The Sprung Horror alone, with what its run starts with
     g.run = 'noel'; g.p = NOEL_P;
     g.spells = { heal: 1 }; g.spells[g.attack] = 1; g.spellList = ['heal', g.attack];
-    if (CHECK_NOELPARTS || CHECK_NOELLAYERS || CHECK_NOELTHRU) { g.check.parts = true; g.check.layers = CHECK_NOELLAYERS; g.check.light = CHECK_NOELTHRU; (CHECK_NOELTHRU ? NOEL_THRU : CHECK_NOELLAYERS ? NOEL_LAYERS : NOEL_PARTS).forEach((q) => g.check.legs.push({ p: NOEL_P, boss: !!q.boss, n: 0, noel: true, part: q.part, off: q.off, way: q.way, moon: q.moon, probe: q.probe, compare: !!q.compare })); }   // step 4b; kit 0.68.1: or its layers; kit 0.69.0: or its light through the clouds
+    if (CHECK_NOELPARTS || CHECK_NOELLAYERS || CHECK_NOELTHRU || CHECK_NOELCOST) { g.check.parts = true; g.check.layers = CHECK_NOELLAYERS; g.check.light = CHECK_NOELTHRU; g.check.cost = CHECK_NOELCOST; (CHECK_NOELCOST ? NOEL_COST : CHECK_NOELTHRU ? NOEL_THRU : CHECK_NOELLAYERS ? NOEL_LAYERS : NOEL_PARTS).forEach((q) => g.check.legs.push({ p: NOEL_P, boss: !!q.boss, n: 0, noel: true, part: q.part, off: q.off, way: q.way, moon: q.moon, probe: q.probe, compare: !!q.compare })); }   // step 4b; kit 0.68.1: or its layers; kit 0.69.0: or its light through the clouds
     else g.check.legs.push({ p: NOEL_P, boss: false, n: 0, noel: true }, { p: NOEL_P, boss: true, n: 0, noel: true });
     withSeed(1, () => loadPlace(g, lb, NOEL_P, 0));
   } else {
@@ -16377,7 +16408,7 @@ function finishCheck(g, lb) {
     picture: s.picture, effects: !!s.effects, rm: !!s.reduceMotion, slips: C.slips, picLost: C.picLost, legs: C.res, trials: lb.trials || [] };   // trials: kit 0.20.2
   if (C.rot) res.rot = true;           // The Endless Rot's
   if (C.noel) res.noel = true;         // The Wretched Noel's
-  if (C.parts) { res.parts = true; if (C.layers) res.layers = true; if (C.light) res.light = true; if (lb.world._hamletOff) lb.world._hamletOff({}); if (lb.world._thruWay) lb.world._thruWay(null); if (lb.world._moonWay) { lb.world._moonWay(null); lb.world._probe(0); } }   // step 4b: and its parts, every part back on
+  if (C.parts) { res.parts = true; if (C.layers) res.layers = true; if (C.light) res.light = true; if (C.cost) res.cost = true; if (lb.world._hamletOff) lb.world._hamletOff({}); if (lb.world._thruWay) lb.world._thruWay(null); if (lb.world._moonWay) { lb.world._moonWay(null); lb.world._probe(0); } }   // step 4b: and its parts, every part back on
   C.result = readCheck(res);
   // 0.68.0-r1: a result its own reader refuses is said on the screen, again every 4 s, and the scene left as it is: before, the run
   // ended in the pause plaque with nothing to say why
@@ -16443,6 +16474,7 @@ function readCheck(o) {
   if (o.parts === true) out.parts = true;
   if (o.layers === true) out.layers = true;   // kit 0.68.1: the layers' test
   if (o.light === true) out.light = true;   // kit 0.69.0: the light through the clouds' test
+  if (o.cost === true) out.cost = true;   // kit 0.70.1: the cost test
   return out;
 }
 function checkShown(lb) {
@@ -16466,7 +16498,7 @@ const computerPass = (res) => playLegs(res).every((r) => r.fps >= 58);
 function checkText(lb, res) {
   const lvl = res.legs[res.legs.length - 1].level;
   const lines = [
-    'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : res.noel ? ', ' + NOEL_RUN.name + (res.light ? ', its light through the clouds' : res.layers ? ', its layers' : res.parts ? ', its parts' : '') : '') + ', ' + res.day + ', kit ' + res.kit,
+    'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : res.noel ? ', ' + NOEL_RUN.name + (res.cost ? ', what each thing costs' : res.light ? ', its light through the clouds' : res.layers ? ', its layers' : res.parts ? ', its parts' : '') : '') + ', ' + res.day + ', kit ' + res.kit,
     res.device + ' · ' + res.width + ' × ' + res.height + ' at ' + res.k.toFixed(2) + '× · ' + res.lines + ' lines wide · Picture ' + PICTURE_NAMES[res.picture] +
       (lvl ? ' (' + PICTURE_NAMES[lvl] + ')' : '') + (res.effects ? '' : ' · effects off') + (res.rm ? ' · reduce motion' : '') + (res.slips ? ' · ' + res.slips + ' falls' : '') +
       (res.picLost ? ' · the picture was lost ' + res.picLost + (res.picLost === 1 ? ' time' : ' times') : '') +
@@ -16480,7 +16512,7 @@ function checkText(lb, res) {
 }
 // the result on the title (the plaque built from the kit's parts): each place's path and boss, the targets, and the ways to send it
 function checkPlaque(lb, ui, res, inRun) {   // inRun (5f-2): over the paused scene, so Close leaves the run
-  const phone = ui.phone, text = checkText(lb, res), subject = 'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : res.noel ? ', ' + NOEL_RUN.name + (res.light ? ', its light through the clouds' : res.layers ? ', its layers' : res.parts ? ', its parts' : '') : '');
+  const phone = ui.phone, text = checkText(lb, res), subject = 'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : res.noel ? ', ' + NOEL_RUN.name + (res.cost ? ', what each thing costs' : res.light ? ', its light through the clouds' : res.layers ? ', its layers' : res.parts ? ', its parts' : '') : '');
   const { panel, face } = ui.plaque('gh-ck', 560, 640, phone ? 'gap:6px;padding:12px 16px 12px' : 'gap:10px;padding:18px 20px 14px');
   const head = ui.heading('gh-ck', PLAYTEST ? 'Speed test' : 'Play check');
   const t = ui.el('table', 'lb-scores');
