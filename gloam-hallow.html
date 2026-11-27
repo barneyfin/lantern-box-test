@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.64.0';
+  const VERSION = '0.65.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -7042,7 +7042,8 @@ function mvMove(name,step){const M=MOVES[name];if(!M)throw new Error('Lantern Bo
 // The kit's way: the figure painted once per pose step into cached canvases, its lit edge in one and its ink and colours in the other,
 // so the second of safety's pulse is only the edge's strength; his lantern's pool of light and the glow at his feet drawn every frame.
 let MV_RM=false;                                   // Reduce motion while a figure is painted: his belt tails and cloak ripple less (Barney, 4 November 2026)
-// Kit 0.59.0 (Barney, 27 November 2026: "Build"; the trial word ripple, at Fastest and Faster, not with Reduce motion). His cloak's sway (3) and
+// Kit 0.59.0 (Barney, 27 November 2026: "Build"; the trial word ripple, not with Reduce motion; at Fastest and Faster, and since kit 0.65.0 at
+// Best too: his Pixel at Best ran 48 to 57 fps with nothing painted against 36 to 44, and two thirds of that painting is his). His cloak's sway (3) and
 // hem (9), his belt's tails (7) and the hat's tail (6.3) ran off the frame's clock at speeds that never line up again, so no picture of him was
 // ever drawn twice: 12 painted a second standing, about 21 walking (the Fire, 27 November: about 1.6 ms a frame on the path). In the loop the
 // four turn a whole number of times in 2 seconds (24 steps: pi, 3 pi, 2 pi, 2 pi, so 5% quicker, 5% quicker, 10% slower, the same), and the
@@ -8552,7 +8553,8 @@ function makeTools(env){
       const f=frame("wanderer");o=o||{};
       const name=o.move||(o.walking===false?"idle":"walk"),step=o.step==null?f.t*MV_RATE:o.step,mv=mvMove(name,step);
       const TQ=o.thrown||null,lvl=o.sword?{r:o.sword.reach||0,s:o.sword.bite||0}:null,P0=TQ?TQ.P:mv.P,P=lvl?withLvl(P0,lvl):P0,
-        LP=!!(TRIAL.ripple&&CAST_LITE&&!f.rm),lpn=Math.floor(mv.done?mv.steps-1:step),   // kit 0.59.0: the 2-second loop (see MV_LP), its step his own
+        // kit 0.65.0 (Barney, 27 November 2026, of the side-by-side film: "2 second loop looks fine"): at Best too (it was Fastest and Faster only)
+        LP=!!(TRIAL.ripple&&!f.rm),lpn=Math.floor(mv.done?mv.steps-1:step),   // kit 0.59.0: the 2-second loop (see MV_LP), its step his own
         tq=TRIAL.hero?(mv.done?mv.steps-1:((Math.floor(step)%mv.steps)+mv.steps)%mv.steps)/MV_RATE:LP?(((lpn%MV_LOOP)+MV_LOOP)%MV_LOOP)/MV_RATE:Math.floor(f.t*MV_RATE)/MV_RATE;   // kit 0.20.4: the hero trial
       const c=f.ctx,X=x-f.camX,Y=o.y==null?f.gy(x)+1:o.y,fc=TQ?TQ.f:o.facing||1,e=LV[f.level].edge;
       if(o.pit){const p0=o.pit[0],p1=o.pit[1];c.save();c.beginPath();c.rect(-200,-2000,f.W+400,2000+f.gy(p0)-1);c.rect(p0+3-f.camX,-2000,p1-p0-6,4000);c.clip("nonzero");}
