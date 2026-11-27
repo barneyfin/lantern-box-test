@@ -91,3 +91,5 @@ Since kit 0.64.0 the trial word paintfirst (trial=paintfirst): the monsters', bo
 Since kit 0.65.0 the trial word ripple loops the wanderer's ripple at Picture Best too (it was Faster and Fastest).
 
 Since kit 0.66.0 two trial words for the puppets' painting: leanpaint (one kept picture for poses that are drawn the same; the same pictures) and leanedge (their edge working canvases used again; nearly the same picture, for timing).
+
+Since kit 0.67.0 the trial word snowsheet: the falling snow stamped from one sheet of flakes (the same picture as snowstamp), for timing on a phone.

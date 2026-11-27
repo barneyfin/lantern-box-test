@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.66.0';
+  const VERSION = '0.67.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2289,9 +2289,9 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // cloudref (kit 0.52.2, for the Fire's timing): design system 34's Fastest flyers; retired in kit 0.53.0, where they are Fastest's own look.
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),tilecrop:w.includes("tilecrop"),ripple:w.includes("ripple"),foretrim:w.includes("foretrim"),auto33:w.includes("auto33"),sky:w.includes("sky"),bestlite:w.includes("bestlite"),paintfirst:w.includes("paintfirst"),leanpaint:w.includes("leanpaint"),leanedge:w.includes("leanedge"),autonote:w.includes("autonote"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
+  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),snowsheet:w.includes("snowsheet"),tilecrop:w.includes("tilecrop"),ripple:w.includes("ripple"),foretrim:w.includes("foretrim"),auto33:w.includes("auto33"),sky:w.includes("sky"),bestlite:w.includes("bestlite"),paintfirst:w.includes("paintfirst"),leanpaint:w.includes("leanpaint"),leanedge:w.includes("leanedge"),autonote:w.includes("autonote"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
 const TRIAL_FL=["look timing T0: Fastest as it is, a plain belt and the gold glass","look timing T1: his light kept, a plain belt and the gold glass","look timing T2: the strong glow and the red glass, its light added","look timing T3: the strong glow and the red glass, its light laid over"];   // kit 0.43.0
-const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.foretrim&&"the foreground layers trimmed",TRIAL.auto33&&"Automatic's line at 33 fps, with a note",TRIAL.sky&&"the sky's work each frame cut",TRIAL.bestlite&&"Best paints as Faster does (timing only)",TRIAL.paintfirst&&"pictures painted before a frame draws",TRIAL.leanpaint&&"one picture for puppets drawn the same",TRIAL.leanedge&&"the puppets' edge canvases used again",TRIAL.autonote&&!TRIAL.auto33&&"Automatic says when it steps down",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
+const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.snowsheet&&"the snow stamped from one sheet",TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.foretrim&&"the foreground layers trimmed",TRIAL.auto33&&"Automatic's line at 33 fps, with a note",TRIAL.sky&&"the sky's work each frame cut",TRIAL.bestlite&&"Best paints as Faster does (timing only)",TRIAL.paintfirst&&"pictures painted before a frame draws",TRIAL.leanpaint&&"one picture for puppets drawn the same",TRIAL.leanedge&&"the puppets' edge canvases used again",TRIAL.autonote&&!TRIAL.auto33&&"Automatic says when it steps down",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -3449,6 +3449,14 @@ function snowSprites(col,layer,s){const k=col+"|"+layer+"|"+s;let S=SNOW_ST.get(
   const r0=layer?1.2:0.7,r1=layer?2.7:1.6,NB=8;S={r0,r1,NB,b:[]};
   for(let i=0;i<NB;i++){const rr=r0+(i+0.5)*(r1-r0)/NB,P=Math.ceil(rr*s)+2,cv=mk(P*2,P*2),q=cv.getContext("2d");q.fillStyle=col;q.beginPath();q.arc(P,P,rr*s,0,Math.PI*2);q.fill();S.b.push({cv,P});}
   SNOW_ST.set(k,S);return S;}
+// Kit 0.67.0 (Barney, 27 November 2026: "Yes build"), the trial word snowsheet. His Pixel at Best: leaving the falling snow out gave 10 fps
+// on the hamlet's path and 7 in the fight, more than any other part of the scene and more than all the puppets' painting; stamped (snowstamp)
+// it cost about a third less, but each flake is then drawn from one of 16 small canvases, a different picture for the graphics chip from one
+// flake to the next. With snowsheet a depth's eight stamps are copied side by side into one canvas (snowSheet; B.sx, where each begins) and
+// every flake is drawn from its part of that, so a depth's flakes are one picture's. The same stamps in the same places: a stamp keeps its
+// 2 clear pixels all round, so nothing of its neighbour is drawn with it
+function snowSheet(S){if(S.sheet)return S.sheet;let W=0,H=0;for(const B of S.b){B.sx=W;W+=B.P*2;H=Math.max(H,B.P*2);}
+  const cv=mk(W,H),q=cv.getContext("2d");for(const B of S.b)q.drawImage(B.cv,B.sx,0);S.sheet=cv;return cv;}
 // each flake's own numbers (where it starts, how fast it falls and sways, its size's stamp), worked out once for its depth and count
 function snowFlakes(layer,n,S){if(S.F&&S.F.length===n)return S.F;const H=LH+20,F=[];
   for(let i=0;i<n;i++){const a=hsh(107,i,layer),b=hsh(109,i,layer),r1=(a&4095)/4095,r2=((a>>>12)&4095)/4095,r3=(b&4095)/4095,r4=((b>>>12)&4095)/4095,rad=layer?1.2+r4*1.5:0.7+r2*0.9;
@@ -3460,10 +3468,10 @@ function drawSnow(x,W,t,layer,rm,col){ // falling snow in two depths, as the rai
   // kit 0.58.1: only with the trial word snowstamp. Kit 0.57.1 stamped it at Best and Faster on the computer's timing alone (a quarter quicker
   // there); the Fire's two checks, read again, have every part with snow about 2 ms of work slower stamped and both parts without it unchanged,
   // and Best and Faster fall twice the flakes. Drawn as it always was, at every setting
-  if(TRIAL.snowstamp){const M=x.getTransform(),S=snowSprites(col,layer,M.a),F=snowFlakes(layer,n,S);x.save();x.setTransform(1,0,0,1,0,0);x.globalAlpha=layer?0.9:0.62;   // kit 0.57.0: stamped
+  if(TRIAL.snowstamp||TRIAL.snowsheet){const M=x.getTransform(),S=snowSprites(col,layer,M.a),F=snowFlakes(layer,n,S),SH=TRIAL.snowsheet?snowSheet(S):null;x.save();x.setTransform(1,0,0,1,0,0);x.globalAlpha=layer?0.9:0.62;   // kit 0.57.0: stamped; kit 0.67.0: from one sheet
     const sw=rm?0:layer?10:6,dr=rm?0:layer?26:14;
     for(let i=0;i<n;i++){const q=F[i],y=posmod(t*sp*q.v+q.y0,H)-10,x0=posmod(q.x0*span+(sw?Math.sin(t*q.w+q.p)*sw:0)+dr*(y/H),span)-70,B=q.B;
-      x.drawImage(B.cv,M.a*x0+M.e-B.P,M.d*y+M.f-B.P);}
+      if(SH)x.drawImage(SH,B.sx,0,B.P*2,B.P*2,M.a*x0+M.e-B.P,M.d*y+M.f-B.P,B.P*2,B.P*2);else x.drawImage(B.cv,M.a*x0+M.e-B.P,M.d*y+M.f-B.P);}
     x.restore();return;}
   x.save();x.fillStyle=col;x.globalAlpha=layer?0.9:0.62;x.beginPath();
   for(let i=0;i<n;i++){
@@ -3576,7 +3584,12 @@ function drawCastRig(ctx,X,Y,opt){
   // picture, where each call made two new ones: a monster's picture made 3 to 4 canvases, The Sprung Horror's 13. Only T's part of them is used,
   // and the blur is clipped to it: unclipped, the edge came out wrong by up to 240 shades. Clipped it is nearly the picture as painted with new
   // canvases, not quite: about 11 pixels a frame differ, by up to 11 shades in 255 (a pair made exactly T's size differs the same, so it is the
-  // blur of a part of a canvas, not the size). For timing: whether making canvases is what a puppet's painting costs a phone)
+  // blur of a part of a canvas, not the size). For timing: whether making canvases is what a puppet's painting costs a phone.
+  // Kit 0.67.0, on trying to make it exact: it is the using again itself, not the blur. A pair of exactly T's size drawn whole, a pair with its
+  // width set again (a canvas wiped as new) and a pair reset all give this same picture, in every frame; D2 alone used again gives it, D alone
+  // gives a third of it; with the boss and without. So it is not the blur, the clip, the size or anything left in a canvas, and there is
+  // nothing here to put right; in a small test of one shape a pair used again painted as a new one does, to the pixel. The cause was not
+  // found. Left as built)
   const innerEdge=(list,rad)=>{const TW=T.width,TH=T.height,LP=TRIAL.leanedge,S2=LP?castEdgePair(TW,TH):null,D=LP?S2.D:mk(TW,TH),dc=D.getContext("2d");
     if(LP){dc.setTransform(1,0,0,1,0,0);dc.globalCompositeOperation="source-over";dc.globalAlpha=1;dc.clearRect(0,0,D.width,D.height);}
     dc.fillStyle=INK;dc.fillRect(0,0,TW,TH);dc.globalCompositeOperation="destination-out";dc.setTransform(s,0,0,s,ox*s,oy*s);
