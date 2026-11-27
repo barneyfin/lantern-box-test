@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.58.1';
+  const VERSION = '0.59.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2289,9 +2289,9 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // cloudref (kit 0.52.2, for the Fire's timing): design system 34's Fastest flyers; retired in kit 0.53.0, where they are Fastest's own look.
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),tilecrop:w.includes("tilecrop"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
+  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),tilecrop:w.includes("tilecrop"),ripple:w.includes("ripple"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
 const TRIAL_FL=["look timing T0: Fastest as it is, a plain belt and the gold glass","look timing T1: his light kept, a plain belt and the gold glass","look timing T2: the strong glow and the red glass, its light added","look timing T3: the strong glow and the red glass, its light laid over"];   // kit 0.43.0
-const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
+const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -6661,13 +6661,13 @@ function mvRunes(x,G,P){const n=(P.lvl&&P.lvl.s)||0;if(!n||!P.sword)return;const
 function mvBoot(x,A,a){x.save();x.translate(A[0],A[1]);x.rotate(a);wPoly(x,[[-2.6,-2.5],[2.2,-2.5],[5.6,1.6],[5.6,3.6],[-3,3.6]]);x.restore();}
 function mvCloak(x,G,P,tq){
   const sh=G.T(0,-31),dx=(sh[0]-P.hx)*0.5,avail=-1.6-P.hy,want=20*P.hem,pool=Math.max(0,want-avail),dep=Math.min(want,avail),fl=P.flut;
-  const top1=G.T(-8.5,-31),top2=G.T(8.5,-31),fc=G.T(8.6,-11),bc=G.T(-10.5-P.bil*0.8-P.flare*0.3,-11),sw=Math.sin(tq*(MV_RM?1.4:3))*(MV_RM?0.6:1.8); /* the kit: calmer with Reduce motion */
+  const top1=G.T(-8.5,-31),top2=G.T(8.5,-31),fc=G.T(8.6,-11),bc=G.T(-10.5-P.bil*0.8-P.flare*0.3,-11),sw=Math.sin(tq*(MV_RM?1.4:MV_LP?Math.PI:3))*(MV_RM?0.6:1.8); /* the kit: calmer with Reduce motion; kit 0.59.0: MV_LP, once round in the 2-second loop */
   const fa=G.legs[1].A,fo=Math.max(0,fa[0]+4-(P.hx+dx+12.5)),ba=G.legs[0].A,bo=Math.max(0,(P.hx+dx-19-P.bil*1.4-P.flare)-(ba[0]-5));
   let fbx=P.hx+dx+12.5+sw*0.5+pool*0.9+fo,fby=P.hy+dep*0.85-P.lift*0.6,hf=0;
   if(P.part&&fa[0]>P.hx+5){const kx=G.legs[1].K[0];const nx=Math.min(fbx,kx-0.5);hf=(fbx-nx)*P.part;fbx-=hf;}
   const fb=[fbx,fby];
   x.beginPath();x.moveTo(top1[0],top1[1]);x.lineTo(top2[0],top2[1]);x.quadraticCurveTo(fc[0],fc[1],fb[0],fb[1]);
-  for(let i=0;i<=9;i++){const u=i/9,hx=P.hx+dx+10+pool*0.9+(fo-hf)*(1-u)+(-29-P.bil*1.4-P.flare-pool*1.8-bo)*u,hy=P.hy+(i%2?15.5:20)*dep/20-P.lift*(0.3+0.7*u)+Math.sin(tq*9+i)*fl*(MV_RM?0.33:1);x.lineTo(hx,hy);}
+  for(let i=0;i<=9;i++){const u=i/9,hx=P.hx+dx+10+pool*0.9+(fo-hf)*(1-u)+(-29-P.bil*1.4-P.flare-pool*1.8-bo)*u,hy=P.hy+(i%2?15.5:20)*dep/20-P.lift*(0.3+0.7*u)+Math.sin(tq*(MV_LP?3*Math.PI:9)+i)*fl*(MV_RM?0.33:1);x.lineTo(hx,hy);}
   x.quadraticCurveTo(bc[0],bc[1],top1[0],top1[1]);x.closePath();x.fill();}
 function mvCowlFrame(x,P){x.translate(0,-30);x.rotate(P.nod);x.translate(0,30);x.translate(0,-35);x.scale(0.86,0.86);x.translate(0,35);}
 function mvCowl(x,P){if(MV_HAT){x.save();mvCowlFrame(x,P);x.beginPath();
@@ -6681,7 +6681,7 @@ function mvCowl(x,P){if(MV_HAT){x.save();mvCowlFrame(x,P);x.beginPath();
 function mvBody(x,G,P){x.save();x.translate(P.hx,P.hy);x.rotate(P.lean);}
 // version 32: the Christmas hat (Barney's sheet, 25 November 2026). Its tail streams back with his speed, lifts a little as he falls,
 // and sways slowly; it is drawn in the upper body's frame, so it follows every pose.
-function mvHatTail(P,tq){const sp=Math.min(1,Math.hypot(P.vx,P.vy)/54);return{dx:-3.5*sp,dy:-2.5*sp+Math.max(-2,Math.min(3,-P.vy/40)),sw:Math.sin(tq*6.3)*(0.8+1.2*sp)};}
+function mvHatTail(P,tq){const sp=Math.min(1,Math.hypot(P.vx,P.vy)/54);return{dx:-3.5*sp,dy:-2.5*sp+Math.max(-2,Math.min(3,-P.vy/40)),sw:Math.sin(tq*(MV_LP?2*Math.PI:6.3))*(0.8+1.2*sp)};}
 function mvFur(x,pts,w){x.lineCap=x.lineJoin="round";x.lineWidth=w;x.beginPath();pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.stroke();
   for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1],n=Math.max(1,Math.round(Math.hypot(b[0]-a[0],b[1]-a[1])/(w*0.55)));
     for(let j=0;j<=n;j++){const u=j/n;x.beginPath();x.arc(a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u,w*0.62,0,Math.PI*2);x.fill();}}}
@@ -6700,7 +6700,7 @@ function mvCaneBand(x){x.save();x.beginPath();x.rect(-9.8,-11.3,20.2,3.4);x.clip
 function mvCaneTails(x,G,P,tq,origin){const sp=Math.min(1,Math.hypot(P.vx,P.vy)/54);
   let dx=-0.6-2.6*Math.max(-1.6,Math.min(1.6,P.vx/54))-Math.min(1,Math.abs(P.vy)/90)*1.1,dy=0.9-2.2*Math.max(-1.2,Math.min(1.2,P.vy/54));
   const d=Math.hypot(dx,dy)||1;dx/=d;dy/=d;const nx=-dy,ny=dx,L=24+10*sp,amp=1.3+2.3*sp,K=origin||G.knot;x.fillStyle=CANE_WHITE;
-  for(let k=0;k<2;k++){const len=L-k*7,N=Math.max(4,Math.round(len/MV_CANE)),pt=(u,side)=>{const w=1.6-u*0.75,wv=Math.sin(tq*7+u*5+k*1.3)*u*amp,
+  for(let k=0;k<2;k++){const len=L-k*7,N=Math.max(4,Math.round(len/MV_CANE)),pt=(u,side)=>{const w=1.6-u*0.75,wv=Math.sin(tq*(MV_LP?2*Math.PI:7)+u*5+k*1.3)*u*amp,
       px=K[0]+dx*u*len+nx*wv,py=K[1]+k*2.2+dy*u*len+ny*wv;return[px+side*nx*w,py+side*ny*w];};
     for(let i=1;i<N;i+=2){const a=i/N,b=Math.min(1,(i+1)/N),sl=0.5/N,q=[pt(a,-1),pt(b,-1),pt(Math.min(1,b+sl),1),pt(Math.min(1,a+sl),1)];
       x.beginPath();q.forEach((p,j)=>j?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();x.fill();}}}
@@ -6726,7 +6726,7 @@ function mvSil(x,P,tq){x.lineCap="round";x.lineJoin="round";
 // version 28: with a Path2D as path the two tails are added to it and nothing is drawn (for the lines at Picture: Fastest)
 function mvTails(x,G,P,tq,origin,path){const sp=Math.min(1,Math.hypot(P.vx,P.vy)/54);let dx=-0.6-2.6*Math.max(-1.6,Math.min(1.6,P.vx/54))-Math.min(1,Math.abs(P.vy)/90)*1.1,dy=0.9-2.2*Math.max(-1.2,Math.min(1.2,P.vy/54));
   const d=Math.hypot(dx,dy)||1;dx/=d;dy/=d;const nx=-dy,ny=dx,L=24+10*sp,amp=(1.3+2.3*sp)*(MV_RM?0.4:1),K=origin||G.knot; /* the kit: calmer with Reduce motion */
-  for(let k=0;k<2;k++){const top=[],bot=[];for(let i=0;i<=8;i++){const u=i/8,w=1.6-u*0.75,wv=Math.sin(tq*(MV_RM?2.5:7)+u*5+k*1.3)*u*amp,px=K[0]+dx*u*(L-k*7)+nx*wv,py=K[1]+k*2.2+dy*u*(L-k*7)+ny*wv;top.push([px-nx*w,py-ny*w]);bot.push([px+nx*w,py+ny*w]);}
+  for(let k=0;k<2;k++){const top=[],bot=[];for(let i=0;i<=8;i++){const u=i/8,w=1.6-u*0.75,wv=Math.sin(tq*(MV_RM?2.5:MV_LP?2*Math.PI:7)+u*5+k*1.3)*u*amp,px=K[0]+dx*u*(L-k*7)+nx*wv,py=K[1]+k*2.2+dy*u*(L-k*7)+ny*wv;top.push([px-nx*w,py-ny*w]);bot.push([px+nx*w,py+ny*w]);}
     const c=path||x;if(!path)x.beginPath();c.moveTo(top[0][0],top[0][1]);for(const q of top)c.lineTo(q[0],q[1]);for(let i=bot.length-1;i>=0;i--)c.lineTo(bot[i][0],bot[i][1]);c.closePath();if(!path)x.fill();}}
 // version 28: the whole belt as one path, in the frame the tails are drawn in: the band and the knot (drawn in the upper body's frame,
 // mvBody) and the two tails. In the tucked roll (K given) only the tails show.
@@ -6974,23 +6974,41 @@ function mvMove(name,step){const M=MOVES[name];if(!M)throw new Error('Lantern Bo
 // The kit's way: the figure painted once per pose step into cached canvases, its lit edge in one and its ink and colours in the other,
 // so the second of safety's pulse is only the edge's strength; his lantern's pool of light and the glow at his feet drawn every frame.
 let MV_RM=false;                                   // Reduce motion while a figure is painted: his belt tails and cloak ripple less (Barney, 4 November 2026)
+// Kit 0.59.0 (Barney, 27 November 2026: "Build"; the trial word ripple, at Fastest and Faster, not with Reduce motion). His cloak's sway (3) and
+// hem (9), his belt's tails (7) and the hat's tail (6.3) ran off the frame's clock at speeds that never line up again, so no picture of him was
+// ever drawn twice: 12 painted a second standing, about 21 walking (the Fire, 27 November: about 1.6 ms a frame on the path). In the loop the
+// four turn a whole number of times in 2 seconds (24 steps: pi, 3 pi, 2 pi, 2 pi, so 5% quicker, 5% quicker, 10% slower, the same), and the
+// step is his own: the clock's while he stands, his walk's while he walks (three strides to a loop), a move's own in a move. Standing is then
+// 24 pictures and walking 24, each way he faces, painted once. MV_LP: on while world.wanderer draws him so; MV_KEEP_LP: pictures kept then
+// (8 otherwise). MV_BOX_T: the box his standing and walking pictures are painted in then, in place of MV_BOX, which has room for the longest
+// sword swing. Measured over all 24 of each with the longest sword, the hat, the candy cane belt and the strong glow, at Fastest (its lines)
+// and Faster (its halo): painted from 50.0 behind to 63.1 ahead and from 84.7 up to 1.1 below his feet; the box leaves 4 more each way and is
+// 53% of MV_BOX's area. Another move, the roll, or him thrown keeps MV_BOX
+let MV_LP=false,MV_SCR=null;const MV_LOOP=24,MV_KEEP_LP=64,MV_BOX_T=[-54,-89,68,6];
 const MV_BOX=[-62,-122,98,14];                     // the figure's box in his own units, feet at (0, 0), with the sword at its longest
 const MVC=[];                                      // the painted figures, the most recent last
-function mvFigure(s,P,tq,k,edge,rm,f){ // painted facing its way, its feet on a whole pixel and its lit edge's offset painted in, so a blit is pixel for pixel
-  const key=s.toFixed(3)+"|"+k+"|"+f+"|"+edge+"|"+(rm?1:0)+"|"+tq.toFixed(4)+"|"+MV_RED+"|"+MV_GLASS+(MV_GLOW?"|"+MV_GLOWC+"|"+MV_GLOWB+"x"+MV_GLOWN+(!LOOK_PIC&&LOOK_FX?"g":mvFastOn()?"l"+MV_GLOWL:""):"")+(MV_CANE?"|cane":"")+(MV_HAT?"|"+MV_HAT:"")+"|"+JSON.stringify(P);   // kit 0.11.0: and the belt; kit 0.41.0: the glass, and a glow's halo (none with Effects off); kit 0.50.0: the candy cane's stripes and the hat (left out with neither, so every other look shares its pictures as before)
+function mvFigure(s,P,tq,k,edge,rm,f,tight){tight=!!(tight&&MV_LP&&MV_BOX_T); // painted facing its way, its feet on a whole pixel and its lit edge's offset painted in, so a blit is pixel for pixel
+  const key=s.toFixed(3)+"|"+k+"|"+f+"|"+edge+"|"+(rm?1:0)+"|"+tq.toFixed(4)+"|"+MV_RED+"|"+MV_GLASS+(MV_GLOW?"|"+MV_GLOWC+"|"+MV_GLOWB+"x"+MV_GLOWN+(!LOOK_PIC&&LOOK_FX?"g":mvFastOn()?"l"+MV_GLOWL:""):"")+(MV_CANE?"|cane":"")+(MV_HAT?"|"+MV_HAT:"")+(MV_LP?"|L":"")+(tight?"|t":"")+"|"+JSON.stringify(P);   // kit 0.11.0: and the belt; kit 0.41.0: the glass, and a glow's halo (none with Effects off); kit 0.50.0: the candy cane's stripes and the hat (left out with neither, so every other look shares its pictures as before)
   for(let i=MVC.length-1;i>=0;i--)if(MVC[i].key===key){const F=MVC[i];if(i!==MVC.length-1){MVC.splice(i,1);MVC.push(F);}return F;}
-  const b=MV_BOX,R=k*s,x0=f>0?b[0]:-b[2],x1=f>0?b[2]:-b[0],ox=Math.ceil(-x0*R)+4,oy=Math.ceil(-b[1]*R)+4,w=ox+Math.ceil(x1*R)+4,h=oy+Math.ceil((b[3]+(mvFastOn()?1:0))*R)+2,e=1.3*k/1.32*s;   // kit 0.43.0: one more unit of room below while the belt's lines are drawn (in the tucked roll the tails' lines reach 14.8 below his feet; the rows are added at the bottom, so nothing moves)
-  let F=MVC.length>=(TRIAL.hero?32:8)?MVC.shift():null;   // kit 0.20.4: the hero trial keeps 32
+  // (kit 0.59.0: a closer picture is painted exactly as a wide one, in a working canvas MV_BOX's size with his feet where they are there, and
+  // the part of it inside MV_BOX_T is copied to the kept canvases. Painted straight into the smaller canvas it came out a shade different in a
+  // few pixels: Chrome smooths a tilted line, his lantern's edges, differently on odd pixels than on even ones)
+  const R=k*s,bx=b=>{const x0=f>0?b[0]:-b[2],x1=f>0?b[2]:-b[0],ox=Math.ceil(-x0*R)+4,oy=Math.ceil(-b[1]*R)+4;return{ox,oy,w:ox+Math.ceil(x1*R)+4,h:oy+Math.ceil((b[3]+(mvFastOn()?1:0))*R)+2};},
+    B=bx(MV_BOX),T=tight?bx(MV_BOX_T):B,ox=T.ox,oy=T.oy,w=T.w,h=T.h,e=1.3*k/1.32*s;   // kit 0.43.0: one more unit of room below while the belt's lines are drawn (in the tucked roll the tails' lines reach 14.8 below his feet; the rows are added at the bottom, so nothing moves)
+  const cap=TRIAL.hero?32:MV_LP?MV_KEEP_LP:8;while(MVC.length>cap)MVC.shift();   // kit 0.20.4: the hero trial keeps 32; kit 0.59.0: the loop 64
+  let F=MVC.length>=cap?MVC.shift():null;
   if(!F||F.E.width!==w||F.E.height!==h)F={E:mk(w,h),I:mk(w,h)};
   F.key=key;F.ox=ox;F.oy=oy;F.w=w;F.h=h;MV_RM=!!rm;
-  try{for(const ink of [false,true]){const x=(ink?F.I:F.E).getContext("2d");x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.clearRect(0,0,w,h);
-    if(ink){x.setTransform(R*f,0,0,R,ox,oy);x.fillStyle=x.strokeStyle=MV_INK;F.G=mvSil(x,P,tq);mvDet(x,P,tq,F.G);}
-    else{x.setTransform(R*f,0,0,R,ox+e,oy-e);x.fillStyle=x.strokeStyle=edge;mvSil(x,P,tq);}}}
+  if(tight&&(!MV_SCR||MV_SCR.width!==B.w||MV_SCR.height!==B.h))MV_SCR=mk(B.w,B.h);
+  try{for(const ink of [false,true]){const cv=ink?F.I:F.E,pc=tight?MV_SCR:cv,x=pc.getContext("2d");x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.clearRect(0,0,pc.width,pc.height);
+    if(ink){x.setTransform(R*f,0,0,R,B.ox,B.oy);x.fillStyle=x.strokeStyle=MV_INK;F.G=mvSil(x,P,tq);mvDet(x,P,tq,F.G);}
+    else{x.setTransform(R*f,0,0,R,B.ox+e,B.oy-e);x.fillStyle=x.strokeStyle=edge;mvSil(x,P,tq);}
+    if(tight){const y=cv.getContext("2d");y.setTransform(1,0,0,1,0,0);y.globalAlpha=1;y.clearRect(0,0,w,h);y.drawImage(MV_SCR,B.ox-ox,B.oy-oy,w,h,0,0,w,h);}}}
   finally{MV_RM=false;}
   MVC.push(F);KIT.poses++;return F;}
 // as mvDraw (moves.js), from the painted figure: the pool of light, the lit edge (at its strength), the figure, the glow at the feet
 function mvDrawKit(x,s,X,Y,P,tq,f,edge,k,o){k=k||K132;f=f||1;o=o||{};const eA=o.edgeA==null?1:o.edgeA,lit=LOOK_FX&&LOOK_PIC!=="bare",laid=LOOK_PIC==="fastest"&&FAST_LAID&&MV_POOLOP,   // kit 0.43.0: as mvDraw
-  pl=lit?(o.pool==null?1:o.pool)*(laid?FAST_LAID_X:MV_POOLX):0,pop=laid?"":MV_POOLOP,F=mvFigure(s,P,tq,k,edge,o.rm,f),G=F.G;
+  pl=lit?(o.pool==null?1:o.pool)*(laid?FAST_LAID_X:MV_POOLX):0,pop=laid?"":MV_POOLOP,F=mvFigure(s,P,tq,k,edge,o.rm,f,o.tight),G=F.G;
   let lx,ly;if(P.ball!=null){lx=X+f*(P.hx+5)*k;ly=Y-13*k;}else{lx=X+f*G.hook[0]*k;ly=Y+(G.hook[1]+12)*k;}
   if(pl>0&&LOOK_PIC)mvLit(x,s,false,lx,ly,k,pl,pop);else
   if(pl>0){const g=x.createRadialGradient(lx,ly,2,lx,ly,74*k/1.32);g.addColorStop(0,"rgba("+MV_POOL+","+Math.min(1,0.42*pl)+")");g.addColorStop(1,"rgba("+MV_POOL+",0)");x.save();if(pop)x.globalCompositeOperation=pop;x.fillStyle=g;x.fillRect(lx-80*k,ly-80*k,160*k,160*k);x.restore();}
@@ -8291,7 +8309,7 @@ function poseKey(P){return JSON.stringify(P,(k,v)=>typeof v==="number"?Math.roun
 // kit 0.45.0: every store of kept pictures that is not the scene's own (the scene is made again in makeTools). Each is filled again the
 // next time its picture is wanted. Not here: MD_PROF and CP_HOOK (figures read from a picture once, not pictures), HXC (colours)
 function forgetKept(){
-  TILE_POOL.clear();RIM_E.clear();MV_LIT.clear();MVC.length=0;CV_LOST.clear();CAST_KEPT.clear();CAST_BOSS.clear();CAST_LAST.clear();CAST_SCR=null;   // kit 0.48.0: and the puppets' pictures
+  TILE_POOL.clear();RIM_E.clear();MV_LIT.clear();MVC.length=0;MV_SCR=null;CV_LOST.clear();CAST_KEPT.clear();CAST_BOSS.clear();CAST_LAST.clear();CAST_SCR=null;   // kit 0.48.0: and the puppets' pictures
   KIT.fc=null;KIT.fs=null;KIT.th=null;
   for(const o of[BOSS_CACHE,SH,MV_SH,CPK,BSK,MDK,_lvP,_hamP,YULE_KEPT])for(const k of Object.keys(o))delete o[k];   // kit 0.46.0: and the hamlet's props
   _bossCache=new WeakMap();RESETS++;
@@ -8458,10 +8476,11 @@ function makeTools(env){
       const f=frame("wanderer");o=o||{};
       const name=o.move||(o.walking===false?"idle":"walk"),step=o.step==null?f.t*MV_RATE:o.step,mv=mvMove(name,step);
       const TQ=o.thrown||null,lvl=o.sword?{r:o.sword.reach||0,s:o.sword.bite||0}:null,P0=TQ?TQ.P:mv.P,P=lvl?withLvl(P0,lvl):P0,
-        tq=TRIAL.hero?(mv.done?mv.steps-1:((Math.floor(step)%mv.steps)+mv.steps)%mv.steps)/MV_RATE:Math.floor(f.t*MV_RATE)/MV_RATE;   // kit 0.20.4: the hero trial
+        LP=!!(TRIAL.ripple&&CAST_LITE&&!f.rm),lpn=Math.floor(mv.done?mv.steps-1:step),   // kit 0.59.0: the 2-second loop (see MV_LP), its step his own
+        tq=TRIAL.hero?(mv.done?mv.steps-1:((Math.floor(step)%mv.steps)+mv.steps)%mv.steps)/MV_RATE:LP?(((lpn%MV_LOOP)+MV_LOOP)%MV_LOOP)/MV_RATE:Math.floor(f.t*MV_RATE)/MV_RATE;   // kit 0.20.4: the hero trial
       const c=f.ctx,X=x-f.camX,Y=o.y==null?f.gy(x)+1:o.y,fc=TQ?TQ.f:o.facing||1,e=LV[f.level].edge;
       if(o.pit){const p0=o.pit[0],p1=o.pit[1];c.save();c.beginPath();c.rect(-200,-2000,f.W+400,2000+f.gy(p0)-1);c.rect(p0+3-f.camX,-2000,p1-p0-6,4000);c.clip("nonzero");}
-      let G=null;
+      let G=null;MV_LP=LP;try{
       if(o.refuse!=null){const fr=o.from||{},Xb=fr.x==null?X:fr.x-f.camX,Yb=fr.y==null?Y:fr.y;mvGather(c,MV_SH,Xb,Yb,X,Y,fc,o.refuse);}   // kit 0.18.0
       else if(o.shatter!=null)mvShatter(c,MV_SH,X-fc*6*K132,Y,fc,Math.min(1,Math.max(0,o.shatter/1.1)),e);
       else{
@@ -8471,20 +8490,21 @@ function makeTools(env){
         if(heal){healRings(c,X,Y,K132,hu,hl,false);healGlow(c,X,Y,K132,hu,hl*0.6);}
         const fa=o.form!=null?Math.max(0,Math.min(1,(o.form-0.12)/0.3)):1;
         if(fa<1){c.save();c.globalAlpha=fa;}
-        const mo={edgeA:o.form!=null?0.4+0.6*fa:o.safe!=null?moPulse(o.safe):1,rm:f.rm,feet:o.form!=null?true:o.feet,aura:heal?{col:MV_LAMP,h:Math.min(1,hu/0.42)*1.05,a:healEnv(hu)*1.1,w:1.5+0.5*(hl-1)}:null};
+        const mo={edgeA:o.form!=null?0.4+0.6*fa:o.safe!=null?moPulse(o.safe):1,rm:f.rm,tight:LP&&!TQ&&(name==="idle"||name==="walk"),feet:o.form!=null?true:o.feet,aura:heal?{col:MV_LAMP,h:Math.min(1,hu/0.42)*1.05,a:healEnv(hu)*1.1,w:1.5+0.5*(hl-1)}:null};
         if(fa<1){MV_RM=!!f.rm;try{G=mvDraw(c,X,Y,P,tq,fc,e,K132,mo);}finally{MV_RM=false;}} // forming: each shape fades on its own, as play.js draws him
         else if(TQ&&TQ.rot&&P.ball==null)G=mvDrawKitRot(c,f.s,X,Y,P,tq,fc,e,K132,mo,TQ.rot);   // kit 0.36.0: thrown, turning as he flies
         else G=mvDrawKit(c,f.s,X,Y,P,tq,fc,e,K132,mo);
         if(fa<1)c.restore();
         if(!(TQ&&TQ.rot))fxHand(c,X,Y,fc,K132,P,G);
         if(TQ&&TQ.landU!=null&&TQ.landU<1)fxBurst(c,X+fc*8,f.gy(x)-3,1,TQ.landU,"#3a2f2a");   // kit 0.36.0: the dust where he lands (KB_FIGHT's)
-        if(heal){healRings(c,X,Y,K132,hu,hl,true);healMotes(c,X,Y,K132,hu,hl,tq);}
+        if(heal){healRings(c,X,Y,K132,hu,hl,true);healMotes(c,X,Y,K132,hu,hl,LP?Math.floor(f.t*MV_RATE)/MV_RATE:tq);}
         if(o.drink){const u=(o.drink.t||0)/0.9;if(u>=0&&u<1)potDrinkFx(c,mvPt(G,P,X,Y,fc,K132,4,-22),u,o.drink.kind==="mana"?"mana":"health",f.rm,FX);} // kit 0.9.0: a potion drunk (0.9 s)
         if(o.fizzle!=null){const G2=mvGeo(PF.thrust,0),hp=G2.T(G2.fHd[0],G2.fHd[1]);fxFizzle(c,X+fc*(hp[0]*K132+3),Y+hp[1]*K132,K132,o.fizzle/0.6);}
         if(!TQ&&name==="sword"&&(mv.tag==="strike"||mv.tag==="follow")){const L=lvl||{r:0,s:0},a=mv.tag==="strike"?[tipAng(withLvl(PS.wind,L)),tipAng(P),0.85]:[tipAng(withLvl(PS.strike,L))-0.5,tipAng(P),0.4];
           fxSlash(c,X,Y,fc,K132,P,a[0],a[1],a[2],e,L);}
         if(o.hurt){const ch=mvPt(G,P,X,Y,fc,K132,12,-21),u=o.hurt.t||0;if(o.hurt.kind==="armour")fxShards(c,ch[0],ch[1],fc,K132,u/0.5,e);else fxEmber(c,ch[0],ch[1],fc,K132,u/0.45);}
       }
+      }finally{MV_LP=false;}
       if(o.pit)c.restore();
       if(o.ward!=null&&o.ward>=0&&o.ward<=0.6){const lp=mvPt(G,P,X,Y,fc,K132,13.4,3.5);fxWard(c,lp[0],lp[1],K132,o.ward/0.6,f.rm,!FX);}   // kit 0.17.0
       if(o.flare!=null&&o.flare>=0&&o.flare<=0.5&&G){const lp=mvPt(G,P,X,Y,fc,K132,13.4,3.5);fxGraveFlare(c,lp[0],lp[1],K132,o.flare/0.5,!FX);}   // kit 0.18.0
