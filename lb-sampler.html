@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.70.1';
+  const VERSION = '0.71.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2289,9 +2289,9 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // cloudref (kit 0.52.2, for the Fire's timing): design system 34's Fastest flyers; retired in kit 0.53.0, where they are Fastest's own look.
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),snowsheet:w.includes("snowsheet"),moonbox:w.includes("moonbox"),moonhalf:w.includes("moonhalf"),moonone:w.includes("moonone"),shared:w.includes("shared"),thru:(()=>{const t=w.find((x)=>/^thru[1-4]$/.test(x));return t?+t.slice(4):0;})(),tilecrop:w.includes("tilecrop"),ripple:w.includes("ripple"),foretrim:w.includes("foretrim"),auto33:w.includes("auto33"),sky:w.includes("sky"),bestlite:w.includes("bestlite"),paintfirst:w.includes("paintfirst"),leanpaint:w.includes("leanpaint"),leanedge:w.includes("leanedge"),autonote:w.includes("autonote"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
+  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),snowsheet:w.includes("snowsheet"),moonbox:w.includes("moonbox"),moonhalf:w.includes("moonhalf"),moonone:w.includes("moonone"),shared:w.includes("shared"),flyone:w.includes("flyone"),flyref:w.includes("flyref"),thru:(()=>{const t=w.find((x)=>/^thru[1-4]$/.test(x));return t?+t.slice(4):0;})(),tilecrop:w.includes("tilecrop"),ripple:w.includes("ripple"),foretrim:w.includes("foretrim"),auto33:w.includes("auto33"),sky:w.includes("sky"),bestlite:w.includes("bestlite"),paintfirst:w.includes("paintfirst"),leanpaint:w.includes("leanpaint"),leanedge:w.includes("leanedge"),autonote:w.includes("autonote"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
 const TRIAL_FL=["look timing T0: Fastest as it is, a plain belt and the gold glass","look timing T1: his light kept, a plain belt and the gold glass","look timing T2: the strong glow and the red glass, its light added","look timing T3: the strong glow and the red glass, its light laid over"];   // kit 0.43.0
-const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.snowsheet&&"the snow stamped from one sheet",TRIAL.moonbox&&"the moonlight only where it reaches",TRIAL.moonhalf&&"the moonlight made at half size",TRIAL.moonone&&"the moonlight made in one canvas",TRIAL.shared&&"the light and moonlight in one canvas",TRIAL.thru&&("the light through the clouds, way "+TRIAL.thru),TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.foretrim&&"the foreground layers trimmed",TRIAL.auto33&&"Automatic's line at 33 fps, with a note",TRIAL.sky&&"the sky's work each frame cut",TRIAL.bestlite&&"Best paints as Faster does (timing only)",TRIAL.paintfirst&&"pictures painted before a frame draws",TRIAL.leanpaint&&"one picture for puppets drawn the same",TRIAL.leanedge&&"the puppets' edge canvases used again",TRIAL.autonote&&!TRIAL.auto33&&"Automatic says when it steps down",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
+const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.snowsheet&&"the snow stamped from one sheet",TRIAL.moonbox&&"the moonlight only where it reaches",TRIAL.moonhalf&&"the moonlight made at half size",TRIAL.moonone&&"the moonlight made in one canvas",TRIAL.shared&&"the light and moonlight in one canvas",TRIAL.flyone&&"the flyers laid with one darken",TRIAL.flyref&&"the flyers laid Fastest's way, no darken",TRIAL.thru&&("the light through the clouds, way "+TRIAL.thru),TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.foretrim&&"the foreground layers trimmed",TRIAL.auto33&&"Automatic's line at 33 fps, with a note",TRIAL.sky&&"the sky's work each frame cut",TRIAL.bestlite&&"Best paints as Faster does (timing only)",TRIAL.paintfirst&&"pictures painted before a frame draws",TRIAL.leanpaint&&"one picture for puppets drawn the same",TRIAL.leanedge&&"the puppets' edge canvases used again",TRIAL.autonote&&!TRIAL.auto33&&"Automatic says when it steps down",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -4611,7 +4611,15 @@ Object.assign(Scene.prototype,{
   // dearly (the Fire HD 8: Blood Red Rain's path 51 fps before, 30 with 0.52.0). Now every group's pictures are made here, before the frame's
   // drawing begins (as the clouds' composite is), each box copied to its own slot of two working pictures, and kitBacklitLay only lays them on.
   // G: groups {k, ty (the group's rise, as at() gives it), B, paint, share}; y0: where the sky is drawn
-  kitBacklitPrep(ctx,s,lv,y0,G,cr){   // cr: design system 34's reference at Picture: Fastest (kitBegin), or null
+  // Kit 0.71.0 (Barney, 27 November 2026: "Yes build"), the trial words flyone and flyref. His Pixel at Best: the hamlet's path 44 to 46 fps
+  // with the sleigh and its bats and 64 without, 4.3 ms of a 17.5 ms frame, the largest single cost found, where a screen of plain
+  // pixels costs under a millisecond and a working canvas nothing. What the flyers do that nothing else in the frame does is lay a
+  // picture on the screen with "darken", which needs what is already on the screen under it: twice a frame in the hamlet, once for the
+  // bats' box and once for the sleigh's. flyone (one): the far swarm's and the sleigh's boxes, which are laid one after the other with
+  // nothing drawn between, are put back where they are on the screen in the free picture BF, and that is laid with one darken over
+  // them all; each box's ink is then laid as before. The same picture: a darken over a flyer already laid changes nothing, the flyer
+  // being darker than the bare sky already. flyref: Fastest's way at every Picture setting (cr; no darken, design system 34)
+  kitBacklitPrep(ctx,s,lv,y0,G,cr,one){   // cr: design system 34's reference at Picture: Fastest (kitBegin), or null
     const cw=ctx.canvas.width,ch=ctx.canvas.height,out={},all=[];
     for(const q of G){if(!q)continue;const R=[];
       for(const b of q.B){const x0=Math.max(0,Math.floor(s*b[0])-2),y1=Math.max(0,Math.floor(s*b[1]+q.ty)-2),x2=Math.min(cw,Math.ceil(s*b[2])+2),y2=Math.min(ch,Math.ceil(s*b[3]+q.ty)+2);if(x2>x0&&y2>y1)R.push([x0,y1,x2,y2]);}
@@ -4647,12 +4655,19 @@ Object.assign(Scene.prototype,{
     v.globalCompositeOperation="source-atop";   // (the sky is solid, so as source-in)
     for(const [,o] of all)o.R.forEach((r,i)=>{const w=r[2]-r[0],h=r[3]-r[1];v.drawImage(RS,r[0],r[1],w,h,o.slots[i][0],o.slots[i][1],w,h);});
     v.globalCompositeOperation="source-over";
+    if(one&&!cr){const G1=[out.sw,out.sl].filter(o=>o&&o.R.length);   // kit 0.71.0 (flyone): their boxes back where they are on the screen, in BF
+      if(G1.length){const B=[].concat(...G1.map(o=>o.R)),U=[Math.min(...B.map(r=>r[0])),Math.min(...B.map(r=>r[1])),Math.max(...B.map(r=>r[2])),Math.max(...B.map(r=>r[3]))];
+        g.save();g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation="source-over";g.globalAlpha=1;g.clearRect(U[0],U[1],U[2]-U[0],U[3]-U[1]);
+        for(const o of G1){o.one=true;o.R.forEach((r,i)=>{const w=r[2]-r[0],h=r[3]-r[1];g.drawImage(AT,o.slots[i][0],o.slots[i][1],w,h,r[0],r[1],w,h);});}
+        g.restore();out._one=U;}}
     return out;
   },
+  kitBacklitOne(ctx,U){if(!U)return;ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation=TRIAL.nodark?"source-over":"darken";   // kit 0.71.0 (flyone): one darken over every box of the swarm and the sleigh
+    ctx.drawImage(this._bf,U[0],U[1],U[2]-U[0],U[3]-U[1],U[0],U[1],U[2]-U[0],U[3]-U[1]);ctx.restore();},
   kitBacklitLay(ctx,o){if(!o||!o.R.length)return;const F=this._baf,T=this._bat;
     ctx.save();ctx.setTransform(1,0,0,1,0,0);
     o.R.forEach((r,i)=>{const sx=o.slots[i][0],sy=o.slots[i][1],w=r[2]-r[0],h=r[3]-r[1];
-      ctx.globalAlpha=1;ctx.globalCompositeOperation=o.cr||TRIAL.nodark?"source-over":"darken";ctx.drawImage(T,sx,sy,w,h,r[0],r[1],w,h);   // design system 34: at Fastest, no darken
+      if(!o.one){ctx.globalAlpha=1;ctx.globalCompositeOperation=o.cr||TRIAL.nodark?"source-over":"darken";ctx.drawImage(T,sx,sy,w,h,r[0],r[1],w,h);}   // design system 34: at Fastest, no darken (kit 0.71.0: with flyone, already laid, kitBacklitOne)
       ctx.globalCompositeOperation="source-over";ctx.globalAlpha=1-o.share;ctx.drawImage(F,sx,sy,w,h,r[0],r[1],w,h);});
     ctx.restore();
   },
@@ -4954,7 +4969,8 @@ Object.assign(Scene.prototype,{
     const layOn=(p,al)=>{if(!p)return;ctx.save();ctx.setTransform(1,0,0,1,0,0);if(al!=null)ctx.globalAlpha=al;for(const r of p.R)ctx.drawImage(p.OV,r[0],r[1]+p.dy,r[2],r[3],r[0],r[1],r[2],r[3]);ctx.restore();};
     // design system 33 (kit 0.52.1): the backlit flyers' pictures, made before the frame's own drawing begins (kitBacklitPrep)
     // design system 34 (kit 0.52.2; on since 0.53.0, Barney: "we go with fix 2"): at Picture: Fastest, the flyers' reference: each cloud layer's picture, slide, rise and rest offset
-    const cr=QUICK&&clp.length&&L.fly==="bats"?{W2,layers:clp.map(([cv,ox,k])=>({d:cv===this.cache.cl1?1:0,ox,ty:off(k),D:Math.round(-up(k)*s)-Math.round(-up(0)*s)}))}:null;
+    const fway=FLY_WAY!=null?FLY_WAY:TRIAL.flyref?2:TRIAL.flyone?1:0;   // kit 0.71.0: the way the backlit flyers are laid (0 as before, 1 one darken, 2 Fastest's way)
+    const cr=(QUICK||fway>=2)&&clp.length&&L.fly==="bats"?{W2,layers:clp.map(([cv,ox,k])=>({d:cv===this.cache.cl1?1:0,ox,ty:off(k),D:Math.round(-up(k)*s)-Math.round(-up(0)*s)}))}:null;
     const ML=MB0?this.kitMoon(ctx,s,W,W2,key,clp,off,MB0,mw,SH):null;   // kit 0.68.0: the moonlight, made here (kit 0.70.0: in one canvas, or in the light's)
     // kit 0.70.0, test only (world._probe): so many empty working canvases drawn into this frame, each then laid on the screen as one clear
     // pixel, to time what a working canvas costs a device by itself (512 by 256: large enough that the browser draws it with the graphics chip)
@@ -4972,7 +4988,7 @@ Object.assign(Scene.prototype,{
     const bl=this.kitBacklitPrep(ctx,s,lv,off(0),[
       L.fly==="bats"&&!HAM_OFF.fly&&{k:"sw",ty:off(f(0.34),0.34),B:swarmBoxes(W,t,camX*f(0.34),rm),paint:x=>drawSwarm(x,W,t,camX*f(0.34),rm,INK),share:tn[1]*0.9},
       L.sleigh&&!HAM_OFF.sleigh&&!HAM_OFF.fly&&(()=>{const span=W+760,v=rm?26:68,cx=W+380-posmod(t*v+camX*f(0.34),span),cy=205+Math.sin(t*0.45)*18;return{k:"sl",ty:off(f(0.34),0.34),B:[sleighBox(cx-165,cy-2,SLEIGH_K)],paint:x=>sleighKept(x,cx-165,cy-2,SLEIGH_K,INK,t,rm),share:tn[1]*0.9};})(),
-      L.fly==="bats"&&L.bigBats!==false&&!HAM_OFF.fly&&{k:"bb",ty:off(f(0.62),0.62),B:bigBatBoxes(W,t,camX*f(0.62),rm),paint:x=>drawBigBats(x,W,t,camX*f(0.62),rm,INK),share:tn[2]*0.7}],cr);
+      L.fly==="bats"&&L.bigBats!==false&&!HAM_OFF.fly&&{k:"bb",ty:off(f(0.62),0.62),B:bigBatBoxes(W,t,camX*f(0.62),rm),paint:x=>drawBigBats(x,W,t,camX*f(0.62),rm,INK),share:tn[2]*0.7}],cr,fway===1);
     ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation="source-over";ctx.drawImage(this.sky,0,off(0));
     const mb=after=>{if(!L.mist)return;L.mist.bands.forEach((b,i)=>{if(b[0]!==after)return;const cv=this.cache.mist[i],k=[0.03,0.12,0.28,0.5][after]*(rm?0.4:1),ox=posmod(t*b[3]*(rm?0.4:1)+camX*k,W2);
       at(k,[0.03,0.12,0.28,0.5][after]);ctx.save();ctx.globalAlpha=b[2];ctx.drawImage(cv,-ox,b[1]-100,W2,200);ctx.drawImage(cv,-ox+W2,b[1]-100,W2,200);ctx.restore();});};
@@ -5016,6 +5032,7 @@ Object.assign(Scene.prototype,{
     if(!HAM_OFF.far&&!HAM_OFF.far12){this.kitLayer(ctx,s,W,t,L2x,2,tn[1],o,L2y);layOn(lit.L2,FAR_THRU);} /* version 10; version 11: at 0.55 */mb(2);
     if(L.light==="sun"){at(0);drawRays(ctx,W,t,rm);}
     at(f(0.34),0.34);KIT.fly=s;
+    this.kitBacklitOne(ctx,bl._one);   // kit 0.71.0 (flyone)
     if(L.fly==="bats")this.kitBacklitLay(ctx,bl.sw);   // design system 33: backlit (was the air colour, and version 10's lit-through-a-cloud)
     else if(L.fly==="crows")drawCrowFlocks(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],0.25)); /* version 9: a quarter towards the air, was tn[1]*0.9 */else drawCrowsAlone(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],tn[1]*0.9),3,false);if(lv==="mist")drawLeaves(ctx,W,t,camX*f(0.34),rm,mixc(INK,AIR[lv],tn[1]*0.9),0); // version 8
     if(L.sleigh&&!HAM_OFF.sleigh)this.kitBacklitLay(ctx,bl.sl);   // design system 31: the sleigh, ahead of the swarm; 33: backlit
@@ -8375,7 +8392,7 @@ const CAST_KEPT=new Map(),CAST_KEEP_N=120,CAST_KEEP_FASTER=200;let CAST_SCR=null
 // by its id) for the frame or two until its turn, so when a pose is drawn changes, never what it looks like. At Best and Faster every pose at once
 const CAST_BUDGET=1,CAST_LAST=new Map(),CAST_STATS={};
 // kit 0.50.2, test only (the test page's Hamlet breakdown, after the Fire's Hamlet check): each of the hamlet's costs can be left out, one at a time
-const HAM_OFF={moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false,fly:false};let THRU_WAY=null,MOON_WAY=null,PROBE={empty:0,big:0,full:0,over:0,calls:0};   // kit 0.69.0, test only: the way the light through the clouds is made (0 to 4), or null for the trial word's; kit 0.70.0: the moonlight's (0 to 2), and how many empty working canvases a frame draws into   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
+const HAM_OFF={moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false,fly:false};let THRU_WAY=null,MOON_WAY=null,FLY_WAY=null,PROBE={empty:0,big:0,full:0,over:0,calls:0};   // kit 0.69.0, test only: the way the light through the clouds is made (0 to 4), or null for the trial word's; kit 0.70.0: the moonlight's (0 to 2), and how many empty working canvases a frame draws into   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
 // kit 0.56.9 (Barney, 26 November 2026: "Faster's puppets follow Fastest's rules ... keeping Faster's sharper picture and glows"): the hamlet's
 // puppets drawn the Fastest way at Faster too (set by world.begin with QUICK; the rest of Faster is as it was); CAST_KEEP_FASTER, 200 kept
 // there (its wind-up toy's key turns: 172 pictures to paint ahead)
@@ -9008,7 +9025,8 @@ function makeTools(env){
     get stats(){return{cast:Object.assign({},CAST_STATS),tileBytes:KIT.bytes,poses:KIT.poses,first:KIT.first||0,firstOff:!!KIT.dryOff,twins:KIT.twins||0,builds:KIT.builds,thru:KIT.thruN,tints:KIT.tints||0,mdReads:KIT.mdReads||0};},   // kit 0.36.0: tints, mana's colour laid on (a fill, not a repaint); mdReads, a boss's outline read
     _thruCloud(on){KIT.thru=on!==false;},
     _thruWay(n){THRU_WAY=n==null?null:Math.max(0,Math.min(4,n|0));},
-    _moonWay(n){MOON_WAY=n==null?null:Math.max(0,Math.min(2,n|0));},   // kit 0.70.0, test only: the moonlight in two canvases (0), one (1) or the light's (2), whatever the trial words; null gives it back
+    _moonWay(n){MOON_WAY=n==null?null:Math.max(0,Math.min(2,n|0));},
+    _flyWay(n){FLY_WAY=n==null?null:Math.max(0,Math.min(2,n|0));},   // kit 0.71.0, test only: the backlit flyers laid as before (0), with one darken (1) or Fastest's way (2), whatever the trial words; null gives it back   // kit 0.70.0, test only: the moonlight in two canvases (0), one (1) or the light's (2), whatever the trial words; null gives it back
     _probe(v){PROBE=Object.assign({empty:0,big:0,full:0,over:0,calls:0},typeof v==="number"?{empty:Math.max(0,Math.min(16,v|0))}:v||{});},   // kit 0.70.0, test only: so many empty working canvases a frame (kitBegin); kit 0.70.1: or {empty, big, full, over, calls}   // kit 0.69.0, test only: the light through the clouds made the nth way (kitBegin), whatever the trial word; null gives it back
     _hamletOff(o){Object.assign(HAM_OFF,{moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false,fly:false},o||{});},   // kit 0.50.2, test only: the Hamlet breakdown's switches (cast: the old monsters and the tree; kit 0.68.0: far, the four far layers and the light through the clouds on them; clouds, the two cloud layers on the screen; fore, the foreground; vig, the dark edges; kit 0.68.1: thru, the light through the clouds alone; far12, far layers 1 and 2 and that light; far34, far layers 3 and 4; kit 0.70.1: fly, every backlit flyer, the sleigh and the bats, so their three working canvases are not drawn into)   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
     get _looks(){return{sil:mvSil,det:mvDet,draw:mvDraw,move:mvMove,rm(v){MV_RM=!!v;},state(){return{red:MV_RED,glass:MV_GLASS,pool:MV_POOL,op:MV_POOLOP,x:MV_POOLX,glow:MV_GLOW,halo:MV_GLOWC,blur:MV_GLOWB,n:MV_GLOWN,strength:GLOW_STRENGTH,lightX:LIGHT_X,ask:LOOK_ASK,pic:LOOK_PIC,fx:LOOK_FX,laid:FAST_LAID,laidX:FAST_LAID_X,lines:MV_GLOWL,kept:MV_LIT.size};}};},   // test only (kit 0.41.0): the wanderer's painting, to set beside the design system's own

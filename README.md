@@ -105,3 +105,5 @@ Since kit 0.69.0 the trial words thru1, thru2 and thru3: the light through the c
 Since kit 0.70.0 the trial words thru4 (the light through the clouds made in one working canvas), moonone (the moonlight in one) and shared (both in one shared canvas), for timing on a phone; ?check=noelthru now has seven parts.
 
 Since kit 0.70.1 a test of what a device charges for (?check=noelcost, seven parts, about a minute and a half, the card what each thing costs): each part adds one thing to the hamlet's path; the picture does not change.
+
+Since kit 0.71.0 the trial words flyone (the sleigh and bats laid with one darken, the same picture) and flyref (laid Fastest's way, no darken, a slightly different look), and a test of them (?check=noelfly, seven parts, the card the Hamlet's sleigh and bats).
