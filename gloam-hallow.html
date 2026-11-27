@@ -13507,8 +13507,9 @@ const wantRotCheck = (lb) => CHECK_ROT || !!(lb.test && lb.test.check && lb.test
 const CHECK_NOEL = /[?&]check=noel\b/.test(location.search);   // The Wretched Noel's play check (the test link's card; step G1, Barney, 25 November 2026)
 // step 4b (Barney, 26 November 2026: the Fire is a target again; "prepare the speed tests and I will do all the tests tonight"): ?check=noelparts,
 // The Wretched Noel's play check with the hamlet's costs left out one at a time, so one run on the Fire shows what each costs in play (the
-// kit's test-only world._hamletOff; the test page's Hamlet breakdown times the scene, this times the game as it is played). Eight legs (twelve since the fight's own breakdown, seventeen since kit 0.68.0)
+// kit's test-only world._hamletOff; the test page's Hamlet breakdown times the scene, this times the game as it is played). Eight legs (twelve since the fight's own breakdown, seventeen since kit 0.68.0; the result's reader took 16 until 0.68.0-r1: see readCheck)
 const CHECK_NOELPARTS = /[?&]check=noelparts\b/.test(location.search);
+const CHECK_LEGS_MAX = 40, CHECK_TRIALS_MAX = 16;   // 0.68.0-r1: the most legs and trial words a check's result is read with (readCheck)
 // and in each of its legs, how many puppet pictures were painted a second while timed (the kit's count, world.stats.cast): many means the
 // puppets are being painted again and again, few that their cost is in drawing them
 // step 4b (kit 0.56.6; Barney, 26 November 2026: "Yes, paint ahead"): the hamlet's puppet pictures painted before they are wanted, at Picture:
@@ -16071,6 +16072,8 @@ function startCheck(g, lb) {
     PLACES.forEach((p, k) => g.check.legs.push({ p: k, boss: false, n: 0 }, { p: k, boss: true, n: 0 }));
     withSeed(1, () => loadPlace(g, lb, 0, 0));
   }
+  // 0.68.0-r1: found at once, not after four minutes on a phone
+  if (g.check.legs.length > CHECK_LEGS_MAX) throw new Error('The check has ' + g.check.legs.length + ' legs and its result takes ' + CHECK_LEGS_MAX + ' (CHECK_LEGS_MAX)');
   lb.hud.health(1); lb.hud.mana(1); lb.hud.armour(g.armour); lb.hud.lives(LIVES); hudSpells(g, lb); lb.hud.potCap(g.potCap.health, g.potCap.mana); lb.hud.potions(0, 0);
   lb.fade(0); if (rot) enterArena(g, lb); else enterPlace(g, lb); g.mode = 'ground';
   wakeHold(true);                      // 5f-3: the screen kept awake until its result is left
@@ -16263,6 +16266,9 @@ function finishCheck(g, lb) {
   if (C.noel) res.noel = true;         // The Wretched Noel's
   if (C.parts) { res.parts = true; if (lb.world._hamletOff) lb.world._hamletOff({}); }   // step 4b: and its parts, every part back on
   C.result = readCheck(res);
+  // 0.68.0-r1: a result its own reader refuses is said on the screen, again every 4 s, and the scene left as it is: before, the run
+  // ended in the pause plaque with nothing to say why
+  if (!C.result) { const say = () => lb.hud.line(null, checkWord() + ' finished, but its result could not be read (' + C.res.length + ' parts)', { chime: false }); say(); setInterval(say, 4000); return; }
   // 5f-2 (Barney's Pixel: the reload to the title left it black for about 10 s): the result shows at once, over the scene paused as P pauses
   // it (the kit has no call for a game to pause; onPause opens the result in place of the pause plaque, where the menus' keys work and a
   // switch of app changes nothing); already paused, it opens over the pause plaque. 0.7 s first, so the boss's bar has faded.
@@ -16300,9 +16306,11 @@ function device() {
 // a result waiting in the window's name, read as data (every value checked), or null
 function readCheck(o) {
   const num = (v, a, b) => (typeof v === 'number' && isFinite(v) ? Math.max(a, Math.min(b, v)) : null), str = (v, n) => (typeof v === 'string' ? v.slice(0, n) : '');
-  // (16 legs at most: the Hamlet's speed test has twelve since the fight's own breakdown; at 8 its result was refused, and the Fire's test
-  // ended paused with nothing shown, Barney, 26 November 2026)
-  if (!o || typeof o !== 'object' || o.v !== 1 || !Array.isArray(o.legs) || !o.legs.length || o.legs.length > 16) return null;
+  // (CHECK_LEGS_MAX legs at most. Twice a test has grown past it, its result been refused here and the run ended paused with nothing
+  // shown: at 8, the Fire's, Barney, 26 November 2026; at 16, his Pixel's, 27 November 2026, "Test ends in a pause not the results", when
+  // kit 0.68.0 made the Hamlet's speed test seventeen. Now 40, startCheck refuses to begin a check with more, and finishCheck says so if a
+  // result is ever refused)
+  if (!o || typeof o !== 'object' || o.v !== 1 || !Array.isArray(o.legs) || !o.legs.length || o.legs.length > CHECK_LEGS_MAX) return null;
   const legs = [];
   for (const q of o.legs) {
     if (!q || typeof q !== 'object') return null;
@@ -16316,7 +16324,7 @@ function readCheck(o) {
   }
   const out = { kit: str(o.kit, 20), day: str(o.day, 10), device: str(o.device, 160), width: num(o.width, 0, 1e5) || 0, height: num(o.height, 0, 1e5) || 0, k: num(o.k, 0, 10) || 1,
     lines: num(o.lines, 0, 1e5) || 0, picture: PICTURE_NAMES[o.picture] ? o.picture : 'auto', effects: o.effects !== false, rm: o.rm === true, slips: num(o.slips, 0, 99) || 0,
-    picLost: num(o.picLost, 0, 99) || 0, legs, trials: Array.isArray(o.trials) ? o.trials.filter((x) => typeof x === 'string').slice(0, 8).map((x) => x.slice(0, 40)) : [] };
+    picLost: num(o.picLost, 0, 99) || 0, legs, trials: Array.isArray(o.trials) ? o.trials.filter((x) => typeof x === 'string').slice(0, CHECK_TRIALS_MAX).map((x) => x.slice(0, 40)) : [] };   // (8 until 0.68.0-r1, which its own test had reached)
   if (o.rot === true) out.rot = true;
   if (o.noel === true) out.noel = true;
   if (o.parts === true) out.parts = true;
