@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.63.0';
+  const VERSION = '0.64.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2289,9 +2289,9 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // cloudref (kit 0.52.2, for the Fire's timing): design system 34's Fastest flyers; retired in kit 0.53.0, where they are Fastest's own look.
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),tilecrop:w.includes("tilecrop"),ripple:w.includes("ripple"),foretrim:w.includes("foretrim"),auto33:w.includes("auto33"),sky:w.includes("sky"),bestlite:w.includes("bestlite"),autonote:w.includes("autonote"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
+  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),tilecrop:w.includes("tilecrop"),ripple:w.includes("ripple"),foretrim:w.includes("foretrim"),auto33:w.includes("auto33"),sky:w.includes("sky"),bestlite:w.includes("bestlite"),paintfirst:w.includes("paintfirst"),autonote:w.includes("autonote"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
 const TRIAL_FL=["look timing T0: Fastest as it is, a plain belt and the gold glass","look timing T1: his light kept, a plain belt and the gold glass","look timing T2: the strong glow and the red glass, its light added","look timing T3: the strong glow and the red glass, its light laid over"];   // kit 0.43.0
-const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.foretrim&&"the foreground layers trimmed",TRIAL.auto33&&"Automatic's line at 33 fps, with a note",TRIAL.sky&&"the sky's work each frame cut",TRIAL.bestlite&&"Best paints as Faster does (timing only)",TRIAL.autonote&&!TRIAL.auto33&&"Automatic says when it steps down",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
+const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.foretrim&&"the foreground layers trimmed",TRIAL.auto33&&"Automatic's line at 33 fps, with a note",TRIAL.sky&&"the sky's work each frame cut",TRIAL.bestlite&&"Best paints as Faster does (timing only)",TRIAL.paintfirst&&"pictures painted before a frame draws",TRIAL.autonote&&!TRIAL.auto33&&"Automatic says when it steps down",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -4025,7 +4025,7 @@ class Scene{
       if(!this.share)this.share=new Map();
       let K=this.share.get(m.kind);if(!K){K={pics:new Map(),n:0,seen:0,nf:-1};this.share.set(m.kind,K);}
       if(K.nf!==KIT.frame){K.n=K.seen;K.seen=0;K.nf=KIT.frame;}   // how many of its kind were drawn in its last frame
-      K.seen++;
+      if(!KIT.dry)K.seen++;   // (kit 0.64.0: not counted twice)
       const key=(FX?1:0)+"|"+(hk>=0?"h"+hk:step);let A=K.pics.get(key);
       if(A)K.pics.delete(key);   // put back below, as the most recently used
       else{
@@ -4461,7 +4461,37 @@ function tileCrop(tl){tl.crop=null;if(!tl.cv)return;const h=tl.cv.height,B=tileB
 function copyBand(cv,src,sx,sy,w,h){const x=cv.getContext("2d");x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.globalCompositeOperation="copy";x.drawImage(src,sx,sy,w,h,0,0,w,h);x.globalCompositeOperation="source-over";return cv;}
 function copyInto(cv,src,sx,w,h){const x=cv.getContext("2d");x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.globalCompositeOperation="copy";x.drawImage(src,sx,0,w,h,0,0,w,h);x.globalCompositeOperation="source-over";return cv;}
 const POSE_RATE={crawler:1.3,bat2:1.6,ghoul2:1,walker:0.6},ATK_KEEP=72; // the pace of each puppet monster's steps (see pz)
-const KIT={frame:0,built:false,builds:0,buildMs:0,poses:0,bytes:0,thru:!TRIAL.cloud,thruN:0};   // thru: version 10's lit-through-a-cloud (off only for the test page's comparison, or the cloud trial); thruN: composites last frame
+const KIT={frame:0,built:false,builds:0,buildMs:0,poses:0,bytes:0,thru:!TRIAL.cloud,thruN:0};
+// Kit 0.64.0 (Barney, 27 November 2026: "Yes build trial"), for now only with the trial word paintfirst: paint first, then draw. A monster's,
+// boss's or the wanderer's kept picture was painted at the moment it was drawn, part-way through the frame, so the drawing left the screen's
+// picture for another and came back (his Pixel at Best: with no such painting, 48 to 57 fps against 36 to 44). With the word, world.begin
+// first runs what a game hands it as before (its monsters, boss and wanderer, drawn as it will draw them) against a stand-in for the
+// screen's picture that draws nothing (dryCtx: every drawing call does nothing; only the transform is kept, as some drawing reads it back),
+// so every kept picture the frame needs is painted before anything is drawn on the screen, as the clouds' and flyers' pictures already are.
+// The frame is then drawn as ever and finds its pictures kept: the same pictures, to the pixel. KIT.dry is on meanwhile (what is done a
+// frame at a time for the screen alone is left out: a defeat's pieces, the struck flash, the count of a kind drawn); KIT.first counts the
+// pictures painted so. A fault in the rehearsal switches it off for the visit and the frame is drawn as it always was
+let DRY=null;
+function dryCtx(real){
+  if(!DRY){const P=CanvasRenderingContext2D.prototype,d={},nop=function(){},m=new DOMMatrix(),st=[],G={addColorStop:nop},
+      set=(a,b,c2,d2,e,f)=>{m.a=a;m.b=b;m.c=c2;m.d=d2;m.e=e;m.f=f;};
+    for(const k of Object.getOwnPropertyNames(P)){const q=Object.getOwnPropertyDescriptor(P,k);if(q&&typeof q.value==="function")d[k]=nop;}
+    Object.assign(d,{globalAlpha:1,globalCompositeOperation:"source-over",fillStyle:"#000",strokeStyle:"#000",lineWidth:1,lineCap:"butt",lineJoin:"miter",miterLimit:10,
+      lineDashOffset:0,shadowBlur:0,shadowColor:"rgba(0, 0, 0, 0)",shadowOffsetX:0,shadowOffsetY:0,font:"10px sans-serif",textAlign:"start",textBaseline:"alphabetic",
+      direction:"ltr",imageSmoothingEnabled:true,imageSmoothingQuality:"low",filter:"none",
+      save(){st.push([m.a,m.b,m.c,m.d,m.e,m.f]);},restore(){const q=st.pop();if(q)set(q[0],q[1],q[2],q[3],q[4],q[5]);},
+      translate(x,y){m.translateSelf(x,y);},scale(x,y){m.scaleSelf(x,y);},rotate(a){m.rotateSelf(a*180/Math.PI);},
+      transform(a,b,c2,d2,e,f){m.multiplySelf(new DOMMatrix([a,b,c2,d2,e,f]));},
+      setTransform(a,b,c2,d2,e,f){if(a==null)set(1,0,0,1,0,0);else if(typeof a==="object")set(a.a,a.b,a.c,a.d,a.e,a.f);else set(a,b,c2,d2,e,f);},
+      resetTransform(){set(1,0,0,1,0,0);},getTransform(){return new DOMMatrix([m.a,m.b,m.c,m.d,m.e,m.f]);},
+      createLinearGradient(){return G;},createRadialGradient(){return G;},createConicGradient(){return G;},createPattern(){return null;},
+      measureText(){return{width:0,actualBoundingBoxAscent:0,actualBoundingBoxDescent:0,actualBoundingBoxLeft:0,actualBoundingBoxRight:0};},
+      getLineDash(){return[];},isPointInPath(){return false;},isPointInStroke(){return false;},
+      getImageData(x,y,w,h){return new ImageData(Math.max(1,Math.abs(w)|0),Math.max(1,Math.abs(h)|0));},createImageData(w,h){return new ImageData(Math.max(1,Math.abs(w)|0),Math.max(1,Math.abs(h)|0));},
+      _new(){st.length=0;set(1,0,0,1,0,0);d.globalAlpha=1;d.globalCompositeOperation="source-over";d.shadowBlur=0;}});
+    DRY=d;}
+  DRY._new();DRY.canvas=real.canvas;return DRY;}
+   // thru: version 10's lit-through-a-cloud (off only for the test page's comparison, or the cloud trial); thruN: composites last frame
 // version 10: how high a layer tile's own picture reaches, in strips THRU_CH device pixels wide: for each strip the highest row with anything
 // in it, two blocks (16 rows) higher to be safe. Read once, when the tile is built, from an eighth-size copy made by halving three times, so
 // every pixel counts (shrunk in one step, a thin spire could fall between the pixels sampled and be missed)
@@ -4721,7 +4751,8 @@ Object.assign(Scene.prototype,{
   },
   kitBegin(ctx,s,W,t,camX,camY,o){ // everything behind the wanderer and the monsters
     const lv=o.level,rm=o.rm,L=LV[lv],tn=L.tints,W2=W*2,key=lv+"@"+s.toFixed(4)+"@"+Math.round(W*s)+"@"+FX+(L.snow?"@"+tn.join()+"@"+BULB_BRIGHT:"");   // design system 31: and the hamlet's tones and bulbs
-    KIT.frame++;KIT.built=false;this.kit=true;
+    if(KIT.pre)KIT.pre=0;else KIT.frame++;   // (kit 0.64.0: already moved on, before the rehearsal)
+    KIT.built=false;this.kit=true;
     // kit 0.58.0: one tile a frame cropped to its band, two frames after it was painted, before this frame draws anything: reading a picture back
     // waits on the graphics chip for everything already asked of it, so here, with nothing of this frame asked yet (cropped as it was made, a
     // tile took about 6 ms longer on the computer; cropped in the middle of a frame, that frame waited for all drawn before it)
@@ -8453,6 +8484,14 @@ function makeTools(env){
       const opt={level,rm,walking:true,facing:1,hud:false,splash:"on",emberMouth:true,defeat:"cardwisp",dcol:EMBER.danger,dglow:EMBER.glow,win:GOLD_LIGHT,litP:LV[level].litP,sample:!!o.sample,lvl:L?L._T:null};
       const rise=o.rise!=null?o.rise:L?L.rise(camX+W*0.32):0;
       F={ctx,s:S,W,t,rm,level,camX,camY:rise,opt,gy:L?L.ground:gY,late:[]};
+      // kit 0.64.0 (the trial word paintfirst; see dryCtx): o.before, the game's drawing of its monsters, boss and wanderer, run first against the
+      // stand-in, in a frame like the last (the same place, size and setting, so the scene's kept pictures are not about to be thrown away)
+      if(TRIAL.paintfirst&&typeof o.before==="function"&&!KIT.dryOff){const dk=level+"@"+S+"@"+W+"@"+FX+"@"+QUICK+"@"+CAST_LITE+"@"+rm;
+        if(KIT.dryKey===dk&&sc.kit){const F0=F,p0=KIT.poses;KIT.frame++;KIT.pre=1;KIT.dry=1;
+          try{F=Object.assign({},F0,{ctx:dryCtx(ctx),late:[]});o.before();}
+          catch(e){KIT.dryOff=1;if(typeof console!=="undefined")console.warn("Lantern Box: paint first is off for this visit: "+(e&&e.message||e));}
+          finally{F=F0;KIT.dry=0;KIT.first=(KIT.first||0)+(KIT.poses-p0);}}
+        KIT.dryKey=dk;}
       sc.kitBegin(ctx,S,F.W,t,F.camX,F.camY,opt);
       frame("begin");
     },
@@ -8693,7 +8732,7 @@ function makeTools(env){
       const out=at?{phase:at.phase,dx,dy}:{phase:null,dx,dy};
       if(f.level==="yule"&&CAST_RIG[o.kind]&&o.rise==null&&!HAM_OFF.cast){ // kit 0.48.0 (design system 31, step K2a): in the hamlet, its puppet, drawn where the kit puts the monster, its foot
         // at the cast's foot line (2 lines below the ground; the gonk 8 more, its hem in the path); a mouth-hat's hop is the gonk's scurry, so the hop's lift is left out
-        const cid=o.id!=null?o.kind+"|"+o.id:o.kind,cp=castPose(o.kind,o,m,f.t),E=castPainted(cp.rig,cp.key,s,null,null,CAST_LAST.get(cid));CAST_LAST.set(cid,E);if(CAST_LAST.size>200)CAST_LAST.clear();const hy=at&&o.attack.name==="hop"?at.dy:0,Yc=(o.y==null?f.gy(x):o.y)+(o.kind==="hatmaw"?2+CAST_RIG.hatmaw.SINK:2)+dy-hy;
+        const cid=o.id!=null?o.kind+"|"+o.id:o.kind,cp=castPose(o.kind,o,m,f.t),E=castPainted(cp.rig,cp.key,s,null,null,CAST_LAST.get(cid));CAST_LAST.set(cid,E);if(CAST_LAST.size>200)CAST_LAST.clear();if(KIT.dry)return out;const hy=at&&o.attack.name==="hop"?at.dy:0,Yc=(o.y==null?f.gy(x):o.y)+(o.kind==="hatmaw"?2+CAST_RIG.hatmaw.SINK:2)+dy-hy;
         const c=f.ctx,Xs=Math.round(X*s)/s;if(fc===1){c.save();c.translate(Xs,0);c.scale(-1,1);c.translate(-Xs,0);}
         if(o.defeat==null){c.drawImage(E.cv,Math.round((Xs+E.x0)*s)/s,Math.round((Yc+E.y0)*s)/s,E.cv.width/s,E.cv.height/s);
           if(cp.flash)castFlash(c,E,Math.round((Xs+E.x0)*s)/s,Math.round((Yc+E.y0)*s)/s,E.cv.width/s,E.cv.height/s,cp.flash);}   // kit 0.56.8: struck, at Fastest
@@ -8714,6 +8753,7 @@ function makeTools(env){
         const rv=clamp(o.rise/0.35,0,1),gy=f.gy(x);m.Y+=(1-rv)*26;m.P=Object.assign({t:1.0},m.P);
         c.save();c.beginPath();c.rect(X-80,-2000,160,2000+gy+4);c.clip();scene.monster(c,s,m,f.t,f.opt,hit);c.restore();fxBurst(c,X,gy-2,1,rv,"#3a2a22");}
       else if(o.defeat==null)scene.monster(c,s,m,f.t,f.opt,hit);
+      else if(KIT.dry){}   // (kit 0.64.0: its break-up is painted afresh each frame, for the screen)
       else{const d=defeatCanvas("M",260,250,s);
         scene.monsterInto(d.c,s,m,f.t,f.opt,0,0);
         drawDefeat(c,d.M,s,X,Y,MON_BOX[o.kind],clamp(o.defeat,0,1),"cardwisp",o.seed||0);}
@@ -8757,7 +8797,7 @@ function makeTools(env){
           const hp=shPoseKit(name,u,f.t,!!md,!!r.st.flare),E=castPainted(hp.rig,hp.key,s,CAST_BOSS,CAST_LITE?SH_FAST.keep:CAST_BOSS_N,CAST_LAST.get("boss"));CAST_LAST.set("boss",E);const X1=r.X+(r.st.dx||0),Y1=f.gy(X0)+2+(r.st.dy||0);
           if(r.st.clipY!=null){c.save();c.beginPath();c.rect(X1-400,-2000,800,2000+r.st.clipY);c.clip();}   // rising out of the ground as it arrives, as the tree does
           c.drawImage(E.cv,X1+E.x0,Y1+E.y0,E.cv.width/s,E.cv.height/s);
-          if(CAST_LITE&&r.st.flare&&o.hit!=null)castFlash(c,E,X1+E.x0,Y1+E.y0,E.cv.width/s,E.cv.height/s,1-o.hit/0.13);   // kit 0.56.8: struck, at Fastest
+          if(CAST_LITE&&r.st.flare&&o.hit!=null&&!KIT.dry)castFlash(c,E,X1+E.x0,Y1+E.y0,E.cv.width/s,E.cv.height/s,1-o.hit/0.13);   // kit 0.56.8: struck, at Fastest
           if(md&&md.light>0){c.save();c.globalAlpha=Math.min(1,0.48*md.light);c.drawImage(castTinted(E,MANA),X1+E.x0,Y1+E.y0,E.cv.width/s,E.cv.height/s);c.restore();}   // the mend: mana's colour laid over it
           if(r.st.clipY!=null)c.restore();
           if(name==="roots")r.fx=shClawsFx(u,r.targets||[],f.gy,f.t);}
@@ -8796,7 +8836,7 @@ function makeTools(env){
       drawFairyKit(f.ctx,[ax-f.camX,ay,qx-f.camX,qy,bx-f.camX,by,seed||0],f.t,f.level,f.s);
     },
     // for the test page's readout
-    get stats(){return{cast:Object.assign({},CAST_STATS),tileBytes:KIT.bytes,poses:KIT.poses,builds:KIT.builds,thru:KIT.thruN,tints:KIT.tints||0,mdReads:KIT.mdReads||0};},   // kit 0.36.0: tints, mana's colour laid on (a fill, not a repaint); mdReads, a boss's outline read
+    get stats(){return{cast:Object.assign({},CAST_STATS),tileBytes:KIT.bytes,poses:KIT.poses,first:KIT.first||0,firstOff:!!KIT.dryOff,builds:KIT.builds,thru:KIT.thruN,tints:KIT.tints||0,mdReads:KIT.mdReads||0};},   // kit 0.36.0: tints, mana's colour laid on (a fill, not a repaint); mdReads, a boss's outline read
     _thruCloud(on){KIT.thru=on!==false;},
     _hamletOff(o){Object.assign(HAM_OFF,{moon:false,snow:false,sleigh:false,eyes:false,cast:false},o||{});},   // kit 0.50.2, test only: the Hamlet breakdown's switches (cast: the old monsters and the tree)   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
     get _looks(){return{sil:mvSil,det:mvDet,draw:mvDraw,move:mvMove,rm(v){MV_RM=!!v;},state(){return{red:MV_RED,glass:MV_GLASS,pool:MV_POOL,op:MV_POOLOP,x:MV_POOLX,glow:MV_GLOW,halo:MV_GLOWC,blur:MV_GLOWB,n:MV_GLOWN,strength:GLOW_STRENGTH,lightX:LIGHT_X,ask:LOOK_ASK,pic:LOOK_PIC,fx:LOOK_FX,laid:FAST_LAID,laidX:FAST_LAID_X,lines:MV_GLOWL,kept:MV_LIT.size};}};},   // test only (kit 0.41.0): the wanderer's painting, to set beside the design system's own
@@ -13944,7 +13984,10 @@ function playUpdate(g, lb) {
 // a frame of the World; t, its time, left out for the kit's own (step 5f-1: the play check draws frames on from it)
 function playDraw(ctx, g, lb, t) {
   const w = lb.world, L = g.L, camX = camAt(g, lb);
-  w.begin(ctx, { level: L, camX, t, rise: g.run === 'rot' ? L.rise(g.x) : undefined });   // design system 23: in an arena the camera rises with the ground where he is, as play.js's loopArena, even held at an end
+  // kit 0.64.0 (the trial word paintfirst): before, the frame's monsters, boss and wanderer as they will be drawn below, for the kit to paint
+  // their pictures first (it runs this against a stand-in that draws nothing; none of the three changes anything in the game)
+  const before = () => { drawBoss(g, lb, w); drawMonsters(g, lb, w, camX, false); drawWanderer(g, lb, w); drawMonsters(g, lb, w, camX, true); };
+  w.begin(ctx, { level: L, camX, t, rise: g.run === 'rot' ? L.rise(g.x) : undefined, before });   // design system 23: in an arena the camera rises with the ground where he is, as play.js's loopArena, even held at an end
   g.cps.forEach((cp, k) => { g.glass[k] = w.checkpoint(cp.x, { lit: cp.lit === true ? true : cp.lit != null ? lb.time - cp.lit : undefined, from: g.lantern || undefined }); });
   drawLoot(g, lb, w, camX);
   if (g.present) drawGift(g, lb, w);   // step G2

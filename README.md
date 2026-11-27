@@ -85,3 +85,5 @@ Since kit 0.62.0 the trial word sky (trial=sky) cuts the sky's drawing each fram
 Kit 0.62.1: the sky trial reads each cloud picture back once as a place is made ready, not twice; the same picture.
 
 Since kit 0.63.0 the trial word bestlite (trial=bestlite), for timing only: at Picture Best the Snowbound Hamlet's monsters and boss are painted as at Faster (their simpler moves show), to see what painting costs a phone at Best.
+
+Since kit 0.64.0 the trial word paintfirst (trial=paintfirst): the monsters', boss's and wanderer's pictures are painted before a frame is drawn, not part-way through it; the same pictures.
