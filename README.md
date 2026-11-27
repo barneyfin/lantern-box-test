@@ -111,3 +111,5 @@ Since kit 0.71.0 the trial words flyone (the sleigh and bats laid with one darke
 Since kit 0.71.1 a test that takes the sleigh and bats apart a step at a time (?check=noelsteps, seven parts, the card the sleigh and bats, step by step), and the trial word flysheet (the bats drawn from one sheet), for timing on a phone.
 
 Since kit 0.71.2 a test of small pictures by size (?check=noelsize, seven parts, the card small pictures by size) and the trial word flyroom (the bats' wing pictures each in a canvas with room), for timing on a phone.
+
+Since kit 0.72.0 the trial word flysheet matches the picture (each wing picture copied into the sheet); the card the Hamlet's parts, with the day's gains runs the twelve-part test with the eleven words that keep the picture.

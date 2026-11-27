@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.71.2';
+  const VERSION = '0.72.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -4585,12 +4585,17 @@ function drawFlyerKit(x,kind,X,Y,k,ph,col){ // bats and crows: each wing positio
   // Kit 0.71.1 (the trial word flysheet; world._flySheet): a kind's 17 wing positions painted side by side in one picture, 4 clear pixels
   // between, and each flyer drawn from its part of that, where each position has a small picture of its own: the hamlet's 56 bats come
   // from 17 small pictures every frame. As the snow's one sheet (kit 0.67.0), which gave his Pixel 6 fps. The same painting at the same
-  // size; a flyer is drawn smaller than it is painted, so nothing of its neighbour is taken in across the clear pixels
+  // size; a flyer is drawn smaller than it is painted, so nothing of its neighbour is taken in across the clear pixels.
+  // Kit 0.72.0 (Barney, 27 November 2026: "Yes build"; his Pixel: the bats from one sheet 49 fps against 46, and the size of a picture
+  // makes no difference, only how many a frame draws from): each position is now painted in a small picture of its own exactly as
+  // without the word and copied whole into the sheet, where 0.71.1 painted it inside the sheet under a clip and the bats' edges came
+  // out up to 60 shades different at some sizes (a wider gap between positions changed nothing). Copied, 5 to 40 pixels a frame
+  // differ, by 2 shades at most. In rows no wider than 2048 pixels
   if(FLY_SHEET!=null?FLY_SHEET:TRIAL.flysheet){const sk=kind+col;let S=KIT.fc.get("sheet"+sk);
-    if(!S){const R=FLY_REF[kind]*s,w=Math.max(1,Math.ceil((bb[2]-bb[0])*R)),h=Math.max(1,Math.ceil((bb[3]-bb[1])*R)),G=4,cv=mk((w+G)*17,h),c=cv.getContext("2d");
-      KIT.fly=null;for(let p=0;p<17;p++){c.save();c.setTransform(1,0,0,1,0,0);c.beginPath();c.rect(p*(w+G),0,w,h);c.clip();c.setTransform(R,0,0,R,p*(w+G)-bb[0]*R,-bb[1]*R);FLY_DRAW[kind](c,p,col);c.restore();}
-      KIT.fly=s;S={cv,w,h,G};KIT.fc.set("sheet"+sk,S);}
-    x.drawImage(S.cv,q*(S.w+S.G),0,S.w,S.h,X+bb[0]*k,Y+bb[1]*k,(bb[2]-bb[0])*k,(bb[3]-bb[1])*k);return;}
+    if(!S){const R=FLY_REF[kind]*s,w=Math.max(1,Math.ceil((bb[2]-bb[0])*R)),h=Math.max(1,Math.ceil((bb[3]-bb[1])*R)),G=4,cols=Math.max(1,Math.min(17,Math.floor(2048/(w+G)))),cv=mk((w+G)*cols,(h+G)*Math.ceil(17/cols)),c=cv.getContext("2d");
+      KIT.fly=null;for(let p=0;p<17;p++){const one=mk((bb[2]-bb[0])*R,(bb[3]-bb[1])*R),oc=one.getContext("2d");oc.setTransform(R,0,0,R,-bb[0]*R,-bb[1]*R);FLY_DRAW[kind](oc,p,col);c.drawImage(one,(p%cols)*(w+G),((p/cols)|0)*(h+G));}
+      KIT.fly=s;S={cv,w,h,G,cols};KIT.fc.set("sheet"+sk,S);}
+    x.drawImage(S.cv,(q%S.cols)*(S.w+S.G),((q/S.cols)|0)*(S.h+S.G),S.w,S.h,X+bb[0]*k,Y+bb[1]*k,(bb[2]-bb[0])*k,(bb[3]-bb[1])*k);return;}
   // Kit 0.71.2 (Barney, 27 November 2026: "Yes build"; the trial word flyroom, world._flyRoom): his Pixel charges about a tenth of a
   // millisecond for each small picture a frame draws from. Is it the picture's own canvas being small? Each wing position painted as
   // before, at the same size, in the corner of a canvas with room to spare (room: its least width and height), and drawn from that
