@@ -79,3 +79,5 @@ Since kit 0.59.0 the trial word ripple (trial=ripple) makes the wanderer's cloak
 Since kit 0.60.0 the trial word foretrim (trial=foretrim) keeps the two foreground scenery layers only as tall as their plants and branches (off unless asked for), for timing on slow devices.
 
 Since kit 0.61.0 two trial words for Picture: Automatic: auto33 (trial=auto33) steps down only under 33 frames a second, not 40; autonote keeps the rule as it is. With either, a line on screen says when Automatic steps down.
+
+Since kit 0.62.0 the trial word sky (trial=sky) cuts the sky's drawing each frame where nothing shows: the clouds over their own rows only, their soft edge from a copy made once, and the Snowbound Hamlet's moonlight kept until a cloud has moved a pixel.
