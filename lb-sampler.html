@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.65.0';
+  const VERSION = '0.66.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2289,9 +2289,9 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // cloudref (kit 0.52.2, for the Fire's timing): design system 34's Fastest flyers; retired in kit 0.53.0, where they are Fastest's own look.
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),tilecrop:w.includes("tilecrop"),ripple:w.includes("ripple"),foretrim:w.includes("foretrim"),auto33:w.includes("auto33"),sky:w.includes("sky"),bestlite:w.includes("bestlite"),paintfirst:w.includes("paintfirst"),autonote:w.includes("autonote"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
+  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),tilecrop:w.includes("tilecrop"),ripple:w.includes("ripple"),foretrim:w.includes("foretrim"),auto33:w.includes("auto33"),sky:w.includes("sky"),bestlite:w.includes("bestlite"),paintfirst:w.includes("paintfirst"),leanpaint:w.includes("leanpaint"),leanedge:w.includes("leanedge"),autonote:w.includes("autonote"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
 const TRIAL_FL=["look timing T0: Fastest as it is, a plain belt and the gold glass","look timing T1: his light kept, a plain belt and the gold glass","look timing T2: the strong glow and the red glass, its light added","look timing T3: the strong glow and the red glass, its light laid over"];   // kit 0.43.0
-const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.foretrim&&"the foreground layers trimmed",TRIAL.auto33&&"Automatic's line at 33 fps, with a note",TRIAL.sky&&"the sky's work each frame cut",TRIAL.bestlite&&"Best paints as Faster does (timing only)",TRIAL.paintfirst&&"pictures painted before a frame draws",TRIAL.autonote&&!TRIAL.auto33&&"Automatic says when it steps down",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
+const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.foretrim&&"the foreground layers trimmed",TRIAL.auto33&&"Automatic's line at 33 fps, with a note",TRIAL.sky&&"the sky's work each frame cut",TRIAL.bestlite&&"Best paints as Faster does (timing only)",TRIAL.paintfirst&&"pictures painted before a frame draws",TRIAL.leanpaint&&"one picture for puppets drawn the same",TRIAL.leanedge&&"the puppets' edge canvases used again",TRIAL.autonote&&!TRIAL.auto33&&"Automatic says when it steps down",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -3544,6 +3544,8 @@ function rigExtras(ctx,R,f){
 // {out:[x,y,..]}], polygons in the piece's own units that keep only the inside or the outside of it, so one traced piece can give two)};
 // or {disk:[x,y], r} (a round joint in lines, hidden inside the one silhouette). rig.merge: one silhouette; rig.frontLine: the last piece keeps
 // its outline where it crosses the body, except within rig.jointR lines of its joint. opt.sx: width against height (the wind-up toy's 0.9)
+let CAST_EDGE=null;
+function castEdgePair(w,h){if(!CAST_EDGE||CAST_EDGE.D.width<w||CAST_EDGE.D.height<h){const W2=Math.max(w,CAST_EDGE?CAST_EDGE.D.width:0),H2=Math.max(h,CAST_EDGE?CAST_EDGE.D.height:0);CAST_EDGE={D:mk(W2,H2),D2:mk(W2,H2)};}return CAST_EDGE;}
 function drawCastRig(ctx,X,Y,opt){
   const R=opt.rig,k=opt.h||R.h,f=(opt.facing===1?1:-1)*(opt.sx||1),pad=16,edge=opt.edge||1.7;
   if(!R.parts.length){ctx.save();ctx.translate(X,Y);rigExtras(ctx,R,f);ctx.restore();return[X,Y,X,Y];} // extras alone (light on the ground, claws' marks)
@@ -3570,11 +3572,20 @@ function drawCastRig(ctx,X,Y,opt){
     for(const sh of pt.shades||[]){c.save();c.beginPath();path(c,pt,sh.poly);c.clip();const a=tf(pt,sh.from[0],sh.from[1]),b2=tf(pt,sh.to[0],sh.to[1]),g2=c.createLinearGradient(a[0],a[1],b2[0],b2[1]);
       sh.stops.forEach(q=>g2.addColorStop(q[0],q[1]));c.fillStyle=g2;shape(c,pt);c.fill(pt.disk?"nonzero":"evenodd");c.restore();}};
   // the inner shading: ink bleeding in from the outline of the given pieces (one silhouette, or one piece), as the bosses' cards darken to ink at their edges
-  const innerEdge=(list,rad)=>{const D=mk(T.width,T.height),dc=D.getContext("2d");dc.fillStyle=INK;dc.fillRect(0,0,D.width,D.height);dc.globalCompositeOperation="destination-out";dc.setTransform(s,0,0,s,ox*s,oy*s);
+  // (kit 0.66.0, the trial word leanedge: D and D2 are one pair of working canvases, grown as needed and used again for every piece and every
+  // picture, where each call made two new ones: a monster's picture made 3 to 4 canvases, The Sprung Horror's 13. Only T's part of them is used,
+  // and the blur is clipped to it: unclipped, the edge came out wrong by up to 240 shades. Clipped it is nearly the picture as painted with new
+  // canvases, not quite: about 11 pixels a frame differ, by up to 11 shades in 255 (a pair made exactly T's size differs the same, so it is the
+  // blur of a part of a canvas, not the size). For timing: whether making canvases is what a puppet's painting costs a phone)
+  const innerEdge=(list,rad)=>{const TW=T.width,TH=T.height,LP=TRIAL.leanedge,S2=LP?castEdgePair(TW,TH):null,D=LP?S2.D:mk(TW,TH),dc=D.getContext("2d");
+    if(LP){dc.setTransform(1,0,0,1,0,0);dc.globalCompositeOperation="source-over";dc.globalAlpha=1;dc.clearRect(0,0,D.width,D.height);}
+    dc.fillStyle=INK;dc.fillRect(0,0,TW,TH);dc.globalCompositeOperation="destination-out";dc.setTransform(s,0,0,s,ox*s,oy*s);
     for(const pt of list){dc.save();clipOn(dc,pt);shape(dc,pt);dc.fillStyle="#000";dc.fill(pt.disk?"nonzero":"evenodd");dc.restore();}
-    const D2=mk(T.width,T.height),d2=D2.getContext("2d");d2.filter="blur("+(rad*s).toFixed(1)+"px)";d2.drawImage(D,0,0);d2.filter="none";d2.globalCompositeOperation="destination-in";d2.setTransform(s,0,0,s,ox*s,oy*s);
+    const D2=LP?S2.D2:mk(TW,TH),d2=D2.getContext("2d");
+    if(LP){d2.setTransform(1,0,0,1,0,0);d2.globalCompositeOperation="source-over";d2.globalAlpha=1;d2.filter="none";d2.clearRect(0,0,D2.width,D2.height);}
+    d2.filter="blur("+(rad*s).toFixed(1)+"px)";if(LP){d2.save();d2.beginPath();d2.rect(0,0,TW,TH);d2.clip();d2.drawImage(D,0,0,TW,TH,0,0,TW,TH);d2.restore();}else d2.drawImage(D,0,0);d2.filter="none";d2.globalCompositeOperation="destination-in";d2.setTransform(s,0,0,s,ox*s,oy*s);
     for(const pt of list){d2.save();clipOn(d2,pt);shape(d2,pt);d2.fillStyle="#000";d2.fill(pt.disk?"nonzero":"evenodd");d2.restore();}
-    tc.save();tc.setTransform(1,0,0,1,0,0);tc.globalAlpha=TN.edgeA==null?0.9:TN.edgeA;tc.drawImage(D2,0,0);tc.restore();};
+    tc.save();tc.setTransform(1,0,0,1,0,0);tc.globalAlpha=TN.edgeA==null?0.9:TN.edgeA;if(LP)tc.drawImage(D2,0,0,TW,TH,0,0,TW,TH);else tc.drawImage(D2,0,0);tc.restore();};
   // the lines: straight strokes on a piece (its own units), in two paler charcoals or the level's colour (TN.lit, one colour or several taken in turn), clipped to the piece
   let litN=0;const linesOn=pt=>{if(!TN||!(pt.lines||[]).length)return;tc.save();clipOn(tc,pt);shape(tc,pt);tc.clip(pt.disk?"nonzero":"evenodd");tc.lineCap="round";tc.lineJoin="round";
     const LM=TN.lineMode; // draw every line in black ("groove" chosen by Barney for the Christmas cast, 25 November 10:07) ("ink", the outlines' black as the kit's monsters' detail lines; "soft", a softer card black;
@@ -8232,7 +8243,19 @@ let CAST_PAINTS={frame:-1,n:0};
 // chosen, Automatic stepping down in play, the window resized or turned) every puppet's kept picture is let go and painted again at the new one.
 // Before, they were drawn from their top left corner at the new scale: from Best to Faster on the Pixel, half as big again and sunk into the path
 let CAST_S=0;
-function castPainted(rig,key,s,M,N,last){if(s!==CAST_S){CAST_KEPT.clear();CAST_BOSS.clear();CAST_LAST.clear();CAST_S=s;last=null;}M=M||CAST_KEPT;N=N||(CAST_LITE&&!QUICK?CAST_KEEP_FASTER:CAST_KEEP_N);let E=M.get(key);if(E){M.delete(key);M.set(key,E);return E;}
+// Kit 0.66.0 (Barney, 27 November 2026: "Yes build"), for now only with the trial word leanpaint. His Pixel at Best paid about 13 ms for each
+// puppet picture painted, 19 a second on the hamlet's path. One speed test there asked for 406 names, and 85 of them were pictures already
+// painted under another name: the wind-up toy's key either side of flat, the crawler's legs mirrored in its scuttle, The Sprung Horror's sway
+// counted on through moves that take no notice of it (229 names for 168 pictures). With the word a picture not kept under its name is looked
+// for under its rig's own (castRigName: the parts, where they go and what else is drawn, to a ten-thousandth of a line; the same rig is the
+// same painting), and if found is kept under the new name too, not painted again (E.refs: the names it has; it leaves CAST_RIGS with its last).
+// Checked against the pixels over a speed test: 330 rigs for 328 pictures, and no two different pictures with one rig. At Fastest and Faster,
+// where one picture a frame is painted and a puppet waiting its turn shows its last, a shared picture needs no turn, so it shows at once
+const CAST_RIGS=new Map();
+function castRigName(rig){return JSON.stringify(rig,(k,v)=>typeof v==="number"?Math.round(v*1e4)/1e4:v);}
+function castTrim(M,N){while(M.size>N){const k0=M.keys().next().value,E0=M.get(k0);M.delete(k0);if(E0&&E0.rk&&--E0.refs<=0)CAST_RIGS.delete(E0.rk);}}
+function castPainted(rig,key,s,M,N,last){if(s!==CAST_S){CAST_KEPT.clear();CAST_BOSS.clear();CAST_LAST.clear();CAST_RIGS.clear();CAST_S=s;last=null;}M=M||CAST_KEPT;N=N||(CAST_LITE&&!QUICK?CAST_KEEP_FASTER:CAST_KEEP_N);let E=M.get(key);if(E){M.delete(key);M.set(key,E);return E;}
+  let rk=null;if(TRIAL.leanpaint){rk=(M===CAST_BOSS?"B":"K")+(FX?1:0)+castRigName(rig);const E2=CAST_RIGS.get(rk);if(E2){E2.refs++;M.set(key,E2);castTrim(M,N);KIT.twins=(KIT.twins||0)+1;return E2;}}
   if(CAST_LITE){if(CAST_PAINTS.frame!==KIT.frame)CAST_PAINTS={frame:KIT.frame,n:0};if(CAST_PAINTS.n>=CAST_BUDGET&&last)return last;CAST_PAINTS.n++;}   // kit 0.49.2: the budget, at Fastest (kit 0.56.9: and Faster)
   // kit 0.56.7 (Barney's Fire, the speed test: The Sprung Horror's head missing at its spring's full stretch): the working canvas reaches 470 lines
   // ahead of the foot (was 310; the head reaches 424 with the room for its rim, the farthest of any puppet; the wind-up toy's sweep 148)
@@ -8240,7 +8263,8 @@ function castPainted(rig,key,s,M,N,last){if(s!==CAST_S){CAST_KEPT.clear();CAST_B
   const sc=CAST_SCR.cv,x=sc.getContext("2d");x.setTransform(1,0,0,1,0,0);x.globalCompositeOperation="source-over";x.globalAlpha=1;x.shadowBlur=0;x.shadowColor="transparent";x.clearRect(0,0,sc.width,sc.height);x.setTransform(s,0,0,s,OX*s,OY*s);
   const b=drawCastRig(x,0,0,{rig})||[-OX,-OY,W0-OX,H0-OY],P=26,x0=Math.max(-OX,Math.floor(b[0]-P)),y0=Math.max(-OY,Math.floor(b[1]-P)),x1=Math.min(W0-OX,Math.ceil(b[2]+P)),y1=Math.min(H0-OY,Math.ceil(b[3]+P));
   const cv=mk(Math.max(1,Math.ceil((x1-x0)*s)),Math.max(1,Math.ceil((y1-y0)*s)));cv.getContext("2d").drawImage(sc,Math.round((x0+OX)*s),Math.round((y0+OY)*s),cv.width,cv.height,0,0,cv.width,cv.height);
-  E={cv,x0,y0,x1,y1};KIT.poses++;{const kk=key.split("|")[0];CAST_STATS[kk]=(CAST_STATS[kk]||0)+1;}M.set(key,E);if(M.size>N)M.delete(M.keys().next().value);return E;}
+  E={cv,x0,y0,x1,y1};KIT.poses++;{const kk=key.split("|")[0];CAST_STATS[kk]=(CAST_STATS[kk]||0)+1;}M.set(key,E);
+  if(rk){E.rk=rk;E.refs=1;CAST_RIGS.set(rk,E);castTrim(M,N);}else if(M.size>N)M.delete(M.keys().next().value);return E;}
 // kit 0.49.0 (step K2b): The Sprung Horror's pictures, a few kept (each is large), and a kept picture in one colour (the mend's, laid over it)
 const CAST_BOSS=new Map(),CAST_BOSS_N=24;
 // kit 0.50.3 (the Fire's Hamlet breakdown, 25 November 2026: The Sprung Horror repainted its never-repeating sway about 9.5 times a second;
@@ -8378,7 +8402,7 @@ function poseKey(P){return JSON.stringify(P,(k,v)=>typeof v==="number"?Math.roun
 // kit 0.45.0: every store of kept pictures that is not the scene's own (the scene is made again in makeTools). Each is filled again the
 // next time its picture is wanted. Not here: MD_PROF and CP_HOOK (figures read from a picture once, not pictures), HXC (colours)
 function forgetKept(){
-  TILE_POOL.clear();RIM_E.clear();MV_LIT.clear();MVC.length=0;MV_SCR=null;CV_LOST.clear();CAST_KEPT.clear();CAST_BOSS.clear();CAST_LAST.clear();CAST_SCR=null;   // kit 0.48.0: and the puppets' pictures
+  TILE_POOL.clear();RIM_E.clear();MV_LIT.clear();MVC.length=0;MV_SCR=null;CV_LOST.clear();CAST_KEPT.clear();CAST_BOSS.clear();CAST_LAST.clear();CAST_RIGS.clear();CAST_EDGE=null;CAST_SCR=null;   // kit 0.48.0: and the puppets' pictures
   KIT.fc=null;KIT.fs=null;KIT.th=null;
   for(const o of[BOSS_CACHE,SH,MV_SH,CPK,BSK,MDK,_lvP,_hamP,YULE_KEPT])for(const k of Object.keys(o))delete o[k];   // kit 0.46.0: and the hamlet's props
   _bossCache=new WeakMap();RESETS++;
@@ -8838,7 +8862,7 @@ function makeTools(env){
       drawFairyKit(f.ctx,[ax-f.camX,ay,qx-f.camX,qy,bx-f.camX,by,seed||0],f.t,f.level,f.s);
     },
     // for the test page's readout
-    get stats(){return{cast:Object.assign({},CAST_STATS),tileBytes:KIT.bytes,poses:KIT.poses,first:KIT.first||0,firstOff:!!KIT.dryOff,builds:KIT.builds,thru:KIT.thruN,tints:KIT.tints||0,mdReads:KIT.mdReads||0};},   // kit 0.36.0: tints, mana's colour laid on (a fill, not a repaint); mdReads, a boss's outline read
+    get stats(){return{cast:Object.assign({},CAST_STATS),tileBytes:KIT.bytes,poses:KIT.poses,first:KIT.first||0,firstOff:!!KIT.dryOff,twins:KIT.twins||0,builds:KIT.builds,thru:KIT.thruN,tints:KIT.tints||0,mdReads:KIT.mdReads||0};},   // kit 0.36.0: tints, mana's colour laid on (a fill, not a repaint); mdReads, a boss's outline read
     _thruCloud(on){KIT.thru=on!==false;},
     _hamletOff(o){Object.assign(HAM_OFF,{moon:false,snow:false,sleigh:false,eyes:false,cast:false},o||{});},   // kit 0.50.2, test only: the Hamlet breakdown's switches (cast: the old monsters and the tree)   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
     get _looks(){return{sil:mvSil,det:mvDet,draw:mvDraw,move:mvMove,rm(v){MV_RM=!!v;},state(){return{red:MV_RED,glass:MV_GLASS,pool:MV_POOL,op:MV_POOLOP,x:MV_POOLX,glow:MV_GLOW,halo:MV_GLOWC,blur:MV_GLOWB,n:MV_GLOWN,strength:GLOW_STRENGTH,lightX:LIGHT_X,ask:LOOK_ASK,pic:LOOK_PIC,fx:LOOK_FX,laid:FAST_LAID,laidX:FAST_LAID_X,lines:MV_GLOWL,kept:MV_LIT.size};}};},   // test only (kit 0.41.0): the wanderer's painting, to set beside the design system's own

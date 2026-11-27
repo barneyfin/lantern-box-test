@@ -89,3 +89,5 @@ Since kit 0.63.0 the trial word bestlite (trial=bestlite), for timing only: at P
 Since kit 0.64.0 the trial word paintfirst (trial=paintfirst): the monsters', boss's and wanderer's pictures are painted before a frame is drawn, not part-way through it; the same pictures.
 
 Since kit 0.65.0 the trial word ripple loops the wanderer's ripple at Picture Best too (it was Faster and Fastest).
+
+Since kit 0.66.0 two trial words for the puppets' painting: leanpaint (one kept picture for poses that are drawn the same; the same pictures) and leanedge (their edge working canvases used again; nearly the same picture, for timing).
