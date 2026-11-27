@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.71.1';
+  const VERSION = '0.71.2';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2289,9 +2289,9 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // cloudref (kit 0.52.2, for the Fire's timing): design system 34's Fastest flyers; retired in kit 0.53.0, where they are Fastest's own look.
 // Without ?trial, nothing changes.
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
-  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),snowsheet:w.includes("snowsheet"),moonbox:w.includes("moonbox"),moonhalf:w.includes("moonhalf"),moonone:w.includes("moonone"),shared:w.includes("shared"),flyone:w.includes("flyone"),flyref:w.includes("flyref"),flysheet:w.includes("flysheet"),thru:(()=>{const t=w.find((x)=>/^thru[1-4]$/.test(x));return t?+t.slice(4):0;})(),tilecrop:w.includes("tilecrop"),ripple:w.includes("ripple"),foretrim:w.includes("foretrim"),auto33:w.includes("auto33"),sky:w.includes("sky"),bestlite:w.includes("bestlite"),paintfirst:w.includes("paintfirst"),leanpaint:w.includes("leanpaint"),leanedge:w.includes("leanedge"),autonote:w.includes("autonote"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
+  return{fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),snowsheet:w.includes("snowsheet"),moonbox:w.includes("moonbox"),moonhalf:w.includes("moonhalf"),moonone:w.includes("moonone"),shared:w.includes("shared"),flyone:w.includes("flyone"),flyref:w.includes("flyref"),flysheet:w.includes("flysheet"),flyroom:w.includes("flyroom"),thru:(()=>{const t=w.find((x)=>/^thru[1-4]$/.test(x));return t?+t.slice(4):0;})(),tilecrop:w.includes("tilecrop"),ripple:w.includes("ripple"),foretrim:w.includes("foretrim"),auto33:w.includes("auto33"),sky:w.includes("sky"),bestlite:w.includes("bestlite"),paintfirst:w.includes("paintfirst"),leanpaint:w.includes("leanpaint"),leanedge:w.includes("leanedge"),autonote:w.includes("autonote"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
 const TRIAL_FL=["look timing T0: Fastest as it is, a plain belt and the gold glass","look timing T1: his light kept, a plain belt and the gold glass","look timing T2: the strong glow and the red glass, its light added","look timing T3: the strong glow and the red glass, its light laid over"];   // kit 0.43.0
-const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.snowsheet&&"the snow stamped from one sheet",TRIAL.moonbox&&"the moonlight only where it reaches",TRIAL.moonhalf&&"the moonlight made at half size",TRIAL.moonone&&"the moonlight made in one canvas",TRIAL.shared&&"the light and moonlight in one canvas",TRIAL.flyone&&"the flyers laid with one darken",TRIAL.flyref&&"the flyers laid Fastest's way, no darken",TRIAL.flysheet&&"the bats drawn from one sheet",TRIAL.thru&&("the light through the clouds, way "+TRIAL.thru),TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.foretrim&&"the foreground layers trimmed",TRIAL.auto33&&"Automatic's line at 33 fps, with a note",TRIAL.sky&&"the sky's work each frame cut",TRIAL.bestlite&&"Best paints as Faster does (timing only)",TRIAL.paintfirst&&"pictures painted before a frame draws",TRIAL.leanpaint&&"one picture for puppets drawn the same",TRIAL.leanedge&&"the puppets' edge canvases used again",TRIAL.autonote&&!TRIAL.auto33&&"Automatic says when it steps down",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
+const TRIAL_WORDS=[TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.snowsheet&&"the snow stamped from one sheet",TRIAL.moonbox&&"the moonlight only where it reaches",TRIAL.moonhalf&&"the moonlight made at half size",TRIAL.moonone&&"the moonlight made in one canvas",TRIAL.shared&&"the light and moonlight in one canvas",TRIAL.flyone&&"the flyers laid with one darken",TRIAL.flyref&&"the flyers laid Fastest's way, no darken",TRIAL.flysheet&&"the bats drawn from one sheet",TRIAL.flyroom&&"the flyers' wing pictures given room",TRIAL.thru&&("the light through the clouds, way "+TRIAL.thru),TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.foretrim&&"the foreground layers trimmed",TRIAL.auto33&&"Automatic's line at 33 fps, with a note",TRIAL.sky&&"the sky's work each frame cut",TRIAL.bestlite&&"Best paints as Faster does (timing only)",TRIAL.paintfirst&&"pictures painted before a frame draws",TRIAL.leanpaint&&"one picture for puppets drawn the same",TRIAL.leanedge&&"the puppets' edge canvases used again",TRIAL.autonote&&!TRIAL.auto33&&"Automatic says when it steps down",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -4591,6 +4591,15 @@ function drawFlyerKit(x,kind,X,Y,k,ph,col){ // bats and crows: each wing positio
       KIT.fly=null;for(let p=0;p<17;p++){c.save();c.setTransform(1,0,0,1,0,0);c.beginPath();c.rect(p*(w+G),0,w,h);c.clip();c.setTransform(R,0,0,R,p*(w+G)-bb[0]*R,-bb[1]*R);FLY_DRAW[kind](c,p,col);c.restore();}
       KIT.fly=s;S={cv,w,h,G};KIT.fc.set("sheet"+sk,S);}
     x.drawImage(S.cv,q*(S.w+S.G),0,S.w,S.h,X+bb[0]*k,Y+bb[1]*k,(bb[2]-bb[0])*k,(bb[3]-bb[1])*k);return;}
+  // Kit 0.71.2 (Barney, 27 November 2026: "Yes build"; the trial word flyroom, world._flyRoom): his Pixel charges about a tenth of a
+  // millisecond for each small picture a frame draws from. Is it the picture's own canvas being small? Each wing position painted as
+  // before, at the same size, in the corner of a canvas with room to spare (room: its least width and height), and drawn from that
+  // corner: the same picture, to be shown
+  const room=FLY_ROOM||(TRIAL.flyroom?[512,300]:null);
+  if(room){const rk=key+"|"+room[0]+"x"+room[1];let cv=KIT.fc.get(rk);
+    if(!cv){const R=FLY_REF[kind]*s,w=Math.max(1,Math.ceil((bb[2]-bb[0])*R)),h=Math.max(1,Math.ceil((bb[3]-bb[1])*R));cv=mk(Math.max(w,room[0]),Math.max(h,room[1]));cv._w=w;cv._h=h;
+      const c=cv.getContext("2d");c.beginPath();c.rect(0,0,w,h);c.clip();c.setTransform(R,0,0,R,-bb[0]*R,-bb[1]*R);KIT.fly=null;FLY_DRAW[kind](c,q,col);KIT.fly=s;KIT.fc.set(rk,cv);}
+    x.drawImage(cv,0,0,cv._w,cv._h,X+bb[0]*k,Y+bb[1]*k,(bb[2]-bb[0])*k,(bb[3]-bb[1])*k);return;}
   let cv=KIT.fc.get(key);
   if(!cv){const R=FLY_REF[kind]*s;cv=mk((bb[2]-bb[0])*R,(bb[3]-bb[1])*R);const c=cv.getContext("2d");c.setTransform(R,0,0,R,-bb[0]*R,-bb[1]*R);
     KIT.fly=null;FLY_DRAW[kind](c,q,col);KIT.fly=s;KIT.fc.set(key,cv);}
@@ -5000,8 +5009,11 @@ Object.assign(Scene.prototype,{
       if(PROBE.empty){const pb=this._pb=this._pb||[];for(let i=0;i<PROBE.empty;i++){const cv=pb[i]=pb[i]||mk(512,256),v=pv(cv);v.clearRect(0,0,512,256);v.fillStyle="#fff";v.fillRect(200,100,64,32);}}
       // (kit 0.71.1) small: n small pictures, 88 by 48, each painted once, drawn 56 times in all into a working canvas each frame, smaller
       // than they are painted: what the bats do with their 17 wing pictures, and nothing else
-      if(PROBE.small){const ps=this._pbS=this._pbS||[];for(let i=ps.length;i<PROBE.small;i++){const cv=mk(88,48),v=pv(cv);v.fillStyle="#fff";v.beginPath();v.arc(44,24,18,0,7);v.fill();ps.push(cv);}
-        const v=pv(this._pbW=this._pbW||mk(512,256));v.clearRect(0,0,512,256);for(let i=0;i<56;i++)v.drawImage(ps[i%PROBE.small],100+(i%14)*24,60+((i/14)|0)*30,20,11);}
+      // (kit 0.71.2: smallW, smallH: each of the n in a canvas that size, 88 by 48 if not given, the same small picture in its corner and
+      // drawn from that corner, to find how large a canvas must be before drawing from it is free)
+      if(PROBE.small){const sw=Math.max(88,PROBE.smallW|0),sh=Math.max(48,PROBE.smallH|0),pk=sw+"x"+sh,all=this._pbS=this._pbS||{},ps=all[pk]=all[pk]||[];
+        for(let i=ps.length;i<PROBE.small;i++){const cv=mk(sw,sh),v=pv(cv);v.fillStyle="#fff";v.beginPath();v.arc(44,24,18,0,7);v.fill();ps.push(cv);}
+        const v=pv(this._pbW=this._pbW||mk(512,256));v.clearRect(0,0,512,256);for(let i=0;i<56;i++)v.drawImage(ps[i%PROBE.small],0,0,88,48,100+(i%14)*24,60+((i/14)|0)*30,20,11);}
       if(PROBE.big){const v=pv(this._pbB=fitCanvas(this._pbB,cw,ch));v.clearRect(200,100,64,32);v.fillStyle="#fff";v.fillRect(216,108,32,16);}
       if(PROBE.full){const v=pv(this._pbF=fitCanvas(this._pbF,cw,ch));v.clearRect(0,0,cw,ch);v.drawImage(this.vig,0,0);v.clearRect(0,0,2,2);}
       if((PROBE.over||PROBE.calls)&&(!this._pbO||this._pbO.width!==cw||this._pbO.height!==ch)){const v=pv(this._pbO=fitCanvas(this._pbO,cw,ch));v.fillStyle="#fff";v.fillRect(0,0,1,1);}}   // (one white pixel in its corner, so it is a painted picture; never laid)
@@ -8414,7 +8426,7 @@ const CAST_KEPT=new Map(),CAST_KEEP_N=120,CAST_KEEP_FASTER=200;let CAST_SCR=null
 // by its id) for the frame or two until its turn, so when a pose is drawn changes, never what it looks like. At Best and Faster every pose at once
 const CAST_BUDGET=1,CAST_LAST=new Map(),CAST_STATS={};
 // kit 0.50.2, test only (the test page's Hamlet breakdown, after the Fire's Hamlet check): each of the hamlet's costs can be left out, one at a time
-const HAM_OFF={moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false,fly:false};let THRU_WAY=null,MOON_WAY=null,FLY_WAY=null,FLY_STEP=0,FLY_SHEET=null,PROBE={empty:0,big:0,full:0,over:0,calls:0,small:0};   // kit 0.69.0, test only: the way the light through the clouds is made (0 to 4), or null for the trial word's; kit 0.70.0: the moonlight's (0 to 2), and how many empty working canvases a frame draws into   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
+const HAM_OFF={moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false,fly:false};let THRU_WAY=null,MOON_WAY=null,FLY_WAY=null,FLY_STEP=0,FLY_SHEET=null,FLY_ROOM=null,PROBE={empty:0,big:0,full:0,over:0,calls:0,small:0,smallW:0,smallH:0};   // kit 0.69.0, test only: the way the light through the clouds is made (0 to 4), or null for the trial word's; kit 0.70.0: the moonlight's (0 to 2), and how many empty working canvases a frame draws into   // CAST_STATS: the puppets' pictures painted, by kind (the test page's readout)
 // kit 0.56.9 (Barney, 26 November 2026: "Faster's puppets follow Fastest's rules ... keeping Faster's sharper picture and glows"): the hamlet's
 // puppets drawn the Fastest way at Faster too (set by world.begin with QUICK; the rest of Faster is as it was); CAST_KEEP_FASTER, 200 kept
 // there (its wind-up toy's key turns: 172 pictures to paint ahead)
@@ -9051,7 +9063,8 @@ function makeTools(env){
     _flyWay(n){FLY_WAY=n==null?null:Math.max(0,Math.min(2,n|0));},   // kit 0.71.0, test only: the backlit flyers laid as before (0), with one darken (1) or Fastest's way (2), whatever the trial words; null gives it back   // kit 0.70.0, test only: the moonlight in two canvases (0), one (1) or the light's (2), whatever the trial words; null gives it back
     _flyStep(n){FLY_STEP=Math.max(0,Math.min(3,n|0));},   // kit 0.71.1, test only: the backlit flyers made as far as a step (kitBacklitPrep): 0 all, 1 made not laid, 2 painted only, 3 boxes only
     _flySheet(v){FLY_SHEET=v==null?null:!!v;},   // kit 0.71.1, test only: the flyers drawn from one sheet a kind, or not, whatever the trial word; null gives it back
-    _probe(v){PROBE=Object.assign({empty:0,big:0,full:0,over:0,calls:0,small:0},typeof v==="number"?{empty:Math.max(0,Math.min(16,v|0))}:v||{});},   // kit 0.70.0, test only: so many empty working canvases a frame (kitBegin); kit 0.70.1: or {empty, big, full, over, calls}; kit 0.71.1: and small   // kit 0.69.0, test only: the light through the clouds made the nth way (kitBegin), whatever the trial word; null gives it back
+    _flyRoom(r){FLY_ROOM=Array.isArray(r)&&r.length===2?[Math.max(1,Math.min(1024,r[0]|0)),Math.max(1,Math.min(1024,r[1]|0))]:null;},   // kit 0.71.2, test only: the flyers' wing pictures each in a canvas at least this wide and deep; null gives it back
+    _probe(v){PROBE=Object.assign({empty:0,big:0,full:0,over:0,calls:0,small:0,smallW:0,smallH:0},typeof v==="number"?{empty:Math.max(0,Math.min(16,v|0))}:v||{});},   // kit 0.70.0, test only: so many empty working canvases a frame (kitBegin); kit 0.70.1: or {empty, big, full, over, calls}; kit 0.71.1: and small; kit 0.71.2: and smallW, smallH   // kit 0.69.0, test only: the light through the clouds made the nth way (kitBegin), whatever the trial word; null gives it back
     _hamletOff(o){Object.assign(HAM_OFF,{moon:false,snow:false,sleigh:false,eyes:false,cast:false,far:false,clouds:false,fore:false,vig:false,thru:false,far12:false,far34:false,fly:false},o||{});},   // kit 0.50.2, test only: the Hamlet breakdown's switches (cast: the old monsters and the tree; kit 0.68.0: far, the four far layers and the light through the clouds on them; clouds, the two cloud layers on the screen; fore, the foreground; vig, the dark edges; kit 0.68.1: thru, the light through the clouds alone; far12, far layers 1 and 2 and that light; far34, far layers 3 and 4; kit 0.70.1: fly, every backlit flyer, the sleigh and the bats, so their three working canvases are not drawn into)   // test only: version 10's lit-through-a-cloud off and on, for the test page's Cloud check
     get _looks(){return{sil:mvSil,det:mvDet,draw:mvDraw,move:mvMove,rm(v){MV_RM=!!v;},state(){return{red:MV_RED,glass:MV_GLASS,pool:MV_POOL,op:MV_POOLOP,x:MV_POOLX,glow:MV_GLOW,halo:MV_GLOWC,blur:MV_GLOWB,n:MV_GLOWN,strength:GLOW_STRENGTH,lightX:LIGHT_X,ask:LOOK_ASK,pic:LOOK_PIC,fx:LOOK_FX,laid:FAST_LAID,laidX:FAST_LAID_X,lines:MV_GLOWL,kept:MV_LIT.size};}};},   // test only (kit 0.41.0): the wanderer's painting, to set beside the design system's own
     get _legs(){return{legs:moLegs,gait:MO_GAIT,stoop:MO_STOOP,hand:moWalkerHandAt,room:MON_ROOM,box:MON_BOX,scene};},   // test only (kit 0.34.0): the walker's and the ghoul's legs, the stoop and the painter, for measuring where their feet and the stooped arm are and how far each reaches
@@ -13655,6 +13668,7 @@ const CHECK_NOELTHRU = /[?&]check=noelthru\b/.test(location.search);   // kit 0.
 const CHECK_NOELCOST = /[?&]check=noelcost\b/.test(location.search);   // kit 0.70.1: what a device charges for, one thing a part (NOEL_COST)
 const CHECK_NOELFLY = /[?&]check=noelfly\b/.test(location.search);   // kit 0.71.0: the sleigh and its bats laid two cheaper ways (NOEL_FLY)
 const CHECK_NOELSTEPS = /[?&]check=noelsteps\b/.test(location.search);   // kit 0.71.1: the sleigh and its bats taken apart a step at a time (NOEL_STEPS)
+const CHECK_NOELSIZE = /[?&]check=noelsize\b/.test(location.search);   // kit 0.71.2: small pictures drawn from canvases of four sizes (NOEL_SIZE)
 const CHECK_LEGS_MAX = 40, CHECK_TRIALS_MAX = 16;   // 0.68.0-r1: the most legs and trial words a check's result is read with (readCheck)
 // and in each of its legs, how many puppet pictures were painted a second while timed (the kit's count, world.stats.cast): many means the
 // puppets are being painted again and again, few that their cost is in drawing them
@@ -13779,7 +13793,21 @@ const NOEL_STEPS = [
   { part: '17 small pictures drawn each frame', off: {}, way: 0, moon: 0, fly: 0, probe: { small: 17 }, compare: true },
   { part: 'everything, again', off: {}, way: 0, moon: 0, fly: 0 },
 ];
-const wantNoelCheck = (lb) => NOEL && (CHECK_NOEL || CHECK_NOELPARTS || CHECK_NOELLAYERS || CHECK_NOELTHRU || CHECK_NOELCOST || CHECK_NOELFLY || CHECK_NOELSTEPS || !!(lb.test && lb.test.check && lb.test.noel));
+// kit 0.71.2 (Barney, 27 November 2026: "Yes build"): ?check=noelsize. His Pixel's steps test: 17 small pictures drawn each frame cost
+// 1.7 ms, the bats from one sheet saved as much, as the snow's sheet did: about a tenth of a millisecond for each small picture a frame
+// draws from, and a frame of the path draws from about 25. Is it the picture's own canvas being small? The same 17 pictures in
+// canvases of four sizes (world._probe small, smallW, smallH), and one real case, the bats' wing pictures each given a canvas with
+// room (world._flyRoom). Everything first and last; the five between for comparison only. From cool
+const NOEL_SIZE = [
+  { part: 'everything', off: {}, way: 0, moon: 0, fly: 0 },
+  { part: '17 pictures of 88 by 48', off: {}, way: 0, moon: 0, fly: 0, probe: { small: 17 }, compare: true },
+  { part: '17 pictures in canvases of 160 by 128', off: {}, way: 0, moon: 0, fly: 0, probe: { small: 17, smallW: 160, smallH: 128 }, compare: true },
+  { part: '17 pictures in canvases of 288 by 256', off: {}, way: 0, moon: 0, fly: 0, probe: { small: 17, smallW: 288, smallH: 256 }, compare: true },
+  { part: '17 pictures in canvases of 512 by 300', off: {}, way: 0, moon: 0, fly: 0, probe: { small: 17, smallW: 512, smallH: 300 }, compare: true },
+  { part: "bats' wing pictures given room", off: {}, way: 0, moon: 0, fly: 0, room: [512, 300], compare: true },
+  { part: 'everything, again', off: {}, way: 0, moon: 0, fly: 0 },
+];
+const wantNoelCheck = (lb) => NOEL && (CHECK_NOEL || CHECK_NOELPARTS || CHECK_NOELLAYERS || CHECK_NOELTHRU || CHECK_NOELCOST || CHECK_NOELFLY || CHECK_NOELSTEPS || CHECK_NOELSIZE || !!(lb.test && lb.test.check && lb.test.noel));
 // the play check's figures (see the play check, at the end): seconds to settle, to time a leg's frames and to time its drawing, as the
 // test page's speed check (WARM, RUN, LOAD), and at most 6 s of play while its drawing is timed; eight frames a refresh then; 30 ways for
 // each place's encounters to fall; the picture settled once at one level for 3.2 s (10 s at most); 150 walked before a stretch's timing;
@@ -16280,7 +16308,7 @@ function startCheck(g, lb) {
   } else if (noel) {                   // The Wretched Noel's: the hamlet's busiest stretch, then The Sprung Horror alone, with what its run starts with
     g.run = 'noel'; g.p = NOEL_P;
     g.spells = { heal: 1 }; g.spells[g.attack] = 1; g.spellList = ['heal', g.attack];
-    if (CHECK_NOELPARTS || CHECK_NOELLAYERS || CHECK_NOELTHRU || CHECK_NOELCOST || CHECK_NOELFLY || CHECK_NOELSTEPS) { g.check.parts = true; g.check.layers = CHECK_NOELLAYERS; g.check.light = CHECK_NOELTHRU; g.check.cost = CHECK_NOELCOST; g.check.fly = CHECK_NOELFLY; g.check.steps = CHECK_NOELSTEPS; (CHECK_NOELSTEPS ? NOEL_STEPS : CHECK_NOELFLY ? NOEL_FLY : CHECK_NOELCOST ? NOEL_COST : CHECK_NOELTHRU ? NOEL_THRU : CHECK_NOELLAYERS ? NOEL_LAYERS : NOEL_PARTS).forEach((q) => g.check.legs.push({ p: NOEL_P, boss: !!q.boss, n: 0, noel: true, part: q.part, off: q.off, way: q.way, moon: q.moon, fly: q.fly, fstep: q.fstep, sheet: q.sheet, probe: q.probe, compare: !!q.compare })); }   // step 4b; kit 0.68.1: or its layers; kit 0.69.0: or its light through the clouds
+    if (CHECK_NOELPARTS || CHECK_NOELLAYERS || CHECK_NOELTHRU || CHECK_NOELCOST || CHECK_NOELFLY || CHECK_NOELSTEPS || CHECK_NOELSIZE) { g.check.parts = true; g.check.size = CHECK_NOELSIZE; g.check.layers = CHECK_NOELLAYERS; g.check.light = CHECK_NOELTHRU; g.check.cost = CHECK_NOELCOST; g.check.fly = CHECK_NOELFLY; g.check.steps = CHECK_NOELSTEPS; (CHECK_NOELSIZE ? NOEL_SIZE : CHECK_NOELSTEPS ? NOEL_STEPS : CHECK_NOELFLY ? NOEL_FLY : CHECK_NOELCOST ? NOEL_COST : CHECK_NOELTHRU ? NOEL_THRU : CHECK_NOELLAYERS ? NOEL_LAYERS : NOEL_PARTS).forEach((q) => g.check.legs.push({ p: NOEL_P, boss: !!q.boss, n: 0, noel: true, part: q.part, off: q.off, way: q.way, moon: q.moon, fly: q.fly, fstep: q.fstep, sheet: q.sheet, room: q.room, probe: q.probe, compare: !!q.compare })); }   // step 4b; kit 0.68.1: or its layers; kit 0.69.0: or its light through the clouds
     else g.check.legs.push({ p: NOEL_P, boss: false, n: 0, noel: true }, { p: NOEL_P, boss: true, n: 0, noel: true });
     withSeed(1, () => loadPlace(g, lb, NOEL_P, 0));
   } else {
@@ -16320,7 +16348,8 @@ function nextLeg(g, lb) {
   if (C.parts && lb.world._thruWay) lb.world._thruWay(leg.way == null ? null : leg.way);   // kit 0.69.0: and the way its light through the clouds is made
   if (C.parts && lb.world._moonWay) { lb.world._moonWay(leg.moon == null ? null : leg.moon); lb.world._probe(leg.probe || 0); }
   if (C.parts && lb.world._flyWay) lb.world._flyWay(leg.fly == null ? null : leg.fly);   // kit 0.71.0: and the way its backlit flyers are laid
-  if (C.parts && lb.world._flyStep) { lb.world._flyStep(leg.fstep || 0); lb.world._flySheet(leg.sheet == null ? null : leg.sheet); }   // kit 0.71.1: and how far they are made, and from one sheet or not   // kit 0.70.0: and its moonlight, and the probe's empty canvases
+  if (C.parts && lb.world._flyStep) { lb.world._flyStep(leg.fstep || 0); lb.world._flySheet(leg.sheet == null ? null : leg.sheet); }
+  if (C.parts && lb.world._flyRoom) lb.world._flyRoom(leg.room || null);   // kit 0.71.2: and whether their wing pictures are given room   // kit 0.71.1: and how far they are made, and from one sheet or not   // kit 0.70.0: and its moonlight, and the probe's empty canvases
   if (leg.wave) {                      // The Endless Rot's: the arena, and its wave begun with no line, the arena filling quickly (ROT_CHECK)
     loadArena(g, lb, leg.p);
     startWave(g, lb, leg.wave, false);
@@ -16483,7 +16512,7 @@ function finishCheck(g, lb) {
     picture: s.picture, effects: !!s.effects, rm: !!s.reduceMotion, slips: C.slips, picLost: C.picLost, legs: C.res, trials: lb.trials || [] };   // trials: kit 0.20.2
   if (C.rot) res.rot = true;           // The Endless Rot's
   if (C.noel) res.noel = true;         // The Wretched Noel's
-  if (C.parts) { res.parts = true; if (C.layers) res.layers = true; if (C.light) res.light = true; if (C.cost) res.cost = true; if (C.fly) res.fly = true; if (C.steps) res.steps = true; if (lb.world._hamletOff) lb.world._hamletOff({}); if (lb.world._thruWay) lb.world._thruWay(null); if (lb.world._moonWay) { lb.world._moonWay(null); lb.world._probe(0); } if (lb.world._flyWay) lb.world._flyWay(null); if (lb.world._flyStep) { lb.world._flyStep(0); lb.world._flySheet(null); } }   // step 4b: and its parts, every part back on
+  if (C.parts) { res.parts = true; if (C.layers) res.layers = true; if (C.light) res.light = true; if (C.cost) res.cost = true; if (C.fly) res.fly = true; if (C.steps) res.steps = true; if (C.size) res.size = true; if (lb.world._hamletOff) lb.world._hamletOff({}); if (lb.world._thruWay) lb.world._thruWay(null); if (lb.world._moonWay) { lb.world._moonWay(null); lb.world._probe(0); } if (lb.world._flyWay) lb.world._flyWay(null); if (lb.world._flyStep) { lb.world._flyStep(0); lb.world._flySheet(null); } if (lb.world._flyRoom) lb.world._flyRoom(null); }   // step 4b: and its parts, every part back on
   C.result = readCheck(res);
   // 0.68.0-r1: a result its own reader refuses is said on the screen, again every 4 s, and the scene left as it is: before, the run
   // ended in the pause plaque with nothing to say why
@@ -16552,6 +16581,7 @@ function readCheck(o) {
   if (o.cost === true) out.cost = true;   // kit 0.70.1: the cost test
   if (o.fly === true) out.fly = true;   // kit 0.71.0: the flyers' test
   if (o.steps === true) out.steps = true;   // kit 0.71.1: the flyers' steps
+  if (o.size === true) out.size = true;   // kit 0.71.2: small pictures by size
   return out;
 }
 function checkShown(lb) {
@@ -16575,7 +16605,7 @@ const computerPass = (res) => playLegs(res).every((r) => r.fps >= 58);
 function checkText(lb, res) {
   const lvl = res.legs[res.legs.length - 1].level;
   const lines = [
-    'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : res.noel ? ', ' + NOEL_RUN.name + (res.steps ? ', its sleigh and bats, step by step' : res.fly ? ', its sleigh and bats' : res.cost ? ', what each thing costs' : res.light ? ', its light through the clouds' : res.layers ? ', its layers' : res.parts ? ', its parts' : '') : '') + ', ' + res.day + ', kit ' + res.kit,
+    'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : res.noel ? ', ' + NOEL_RUN.name + (res.size ? ', small pictures by size' : res.steps ? ', its sleigh and bats, step by step' : res.fly ? ', its sleigh and bats' : res.cost ? ', what each thing costs' : res.light ? ', its light through the clouds' : res.layers ? ', its layers' : res.parts ? ', its parts' : '') : '') + ', ' + res.day + ', kit ' + res.kit,
     res.device + ' · ' + res.width + ' × ' + res.height + ' at ' + res.k.toFixed(2) + '× · ' + res.lines + ' lines wide · Picture ' + PICTURE_NAMES[res.picture] +
       (lvl ? ' (' + PICTURE_NAMES[lvl] + ')' : '') + (res.effects ? '' : ' · effects off') + (res.rm ? ' · reduce motion' : '') + (res.slips ? ' · ' + res.slips + ' falls' : '') +
       (res.picLost ? ' · the picture was lost ' + res.picLost + (res.picLost === 1 ? ' time' : ' times') : '') +
@@ -16589,7 +16619,7 @@ function checkText(lb, res) {
 }
 // the result on the title (the plaque built from the kit's parts): each place's path and boss, the targets, and the ways to send it
 function checkPlaque(lb, ui, res, inRun) {   // inRun (5f-2): over the paused scene, so Close leaves the run
-  const phone = ui.phone, text = checkText(lb, res), subject = 'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : res.noel ? ', ' + NOEL_RUN.name + (res.steps ? ', its sleigh and bats, step by step' : res.fly ? ', its sleigh and bats' : res.cost ? ', what each thing costs' : res.light ? ', its light through the clouds' : res.layers ? ', its layers' : res.parts ? ', its parts' : '') : '');
+  const phone = ui.phone, text = checkText(lb, res), subject = 'Gloam Hallow ' + (PLAYTEST ? 'speed test' : 'play check') + (res.rot ? ', ' + ROT_NAME : res.noel ? ', ' + NOEL_RUN.name + (res.size ? ', small pictures by size' : res.steps ? ', its sleigh and bats, step by step' : res.fly ? ', its sleigh and bats' : res.cost ? ', what each thing costs' : res.light ? ', its light through the clouds' : res.layers ? ', its layers' : res.parts ? ', its parts' : '') : '');
   const { panel, face } = ui.plaque('gh-ck', 560, 640, phone ? 'gap:6px;padding:12px 16px 12px' : 'gap:10px;padding:18px 20px 14px');
   const head = ui.heading('gh-ck', PLAYTEST ? 'Speed test' : 'Play check');
   const t = ui.el('table', 'lb-scores');

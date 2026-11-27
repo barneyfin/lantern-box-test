@@ -109,3 +109,5 @@ Since kit 0.70.1 a test of what a device charges for (?check=noelcost, seven par
 Since kit 0.71.0 the trial words flyone (the sleigh and bats laid with one darken, the same picture) and flyref (laid Fastest's way, no darken, a slightly different look), and a test of them (?check=noelfly, seven parts, the card the Hamlet's sleigh and bats).
 
 Since kit 0.71.1 a test that takes the sleigh and bats apart a step at a time (?check=noelsteps, seven parts, the card the sleigh and bats, step by step), and the trial word flysheet (the bats drawn from one sheet), for timing on a phone.
+
+Since kit 0.71.2 a test of small pictures by size (?check=noelsize, seven parts, the card small pictures by size) and the trial word flyroom (the bats' wing pictures each in a canvas with room), for timing on a phone.
