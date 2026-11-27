@@ -81,3 +81,5 @@ Since kit 0.60.0 the trial word foretrim (trial=foretrim) keeps the two foregrou
 Since kit 0.61.0 two trial words for Picture: Automatic: auto33 (trial=auto33) steps down only under 33 frames a second, not 40; autonote keeps the rule as it is. With either, a line on screen says when Automatic steps down.
 
 Since kit 0.62.0 the trial word sky (trial=sky) cuts the sky's drawing each frame where nothing shows: the clouds over their own rows only, their soft edge from a copy made once, and the Snowbound Hamlet's moonlight kept until a cloud has moved a pixel.
+
+Kit 0.62.1: the sky trial reads each cloud picture back once as a place is made ready, not twice; the same picture.

@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.62.0';
+  const VERSION = '0.62.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -3640,7 +3640,7 @@ class Scene{
     if(this.cache.key===key)return;
     this.cache={key};const cs=Math.min(s,1.25),L=LV[lv];
     if(lv!=="mist"){this.cache.cl0=renderCutClouds(W*2,cs,lv,0,hsh(91,1));this.cache.cl1=renderCutClouds(W*2,cs,lv,1,hsh(91,2));this.cache.clB=cloudFoot([this.cache.cl0,this.cache.cl1],cs);this.cache.cl0b=blurCopy(this.cache.cl0,CLOUD_SOFT*cs);this.cache.cl1b=blurCopy(this.cache.cl1,CLOUD_SOFT*cs); /* version 11 */
-      if(TRIAL.sky)for(const d of [0,1]){this.cache["cl"+d+"b"]=skyDouble(this.cache["cl"+d+"b"]);skyRows(this.cache["cl"+d]);}   // kit 0.62.0 (see skyDouble)
+      if(TRIAL.sky)for(const d of [0,1])this.cache["cl"+d+"b"]=skyDouble(this.cache["cl"+d+"b"]);   // kit 0.62.0 (see skyDouble; the clouds' rows: cloudFoot)
     } /* version 10: clB */
     if(L.light!=="sun")this.cache.moon=this.ver===3?moonSprite(Math.min(2,s),lv==="storm"):moonSprite4(Math.min(2,s),lv);
     if(L.mist)this.cache.mist=L.mist.bands.map((b,i)=>renderMist(W*2,cs,L.mist.col,hsh(93,i,lv.length)));
@@ -5140,10 +5140,13 @@ function blurCopy(c,r){const b=mk(c.width,c.height),x=b.getContext("2d");
 // 3. the moonlight's picture is kept from frame to frame and made again only when a cloud layer has moved a whole pixel of the screen, or the camera
 //    has (kitBegin, _mvK): under a pixel's lag in the glow's edge, which is itself 18 lines soft.
 function skyDouble(c){const b=mk(c.width,c.height),x=b.getContext("2d");x.drawImage(c,0,0);x.drawImage(c,0,0);b.dbl=true;return b;}
-function skyRows(c){const w=c.width,h=c.height,d=c.getContext("2d").getImageData(0,0,w,h).data;let r=h-1;   // its last row with anything in it, exactly (cloudFoot samples)
+// (kit 0.62.1: skyRows works from the read cloudFoot already makes, so a cloud picture is still read back once only: a canvas read twice is
+// one Chrome may move to its other way of drawing, and what that costs a phone each frame it is laid on the screen is not known)
+function skyRows(c,d){const w=c.width,h=c.height;let r=h-1;   // its last row with anything in it, exactly (cloudFoot samples)
   for(;r>=0;r--){let hit=false;for(let i=r*w*4+3,e=i+w*4;i<e;i+=4)if(d[i]){hit=true;break;}if(hit)break;}
   c.rows=Math.min(h,r+2);return c;}
 function cloudFoot(cvs,cs){let foot=0;for(const c of cvs){const w=c.width,h=c.height,d=c.getContext("2d").getImageData(0,0,w,h).data; // the kit: one read per cloud picture, the same rows and samples (row by row, Chrome warns)
+    if(TRIAL.sky)skyRows(c,d);   // kit 0.62.1
     for(let r=h-1;r>=0;r-=2){let hit=false;for(let i=r*w*4+3,e=i+w*4;i<e;i+=16)if(d[i]>6){hit=true;break;}
       if(hit){foot=Math.max(foot,(r+3)/cs);break;}}}
   return foot;}
