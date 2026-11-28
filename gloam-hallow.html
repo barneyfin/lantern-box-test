@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.78.0';
+  const VERSION = '0.78.1';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -3196,12 +3196,14 @@ function strBulbs(s){const T=TRIAL.str,b=BULB_BRIGHT,key=s+"@"+FX+"@"+b+"@"+T.pa
 // and the same in every tile: 0 steady, 1 fading (each bulb at its own moment, as since kit 0.20.0), 2 failing. A failing string has its own place in
 // a 16.2-second round: lit 10 s, then three dips (0.2 s out, 0.2 s lit: 2.5 a second, under ARCADE.md's 3 a second), then out 5 s. Out, its glass
 // shows faintly and has no glow. Under Reduce motion a failing string stays lit
-const STR_ROUND=16.2,STR_DIM=0.12;   // the shares, 60, 20 and 20 in a hundred, are dealt by strMode
-const strMode=k=>{const g=Math.floor(k/5),o=[0,0,0,1,2];for(let i=4;i>0;i--){const j=hsh(74,g,i)%(i+1),q=o[i];o[i]=o[j];o[j]=q;}return o[posmod(k,5)];};   // dealt, not drawn by chance: in every five neighbouring strings three steady, one fading, one failing, in an order of their own
+// kit 0.78.1 (Barney, 28 November 2026: "Get rid of the fade lights and replace them with the flicker lights. So these make up 40%."): no string fades;
+// in every five, three steady and two failing
+const STR_ROUND=16.2,STR_DIM=0.12;   // the shares, 60 steady and 40 failing in a hundred, are dealt by strMode
+const strMode=k=>{const g=Math.floor(k/5),o=[0,0,0,2,2];for(let i=4;i>0;i--){const j=hsh(74,g,i)%(i+1),q=o[i];o[i]=o[j];o[j]=q;}return o[posmod(k,5)];};   // dealt, not drawn by chance: in every five neighbouring strings three steady and two failing, in an order of their own
 function strLit(t,k){const c=posmod(t+(hsh(72,k)%1000)/1000*STR_ROUND,STR_ROUND);if(c<10)return 1;if(c<11.2)return Math.floor((c-10)/0.2)%2===0?0:1;return 0;}   // 1 lit, 0 out
 function drawStrings(x,list,t,s,dx,rm){const B=strBulbs(s),h=B.h,hw=h/s,n=TRIAL.str.n||10,P=[];
   for(const fl of list){const ax=fl[0]+dx,ay=fl[1],qx=fl[2]+dx,qy=fl[3],bx=fl[4]+dx,by=fl[5],seed=fl[6],mode=strMode(seed),lit=mode===2&&!rm?strLit(t,seed):1;
-    for(let i=1;i<n;i++){const u=i/n,v=1-u,a=mode===1?0.7+0.3*Math.sin(t*1.1+i*1.7+seed):lit?1:STR_DIM;P.push(v*v*ax+2*v*u*qx+u*u*bx-hw,v*v*ay+2*v*u*qy+u*u*by+1.5-hw,2*h*posmod(i+seed,B.n),a,lit?a:0);}}   // hung a little below the wire, as drawFairy hangs them; its glass, then its glow
+    for(let i=1;i<n;i++){const u=i/n,v=1-u,a=lit?1:STR_DIM;P.push(v*v*ax+2*v*u*qx+u*u*bx-hw,v*v*ay+2*v*u*qy+u*u*by+1.5-hw,2*h*posmod(i+seed,B.n),a,lit?a:0);}}   // hung a little below the wire, as drawFairy hangs them; its glass, then its glow
   if(B.glow){x.globalCompositeOperation="lighter";for(let i=0;i<P.length;i+=5){if(!P[i+4])continue;x.globalAlpha=P[i+4];x.drawImage(B.sheet,P[i+2],0,2*h,2*h,P[i],P[i+1],2*hw,2*hw);}x.globalCompositeOperation="source-over";}
   for(let i=0;i<P.length;i+=5){x.globalAlpha=P[i+3];x.drawImage(B.sheet,P[i+2],2*h,2*h,2*h,P[i],P[i+1],2*hw,2*hw);}
   x.globalAlpha=1;}
