@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.77.0';
+  const VERSION = '0.78.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -3190,11 +3190,20 @@ function strBulbs(s){const T=TRIAL.str,b=BULB_BRIGHT,key=s+"@"+FX+"@"+b+"@"+T.pa
     if(glow)sx.drawImage(halo,2*h*k,0);sx.drawImage(core,2*h*k,2*h);});
   return KIT.sb={key,h,n:pal.length,glow,sheet};}
 // the hamlet's strings each frame: every bulb's place and twinkle worked out once, then all the glows laid together (lighter), then all the glass (RULES-speed.md, rule 2)
-function drawStrings(x,list,t,s,dx){const B=strBulbs(s),h=B.h,hw=h/s,n=TRIAL.str.n||10,P=[];
-  for(const fl of list){const ax=fl[0]+dx,ay=fl[1],qx=fl[2]+dx,qy=fl[3],bx=fl[4]+dx,by=fl[5],seed=fl[6];
-    for(let i=1;i<n;i++){const u=i/n,v=1-u;P.push(v*v*ax+2*v*u*qx+u*u*bx-hw,v*v*ay+2*v*u*qy+u*u*by+1.5-hw,2*h*posmod(i+seed,B.n),0.7+0.3*Math.sin(t*1.1+i*1.7+seed));}}   // hung a little below the wire, as drawFairy hangs them
-  if(B.glow){x.globalCompositeOperation="lighter";for(let i=0;i<P.length;i+=4){x.globalAlpha=P[i+3];x.drawImage(B.sheet,P[i+2],0,2*h,2*h,P[i],P[i+1],2*hw,2*hw);}x.globalCompositeOperation="source-over";}
-  for(let i=0;i<P.length;i+=4){x.globalAlpha=P[i+3];x.drawImage(B.sheet,P[i+2],2*h,2*h,2*h,P[i],P[i+1],2*hw,2*hw);}
+// kit 0.78.0 (Barney, 28 November 2026: "I would like three different rules for the lights 1. The majority of the string lights do not change and remain
+// fixed intensity. 60% 2. Fade in and out like present 20% and 3 lights that flicker a few times and then go out for 5 seconds before coming on for
+// 10 seconds. 20%. Randomly placed throughout the level"). Each string's way comes from its stretch (its seed), so a string always behaves the same
+// and the same in every tile: 0 steady, 1 fading (each bulb at its own moment, as since kit 0.20.0), 2 failing. A failing string has its own place in
+// a 16.2-second round: lit 10 s, then three dips (0.2 s out, 0.2 s lit: 2.5 a second, under ARCADE.md's 3 a second), then out 5 s. Out, its glass
+// shows faintly and has no glow. Under Reduce motion a failing string stays lit
+const STR_ROUND=16.2,STR_DIM=0.12;   // the shares, 60, 20 and 20 in a hundred, are dealt by strMode
+const strMode=k=>{const g=Math.floor(k/5),o=[0,0,0,1,2];for(let i=4;i>0;i--){const j=hsh(74,g,i)%(i+1),q=o[i];o[i]=o[j];o[j]=q;}return o[posmod(k,5)];};   // dealt, not drawn by chance: in every five neighbouring strings three steady, one fading, one failing, in an order of their own
+function strLit(t,k){const c=posmod(t+(hsh(72,k)%1000)/1000*STR_ROUND,STR_ROUND);if(c<10)return 1;if(c<11.2)return Math.floor((c-10)/0.2)%2===0?0:1;return 0;}   // 1 lit, 0 out
+function drawStrings(x,list,t,s,dx,rm){const B=strBulbs(s),h=B.h,hw=h/s,n=TRIAL.str.n||10,P=[];
+  for(const fl of list){const ax=fl[0]+dx,ay=fl[1],qx=fl[2]+dx,qy=fl[3],bx=fl[4]+dx,by=fl[5],seed=fl[6],mode=strMode(seed),lit=mode===2&&!rm?strLit(t,seed):1;
+    for(let i=1;i<n;i++){const u=i/n,v=1-u,a=mode===1?0.7+0.3*Math.sin(t*1.1+i*1.7+seed):lit?1:STR_DIM;P.push(v*v*ax+2*v*u*qx+u*u*bx-hw,v*v*ay+2*v*u*qy+u*u*by+1.5-hw,2*h*posmod(i+seed,B.n),a,lit?a:0);}}   // hung a little below the wire, as drawFairy hangs them; its glass, then its glow
+  if(B.glow){x.globalCompositeOperation="lighter";for(let i=0;i<P.length;i+=5){if(!P[i+4])continue;x.globalAlpha=P[i+4];x.drawImage(B.sheet,P[i+2],0,2*h,2*h,P[i],P[i+1],2*hw,2*hw);}x.globalCompositeOperation="source-over";}
+  for(let i=0;i<P.length;i+=5){x.globalAlpha=P[i+3];x.drawImage(B.sheet,P[i+2],2*h,2*h,2*h,P[i],P[i+1],2*hw,2*hw);}
   x.globalAlpha=1;}
 function drawBulb(x,px,py,r,bc,blur){const b=BULB_BRIGHT;x.save();
   if(b>1){const R=r*(3+(b-1)),g=x.createRadialGradient(px,py,0,px,py,R);g.addColorStop(0,rgba(bc,0.1*(b-1)));g.addColorStop(1,rgba(bc,0));x.globalCompositeOperation="lighter";x.fillStyle=g;x.fillRect(px-R,py-R,R*2,R*2);x.globalCompositeOperation="source-over";}
@@ -4817,7 +4826,7 @@ Object.assign(Scene.prototype,{
     if(L<=2&&this.cache.clB){const rows=Math.min(sc.h,Math.ceil((this.cache.clB+CLOUD_SOFT*2)*s)+16); /* version 11: down to the soft edge's foot */thru=copyInto(poolTake(TWP,rows),sc.a,sc.m,TWP,rows);
       thru.tops=thruTops(thru);thru.top=Math.min(...thru.tops);if(thru.top>=rows)thru=null;}
     const x0=i*TW,x1=x0+TW; // the lights and eyes this tile owns, kept in world positions
-    const fairies=col.fairies.map(f=>[f[0]+lx,f[1],f[2]+lx,f[3],f[4]+lx,f[5],f[6]]).filter(f=>f[0]>=x0&&f[0]<x1);
+    const fairies=col.fairies.map(f=>[f[0]+lx,f[1],f[2]+lx,f[3],f[4]+lx,f[5],f[6]]).filter(f=>f[0]<x1&&f[4]>=x0);   // kit 0.77.1: every tile a string crosses holds it (it was only the tile its left end is in, so its lights went out when that tile left the screen)
     const eyes=col.eyes.map(e=>Object.assign({},e,{X:e.X+lx})).filter(e=>e.X>=x0&&e.X<x1);
     const decos=col.decos.map(d=>[d[0],d[1]+lx,d[2],d[3],d[4],d[5],d[6]]).filter(d=>d[1]>=x0&&d[1]<x1);   // design system 31: the snowmen's eyes
     const tile=this.tileFinish(sc,i,t0,{fairies,eyes,decos,thru});if(thru)tile.bytes+=thru.width*thru.height*4;
@@ -4935,9 +4944,10 @@ Object.assign(Scene.prototype,{
     this.drawTiles(ctx,tiles,lx,s,dy);
     ctx.setTransform(s,0,0,s,0,dy);
     const strs=o.level==="yule"&&TRIAL.str;   // kit 0.76.0: the hamlet's coloured strings, every tile's at once
-    if(strs){const all=[];for(const tl of tiles)for(const f of tl.fairies)all.push(f);if(all.length)drawStrings(ctx,all,t,s,-lx);}
+    const seen=new Set(),once=f=>{const k=Math.round(f[0]*4)+","+Math.round(f[1]*4);if(seen.has(k))return false;seen.add(k);return true;};   // kit 0.77.1: a string held by two tiles is drawn once
+    if(strs){const all=[];for(const tl of tiles)for(const f of tl.fairies)if(once(f))all.push(f);if(all.length)drawStrings(ctx,all,t,s,-lx,o.rm);}
     for(const tl of tiles){
-      if(!strs)for(const f of tl.fairies)drawFairyKit(ctx,f,t,o.level,s,-lx);   // kit 0.20.0: moved by -lx as they're drawn, not copied every frame
+      if(!strs)for(const f of tl.fairies)if(once(f))drawFairyKit(ctx,f,t,o.level,s,-lx);   // kit 0.20.0: moved by -lx as they're drawn, not copied every frame
       if(tl.eyes.length)drawTreeEyes(ctx,tl.eyes,t,L,o.rm,-lx);
       if(tl.decos&&!HAM_OFF.eyes)for(const d of tl.decos)drawFirDeco(ctx,d[0],d[1]-lx,d[2],d[3],d[4],t,d[6]||0,d[5],"eyes");   // design system 31: a snowman's eyes blink
     }
