@@ -117,3 +117,5 @@ Since kit 0.72.0 the trial word flysheet matches the picture (each wing picture 
 Since kit 0.73.0 the trial words fly3 and fly4 (the sleigh and bats made in two working canvases, or one) and a test of them (?check=noellean, five parts, the card the sleigh and bats, leaner).
 
 Since kit 0.74.0 the speed work's twelve trial words (snowsheet, moonbox, moonhalf, moonone, flysheet, fly4, thru4, ripple, foretrim, sky, leanpaint, leanedge) are the normal way and need no word; ?trial=old draws as before, and a word beside old switches its own back on.
+
+Since kit 0.77.0 (kits 0.75.0 to 0.77.0, 28 November 2026): in The Wretched Noel the cart and the pile of presents are walked through, not climbed; the fallen soldier's see-through detail is filled in snow colour; the strings of lights and every bulb in the hamlet are larger and in strong colours (choice C; choice D is ?trial=strmax, with its own card; strdesign, strvivid and strold also work); on the layers behind the path nothing shares a spot.

@@ -1342,7 +1342,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* kit 0.36.1: text 
 (function () {
   'use strict';
 
-  const VERSION = '0.74.0';
+  const VERSION = '0.77.0';
   // kit 0.18.0: the portal this copy was built for, set by build.py (python lantern-box/kit/build.py --portal crazygames <game>); the
   // arcade's own build leaves it empty. CrazyGames forbids a game's own full-screen button, so there the tile goes (ArchTile, HudTile).
   const PORTAL = '__LB_PORTAL__' === 'crazygames' ? 'crazygames' : '';
@@ -2296,9 +2296,9 @@ return {reset,level:v=>{lvl=v;if(out)out.gain.setTargetAtTime(0.5*v,ctx.currentT
 // The words themselves still read as before (TRIAL.sky and the rest are true unless old is given); a result names them only with old
 const TRIAL=(()=>{const m=/[?&]trial=([a-z0-9,]+)/i.exec((typeof location!=="undefined"&&location.search)||""),w=m?m[1].toLowerCase().split(","):[];
   const OLD=w.includes("old"),on=(k)=>w.includes(k)||!OLD;
-  return{old:OLD,fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),snowsheet:on("snowsheet"),moonbox:on("moonbox"),moonhalf:on("moonhalf"),moonone:on("moonone"),shared:w.includes("shared"),flyone:w.includes("flyone"),flyref:w.includes("flyref"),flysheet:on("flysheet"),fly:(()=>{const t=w.find((x)=>/^fly[34]$/.test(x));return t?+t.slice(3):OLD?0:4;})(),flyroom:w.includes("flyroom"),thru:(()=>{const t=w.find((x)=>/^thru[1-4]$/.test(x));return t?+t.slice(4):OLD?0:4;})(),tilecrop:w.includes("tilecrop"),ripple:on("ripple"),foretrim:on("foretrim"),auto33:w.includes("auto33"),sky:on("sky"),bestlite:w.includes("bestlite"),paintfirst:w.includes("paintfirst"),leanpaint:on("leanpaint"),leanedge:on("leanedge"),autonote:w.includes("autonote"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})()};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
+  return{old:OLD,fast:w.includes("fastest"),nodark:w.includes("nodark"),cloud:w.includes("cloud"),boss12:w.includes("boss12"),lines:w.includes("lines432")?432:w.includes("lines540")?540:0,few:w.includes("few"),nohud:w.includes("nohud"),hero:w.includes("hero"),mon:w.includes("mon"),snowstamp:w.includes("snowstamp"),snowsheet:on("snowsheet"),moonbox:on("moonbox"),moonhalf:on("moonhalf"),moonone:on("moonone"),shared:w.includes("shared"),flyone:w.includes("flyone"),flyref:w.includes("flyref"),flysheet:on("flysheet"),fly:(()=>{const t=w.find((x)=>/^fly[34]$/.test(x));return t?+t.slice(3):OLD?0:4;})(),flyroom:w.includes("flyroom"),thru:(()=>{const t=w.find((x)=>/^thru[1-4]$/.test(x));return t?+t.slice(4):OLD?0:4;})(),tilecrop:w.includes("tilecrop"),ripple:on("ripple"),foretrim:on("foretrim"),auto33:w.includes("auto33"),sky:on("sky"),bestlite:w.includes("bestlite"),paintfirst:w.includes("paintfirst"),leanpaint:on("leanpaint"),leanedge:on("leanedge"),autonote:w.includes("autonote"),tz:(()=>{const t=w.find((x)=>/^tz\d{2,3}$/.test(x));return t?+t.slice(2)/100:0;})(),fl:(()=>{const t=w.find((x)=>/^fl[0-3]$/.test(x));return t?+t.slice(2):null;})(),str:w.includes("strold")?null:w.includes("strdesign")?{pal:"design",r:2.4,all:false,word:"A"}:w.includes("strvivid")?{pal:"vivid",r:2.4,all:true,word:"B"}:w.includes("strmax")?{pal:"vivid",r:4,all:true,n:15,glow:0.45,word:"D"}:{pal:"vivid",r:3.2,all:true}};})();   // kit 0.36.1: tz150, text shrunk as for an app that draws it at 150% (see TZ)   // kit 0.20.11: the branch trial (0.20.10) is now the kit's own; kit 0.20.12: the tree trial too (design system 16)   // kit 0.20.9: the rim trial (0.20.8) is now the kit's own rim
 const TRIAL_FL=["look timing T0: Fastest as it is, a plain belt and the gold glass","look timing T1: his light kept, a plain belt and the gold glass","look timing T2: the strong glow and the red glass, its light added","look timing T3: the strong glow and the red glass, its light laid over"];   // kit 0.43.0
-const TRIAL_WORDS=[TRIAL.old&&"the old way of drawing (before kit 0.74.0)",TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.old&&TRIAL.snowsheet&&"the snow stamped from one sheet",TRIAL.old&&TRIAL.moonbox&&"the moonlight only where it reaches",TRIAL.old&&TRIAL.moonhalf&&"the moonlight made at half size",TRIAL.old&&TRIAL.moonone&&"the moonlight made in one canvas",TRIAL.shared&&"the light and moonlight in one canvas",TRIAL.flyone&&"the flyers laid with one darken",TRIAL.flyref&&"the flyers laid Fastest's way, no darken",TRIAL.old&&TRIAL.flysheet&&"the bats drawn from one sheet",(TRIAL.old||TRIAL.fly!==4)&&TRIAL.fly&&("the flyers made in "+(TRIAL.fly===4?"one canvas":"two canvases")),TRIAL.flyroom&&"the flyers' wing pictures given room",(TRIAL.old||TRIAL.thru!==4)&&TRIAL.thru&&("the light through the clouds, way "+TRIAL.thru),TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.old&&TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.old&&TRIAL.foretrim&&"the foreground layers trimmed",TRIAL.auto33&&"Automatic's line at 33 fps, with a note",TRIAL.old&&TRIAL.sky&&"the sky's work each frame cut",TRIAL.bestlite&&"Best paints as Faster does (timing only)",TRIAL.paintfirst&&"pictures painted before a frame draws",TRIAL.old&&TRIAL.leanpaint&&"one picture for puppets drawn the same",TRIAL.old&&TRIAL.leanedge&&"the puppets' edge canvases used again",TRIAL.autonote&&!TRIAL.auto33&&"Automatic says when it steps down",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
+const TRIAL_WORDS=[TRIAL.old&&"the old way of drawing (before kit 0.74.0)",!TRIAL.str&&"the hamlet's strings of lights as before kit 0.76.0",TRIAL.str&&TRIAL.str.word&&("the hamlet's strings of lights, choice "+TRIAL.str.word),TRIAL.nodark&&"the flyers without darken (timing only)",TRIAL.cloud&&"no light through the clouds",TRIAL.boss12&&"bosses' sweeps 12 a second",TRIAL.lines&&("picture "+TRIAL.lines+" lines"),TRIAL.few&&"fewer flyers and leaves",TRIAL.nohud&&"HUD hidden",TRIAL.hero&&"the wanderer's ripple with his steps",TRIAL.mon&&"monsters' waiting poses shared",TRIAL.snowstamp&&"the snow from stamps",TRIAL.old&&TRIAL.snowsheet&&"the snow stamped from one sheet",TRIAL.old&&TRIAL.moonbox&&"the moonlight only where it reaches",TRIAL.old&&TRIAL.moonhalf&&"the moonlight made at half size",TRIAL.old&&TRIAL.moonone&&"the moonlight made in one canvas",TRIAL.shared&&"the light and moonlight in one canvas",TRIAL.flyone&&"the flyers laid with one darken",TRIAL.flyref&&"the flyers laid Fastest's way, no darken",TRIAL.old&&TRIAL.flysheet&&"the bats drawn from one sheet",(TRIAL.old||TRIAL.fly!==4)&&TRIAL.fly&&("the flyers made in "+(TRIAL.fly===4?"one canvas":"two canvases")),TRIAL.flyroom&&"the flyers' wing pictures given room",(TRIAL.old||TRIAL.thru!==4)&&TRIAL.thru&&("the light through the clouds, way "+TRIAL.thru),TRIAL.tilecrop&&"scenery tiles cropped to what is in them",TRIAL.old&&TRIAL.ripple&&"the wanderer's ripple in a 2-second loop",TRIAL.old&&TRIAL.foretrim&&"the foreground layers trimmed",TRIAL.auto33&&"Automatic's line at 33 fps, with a note",TRIAL.old&&TRIAL.sky&&"the sky's work each frame cut",TRIAL.bestlite&&"Best paints as Faster does (timing only)",TRIAL.paintfirst&&"pictures painted before a frame draws",TRIAL.old&&TRIAL.leanpaint&&"one picture for puppets drawn the same",TRIAL.old&&TRIAL.leanedge&&"the puppets' edge canvases used again",TRIAL.autonote&&!TRIAL.auto33&&"Automatic says when it steps down",TRIAL.tz&&("text sized for an app's "+Math.round(TRIAL.tz*100)+"%"),TRIAL.fl!=null&&TRIAL_FL[TRIAL.fl]].filter(Boolean);
   const World = (function () {
   "use strict";
 /* ============================== helpers ============================== */
@@ -3170,6 +3170,32 @@ const HAMLET_HAZE=0.4;
 // kit 0.56.2 (Barney, 26 November 2026: "turn this up to their max setting from the kit design please"): 3 is the default now. The kit paints
 // the bulbs into the scenery's tiles, so the brighter glow costs only when a tile is painted, not every frame
 let BULB_BRIGHT=3;
+// kit 0.76.0 (Barney, 28 November 2026: "the strings of fairy lights running behind the path. Even set at their brightest the colour is not coming through.
+// I want them larger like the other landscape lights which can be seen on the snowman ... I also want the colour to stand out a lot more. The level needs an
+// injection of selective colour to make it more festive"). The kit had drawn the hamlet's strings with the old places' one small cream light (fairySprite), so
+// the design's coloured bulbs (drawFairy: drawBulb, 2.4 lines, BULBS) never showed. Shown four ways (A the design's bulbs; B strong colours, the same size;
+// C strong and larger; D strong, largest, a stronger glow, 14 a string), with or without every bulb in the hamlet strong too, Barney chose "C every bulb":
+// the strings' bulbs 3.2 lines across the glass in BULBS_VIVID, and every bulb of the hamlet's props, snowmen, wreaths and lamp posts in BULBS_VIVID too.
+// He asked to keep D to try later: ?trial=strmax. The others stay as words too: strdesign (A), strvivid (B), strold (as before kit 0.76.0)
+const BULBS_VIVID=["#ffc23a","#2ee06a","#3d9bff","#ff3d4d"];   // gold, green, blue, red in the places of BULBS' warm white, green, blue and pink
+const bulbCol=i=>(TRIAL.str&&TRIAL.str.all?BULBS_VIVID:BULBS)[i];
+function strBulbs(s){const T=TRIAL.str,b=BULB_BRIGHT,key=s+"@"+FX+"@"+b+"@"+T.pal+"@"+T.r+"@"+(T.glow||0);if(KIT.sb&&KIT.sb.key===key)return KIT.sb;   // each colour's bulb: its glow (laid on with lighter) and its glass, in one sheet
+  const r=T.r,viv=T.pal==="vivid",R=r*(3+(b-1))*(viv?1.15:1),bl=FX?9*(1+0.35*(b-1)):0,h=Math.ceil(Math.max(R,r*1.3)*s+bl+3),pal=viv?BULBS_VIVID:BULBS,glow=FX&&(b>1||viv);
+  const sheet=mk(2*h*pal.length,4*h),sx=sheet.getContext("2d");
+  pal.forEach((bc,k)=>{const halo=mk(2*h,2*h),core=mk(2*h,2*h),hx=halo.getContext("2d"),cx=core.getContext("2d");hx.setTransform(s,0,0,s,h,h);cx.setTransform(s,0,0,s,h,h);
+    if(glow){const g=hx.createRadialGradient(0,0,0,0,0,R);g.addColorStop(0,rgba(bc,viv?T.glow||0.32:0.1*(b-1)));g.addColorStop(1,rgba(bc,0));hx.fillStyle=g;hx.fillRect(-R,-R,2*R,2*R);}
+    cx.shadowColor=bc;cx.shadowBlur=bl;cx.beginPath();
+    if(viv){cx.fillStyle=bc;cx.arc(0,0,r*1.12,0,Math.PI*2);cx.fill();cx.shadowBlur=0;cx.fillStyle=mixc(bc,"#ffffff",0.55);cx.beginPath();cx.arc(-r*0.25,-r*0.25,r*0.42,0,Math.PI*2);cx.fill();}   // the strong colour kept to the glass, a pale glint on it
+    else{cx.fillStyle=b>1?mixc(bc,"#ffffff",0.16*(b-1)):rgba(bc,0.92);cx.arc(0,0,r*(1+0.12*(b-1)),0,Math.PI*2);cx.fill();}   // as drawBulb
+    if(glow)sx.drawImage(halo,2*h*k,0);sx.drawImage(core,2*h*k,2*h);});
+  return KIT.sb={key,h,n:pal.length,glow,sheet};}
+// the hamlet's strings each frame: every bulb's place and twinkle worked out once, then all the glows laid together (lighter), then all the glass (RULES-speed.md, rule 2)
+function drawStrings(x,list,t,s,dx){const B=strBulbs(s),h=B.h,hw=h/s,n=TRIAL.str.n||10,P=[];
+  for(const fl of list){const ax=fl[0]+dx,ay=fl[1],qx=fl[2]+dx,qy=fl[3],bx=fl[4]+dx,by=fl[5],seed=fl[6];
+    for(let i=1;i<n;i++){const u=i/n,v=1-u;P.push(v*v*ax+2*v*u*qx+u*u*bx-hw,v*v*ay+2*v*u*qy+u*u*by+1.5-hw,2*h*posmod(i+seed,B.n),0.7+0.3*Math.sin(t*1.1+i*1.7+seed));}}   // hung a little below the wire, as drawFairy hangs them
+  if(B.glow){x.globalCompositeOperation="lighter";for(let i=0;i<P.length;i+=4){x.globalAlpha=P[i+3];x.drawImage(B.sheet,P[i+2],0,2*h,2*h,P[i],P[i+1],2*hw,2*hw);}x.globalCompositeOperation="source-over";}
+  for(let i=0;i<P.length;i+=4){x.globalAlpha=P[i+3];x.drawImage(B.sheet,P[i+2],2*h,2*h,2*h,P[i],P[i+1],2*hw,2*hw);}
+  x.globalAlpha=1;}
 function drawBulb(x,px,py,r,bc,blur){const b=BULB_BRIGHT;x.save();
   if(b>1){const R=r*(3+(b-1)),g=x.createRadialGradient(px,py,0,px,py,R);g.addColorStop(0,rgba(bc,0.1*(b-1)));g.addColorStop(1,rgba(bc,0));x.globalCompositeOperation="lighter";x.fillStyle=g;x.fillRect(px-R,py-R,R*2,R*2);x.globalCompositeOperation="source-over";}
   x.fillStyle=b>1?mixc(bc,"#ffffff",0.16*(b-1)):rgba(bc,0.92);x.shadowColor=bc;x.shadowBlur=blur*(1+0.35*(b-1));x.beginPath();x.arc(px,py,r*(1+0.12*(b-1)),0,Math.PI*2);x.fill();x.restore();}
@@ -3321,13 +3347,20 @@ function tracedHouseSprite(d,h,sc){
 /* Keep clear (Barney, 24 November 2026: "an older style tree which merges with one of the houses so you cannot tell the to apart. There should be a
    rule to prevent this"): a layer is one tone, so two shapes that overlap on it fuse into one. On a layer that has houses, nothing else (a fir, a bare
    tree, a snowman) may overlap a house: it is moved to the nearest clear spot, CLEAR_GAP lines from the house, or left out if none is wide enough.
-   Houses and the things beside them stay inside their own stretch of the layer, so the rule also holds across the joins. */
+   Houses and the things beside them stay inside their own stretch of the layer, so the rule also holds across the joins.
+   Kit 0.77.0 (Barney, 28 November 2026: "In places on the 2nd and I think 3rd layer behind the path there are locations where there are snowman and trees
+   drawn on the same location, meaning they blend into one. There should be a rule that prevents two elements occupying the same spot and there then needs
+   to be a small gap before something else can exist so silhouettes can be seen properly"): on layers 2 and 3 every thing now keeps clear of every other
+   thing already placed in its stretch, not only of houses, by SPACE_GAP: a grove of firs (its firs stand together as one group, as designed), a snowman,
+   a bare tree. Each goes to the nearest clear spot, or is left out if none is wide enough. CLEAR_LOG names each grove ("grove n") for the test.
+   The rule for every new level is lantern-box/RULES-scenery.md, rules 1 to 3 */
 /* The nearest layer is almost as black as the path, and the layers slide past each other as the wanderer walks, so a bare tree there would pass behind
    a house on the path and fuse with it whatever its place. So the nearest layer carries firs only: their own snow keeps them apart from a black house. */
 let NEAR_BARE="traced";   // the nearest layer's bare trees: "traced" from Barney's own bare-tree sheet, which carry snow on their limbs (Barney, 24 November 2026: "Let's try 3"),
                          // "kit" (Night's own, as before mock-up 12) or false (none, as in mock-ups 12 to 14)
 let MID_BARE="traced";    // the middle distance's bare trees: "traced", or "kit"
-let KEEP_CLEAR=true;const CLEAR_GAP=6,CLEAR_LOG=[];   // CLEAR_LOG: every house and other thing placed on layers 2 and 3 (layer, kind, left, right), for the test that counts overlaps
+let KEEP_CLEAR=true;const CLEAR_GAP=6,SPACE_GAP=12,CLEAR_LOG=[];   // SPACE_GAP: kit 0.77.0, the gap between any two things on layers 2 and 3 (CLEAR_GAP stays the gap inside a stretch's edges)
+let CLEAR_KEEP=false;   // a test may keep CLEAR_LOG across tiles   // CLEAR_LOG: every house and other thing placed on layers 2 and 3 (layer, kind, left, right), for the test that counts overlaps
 /* a snowman traced from Barney's snowman sheet (Barney, 24 November 2026: "I also want the snowmen traced using the new rule"): the outline as flat ink,
    the snow on its hat as its own snow, its mouth and buttons as holes in the card, the kit's bulbs where the art strings them, and its eyes lit gold
    and slowly blinking (Barney, 24 November 2026: "slowly blinking eyes. Not ember but so theys standout"). Gold, not ember: ember is danger only,
@@ -3351,10 +3384,18 @@ function tracedSnowmanSprite(d,h,sc){
 /* a prop for the path, traced from Barney's sheet M the same way: the outline with its real gaps as flat ink, the art's snow as its own snow, the
    kit's bulbs where the art strings them, and any lantern glass lit gold by the kit (the place's glow prop and the checkpoint's post are always lit) */
 const PROP_H={lantern:170,post:200,presents:95,cart:120,sign:150,wreath:125,tree:280,fence:66,bauble:120,train:105,soldier:46,presents2:95,sleigh:110,wreath2:125,stocking:120,globe:130};   /* sheet N (24 November 2026, 16:35): the bauble and toy train he asked for, and the fallen soldier laid flat where The Old Town's wall stood, sunk in snow to his body (Barney, 17:11): 46 lines high keeps him 147 long, as in mock-up 23; my sizes, against the props above */   // heights in lines, set against the Forest's big stumps (about 100 to 170 lines tall and 90 to 145 wide), as Barney asked on 24 November 2026; Gloam is about 105
+// kit 0.75.1 (Barney, 28 November 2026: the fallen soldier's detailing was traced as holes in the card, and "in places this works well with the snow
+// meaning the details stand out. In other places you can see the layers sliding through it which does not look good. I want the see through detailing
+// coloured in ... Using the shade of white from the snow layer behind it"): a traced prop named here has its holes filled with that colour, under its
+// ink, so they read as before against the snowfield and nothing slides through them: the nearest snowfield's own colour (layer 4), which his Pixel's
+// picture showed through the holes. Only the holes are filled, never the outline, so no pale edge comes round the card
+const PROP_HOLE_FILL={soldier:SNOW.white.fields[4]};
 function tracedPropSprite(d,h,sc){
   const w=(d.xl+d.xr)*h,pad=Math.max(6,h*0.08),cw=Math.ceil((w+pad*2)*sc),ch=Math.ceil((h+pad*2)*sc),c=mk(cw,ch),sn=mk(cw,ch),ox=pad+d.xl*h,oy=pad+h;
   const draw=(cv,polys,col)=>{const x=cv.getContext("2d");x.setTransform(sc,0,0,sc,ox*sc,oy*sc);x.fillStyle=col;x.beginPath();
     for(const p of polys){for(let i=0;i<p.length;i+=2)i?x.lineTo(p[i]*h,p[i+1]*h):x.moveTo(p[i]*h,p[i+1]*h);x.closePath();}x.fill("evenodd");};
+  if(PROP_HOLE_FILL[d.name]){const P=d.ink.map(p=>{const q=[];for(let i=0;i<p.length;i+=2)q.push([p[i],p[i+1]]);return q;}),inside=(pt,q)=>{let c=false;for(let i=0,j=q.length-1;i<q.length;j=i++){if(((q[i][1]>pt[1])!==(q[j][1]>pt[1]))&&(pt[0]<(q[j][0]-q[i][0])*(pt[1]-q[i][1])/(q[j][1]-q[i][1])+q[i][0]))c=!c;}return c;};
+    const holes=d.ink.filter((p,i)=>P.filter((q,j)=>j!==i&&inside(P[i][0],q)).length%2===1);if(holes.length)draw(c,holes,PROP_HOLE_FILL[d.name]);}   // a hole: inside an odd number of the ink's outlines
   draw(c,d.ink,INK);draw(sn,d.snow,"#fff");
   const glass=d.glass.map(p=>{const q=[];for(let i=0;i<p.length;i+=2)q.push([p[i]*h,p[i+1]*h]);return q;});
   const inPoly=(pt,q)=>{let c=false;for(let i=0,j=q.length-1;i<q.length;j=i++){if(((q[i][1]>pt[1])!==(q[j][1]>pt[1]))&&(pt[0]<(q[j][0]-q[i][0])*(pt[1]-q[i][1])/(q[j][1]-q[i][1])+q[i][0]))c=!c;}return c;};
@@ -3381,7 +3422,7 @@ function drawFirDeco(x,sp,X,Y,k,fl,t,seed,star,part){   // kit: part "still" lea
         e.forEach((q,i)=>{const px=X+sg*(ax+(q[0]-ax)*f)*k,py=Y+(ay+(q[1]-ay)*f*o)*k;i?x.lineTo(px,py):x.moveTo(px,py);});x.closePath();x.fill();}
       x.restore();}}
   if(!sp.deco||part==="eyes")return;
-  for(const b of sp.deco.bulbs)drawBulb(x,X+sg*b[0]*k,Y+b[1]*k,Math.max(1.3,2*k),BULBS[b[2]],7);
+  for(const b of sp.deco.bulbs)drawBulb(x,X+sg*b[0]*k,Y+b[1]*k,Math.max(1.3,2*k),bulbCol(b[2]),7);   // kit 0.76.0: strall, the strong colours
 }
 /* snowmen, after Barney's sheet G: scenery, black card like everything else, never ember. Four characters. Their eyes are holes in the card,
    so they show the snow behind and are never lit */
@@ -3850,22 +3891,22 @@ class Scene{
         put=(sp,X,Y,kk,fl)=>{if(decos)for(let i=decos.length-1;i>=0;i--)if(Math.abs(decos[i][1]-X)<sp.w*kk*0.3)decos.splice(i,1);ink(q=>drawSprite(q,sp,X,Y,kk,fl));},
         house=(sp,X,Y,kk)=>{put(sp,X,Y,kk,false);if(xs&&sp.sn)drawSprite(xs,sp.sn,X,Y,kk,false);if(xn&&sp.traced)drawSprite(xn,sp,X,Y,kk,false);},
         fir=(sp,X,Y,kk,fl,star,seed)=>{put(sp,X,Y,kk,fl);if(xs&&!sp.gnarl)drawSprite(xs,{c:sp.sn,ox:sp.ox,oy:sp.oy,w:sp.w,h:sp.h},X,Y,kk,fl);if(xn&&sp.traced)drawSprite(xn,sp,X,Y,kk,fl);if(decos&&(sp.deco||star||(sp.eyes&&sp.eyes.length)))decos.push([sp,X,Y,kk,fl,star,seed]);},
-        KC=L===2||L===3,taken=[],nearF=[],ext=(sp,kk,fl)=>{const a=(sp.xl!=null?sp.xl:sp.ox)*kk,b=(sp.xr!=null?sp.xr:sp.w-sp.ox)*kk;return fl?[b,a]:[a,b];},
-        seat=(px,e)=>{const q=KC&&KEEP_CLEAR?clamp(px,bx+e[0]+CLEAR_GAP,Math.max(bx+e[0]+CLEAR_GAP,bx+cw-e[1]-CLEAR_GAP)):px;if(KC){taken.push([q-e[0],q+e[1]]);CLEAR_LOG.push([L,"house",q-e[0],q+e[1]]);}return q;},   // a house, kept inside its own stretch
-        clear=(px,e)=>{let best=px;   // anything else: the nearest spot clear of every house on this layer, or null
-          if(KC&&KEEP_CLEAR){best=null;let a=bx+CLEAR_GAP;const hi=bx+cw-CLEAR_GAP;for(const tk of taken.slice().sort((p,q)=>p[0]-q[0]).concat([[hi+CLEAR_GAP,hi+CLEAR_GAP]])){const b=tk[0]-CLEAR_GAP;if(b-a>=e[0]+e[1]){const c=clamp(px,a+e[0],b-e[1]);if(best===null||Math.abs(c-px)<Math.abs(best-px))best=c;}a=Math.max(a,tk[1]+CLEAR_GAP);}}
-          if(KC&&best!==null)CLEAR_LOG.push([L,"other",best-e[0],best+e[1]]);return best;},
-        grove=(pool,px,yf,dy,kk,n,star)=>{const mid=Math.floor(n/2);for(const j of range(n).sort((p,q)=>Math.abs(q-mid)-Math.abs(p-mid))){const sp=pick(pool),q0=px+(j-(n-1)/2)*sp.w*kk*(0.46+r()*0.2),kj=kk*(j===mid?1:0.6+r()*0.25),fl=r()<0.5,e=ext(sp,kj,fl),q=clear(q0,e);if(q!==null){if(L===4){nearF.push([q-e[0],q+e[1]]);CLEAR_LOG.push([4,"house",q-e[0],q+e[1]]);}fir(sp,q-lx,yf(q)+dy,kj,fl,star&&j===mid);}}};
+        KC=L===2||L===3,taken=[],nearF=[],groves=[0],ext=(sp,kk,fl)=>{const a=(sp.xl!=null?sp.xl:sp.ox)*kk,b=(sp.xr!=null?sp.xr:sp.w-sp.ox)*kk;return fl?[b,a]:[a,b];},
+        seat=(px,e)=>{const q=KC&&KEEP_CLEAR?clamp(px,bx+e[0]+CLEAR_GAP,Math.max(bx+e[0]+CLEAR_GAP,bx+cw-e[1]-CLEAR_GAP)):px;if(KC){taken.push([q-e[0],q+e[1]]);CLEAR_LOG.push([L,"house",q-e[0],q+e[1],k]);}return q;},   // a house, kept inside its own stretch
+        clear=(px,e,tag)=>{let best=px;   // anything else: the nearest spot clear of every house on this layer, or null
+          if(KC&&KEEP_CLEAR){best=null;let a=bx+CLEAR_GAP;const hi=bx+cw-CLEAR_GAP;for(const tk of taken.slice().sort((p,q)=>p[0]-q[0]).concat([[hi+SPACE_GAP,hi+SPACE_GAP]])){const b=tk[0]-SPACE_GAP;if(b-a>=e[0]+e[1]){const c=clamp(px,a+e[0],b-e[1]);if(best===null||Math.abs(c-px)<Math.abs(best-px))best=c;}a=Math.max(a,tk[1]+SPACE_GAP);}}
+          if(KC&&best!==null)CLEAR_LOG.push([L,tag||"other",best-e[0],best+e[1],k]);return best;},
+        grove=(pool,px,yf,dy,kk,n,star)=>{const mid=Math.floor(n/2),gid="grove "+(groves[0]++),mine=[];for(const j of range(n).sort((p,q)=>Math.abs(q-mid)-Math.abs(p-mid))){const sp=pick(pool),q0=px+(j-(n-1)/2)*sp.w*kk*(0.46+r()*0.2),kj=kk*(j===mid?1:0.6+r()*0.25),fl=r()<0.5,e=ext(sp,kj,fl),q=clear(q0,e,gid);if(q!==null){if(KC)mine.push([q-e[0],q+e[1]]);if(L===4){nearF.push([q-e[0],q+e[1]]);CLEAR_LOG.push([4,"house",q-e[0],q+e[1]]);}fir(sp,q-lx,yf(q)+dy,kj,fl,star&&j===mid);}}for(const m of mine)taken.push(m);};   // kit 0.77.0: then the grove is taken
       if(L===1){const n=6+Math.floor(r()*3);for(let i=0;i<n;i++){const px=bx+(i+r()*0.9)*(cw/n);fir(pick(F.f1),px-lx,yfn(px)+2,0.6+r()*0.5,r()<0.5);}}
       else if(L===2){const n=1+Math.floor(r()*2);
         for(let i=0;i<n;i++){const sp0=S.h2[posmod(k*3+i,S.h2.length)],px0=bx+(i+0.1+r()*0.5)*(cw/n),sp=sp0,k2=0.97+r()*0.06,px=seat(px0,ext(sp,k2,false)),X=px-lx,Y=groundAt(yfn,px-sp0.ox*0.4,px+(sp0.w-sp0.ox)*0.8)+4;house(sp,X,Y,k2);houses.push({sp,X,Y,k:k2,seed:hsh(19,L,k,i,7),a:0.55});}
         grove(F.f2,bx+r()*cw,yfn,4,0.75+r()*0.4,1+Math.floor(r()*3));if(r()<0.5)grove(F.f2,bx+r()*cw,yfn,4,0.7+r()*0.3,1);}
       else if(L===3){if(r()<0.7){const sp=S.h3[posmod(k*2,S.h3.length)],px0=bx+cw*(0.1+r()*0.5),k2=0.97+r()*0.06,px=seat(px0,ext(sp,k2,false)),X=px-lx,Y=groundAt(yfn,px-sp.ox*0.4,px+(sp.w-sp.ox)*0.8)+5;house(sp,X,Y,k2);houses.push({sp,X,Y,k:k2,seed:hsh(19,L,k,7),a:0.75});}
+        if(r()<0.5){const px0=bx+r()*cw;   // snowmen stand in the middle distance only (kit 0.77.0: placed before the firs, so a snowman has first choice of its spot)
+          if(SNOWMAN_SRC==="traced"){const sp=S.snowmen[posmod(k*3+1,S.snowmen.length)],fl=hsh(53,k)%2===0,e=ext(sp,1,fl),px=clear(px0,e,"snowman");if(px!==null){if(KC)taken.push([px-e[0],px+e[1]]);fir(sp,px-lx,yfn(px)+3,1,fl,false,k);}}
+          else{const px=clear(px0,[36,36],"snowman");if(px!==null){if(KC)taken.push([px-36,px+36]);ink(q=>drawSnowman(q,px-lx,yfn(px)+3,0.9,k));}}}
         grove(F.f3,bx+r()*cw,yfn,6,0.75+r()*0.35,1+Math.floor(r()*3));
-        if(r()<0.5){const px0=bx+r()*cw;   // snowmen stand in the middle distance only
-          if(SNOWMAN_SRC==="traced"){const sp=S.snowmen[posmod(k*3+1,S.snowmen.length)],fl=hsh(53,k)%2===0,px=clear(px0,ext(sp,1,fl));if(px!==null)fir(sp,px-lx,yfn(px)+3,1,fl,false,k);}
-          else{const px=clear(px0,[36,36]);if(px!==null)ink(q=>drawSnowman(q,px-lx,yfn(px)+3,0.9,k));}}
-        if(r()<0.2){const px0=bx+r()*cw,tr=MID_BARE==="traced",sp=tr?S.bareMid[posmod(hsh(64,k),S.bareMid.length)]:pick(Pp.t3),kk=0.7+r()*0.2,fl=r()<0.5,px=clear(px0,ext(sp,kk,fl));if(px!==null){if(tr)fir(sp,px-lx,yfn(px)+7,kk,fl,false);else put(sp,px-lx,yfn(px)+6,kk,fl);}}}
+        if(r()<0.2){const px0=bx+r()*cw,tr=MID_BARE==="traced",sp=tr?S.bareMid[posmod(hsh(64,k),S.bareMid.length)]:pick(Pp.t3),kk=0.7+r()*0.2,fl=r()<0.5,e=ext(sp,kk,fl),px=clear(px0,e,"bare");if(px!==null){if(KC)taken.push([px-e[0],px+e[1]]);if(tr)fir(sp,px-lx,yfn(px)+7,kk,fl,false);else put(sp,px-lx,yfn(px)+6,kk,fl);}}}
       else{const px=bx+cw*0.15+r()*cw*0.6,X=px-lx,q0=r();
         if(SNOWMAN_SRC==="traced"&&(hsh(57,k)%1000)/1000<NEAR_SNOWMAN){   /* the occasional snowman on the nearest layer. It has the stretch to itself: the firs there are the same near-black and would fuse with it. It stands inside the stretch by more than a neighbouring stretch's fir can reach */
           const sp=S.snowmenNear[posmod(hsh(58,k),S.snowmenNear.length)],fl=hsh(53,k)%2===0,e=ext(sp,1,fl),q=clamp(bx+((hsh(59,k)%1000)/1000)*cw,bx+125+e[0],bx+cw-175-e[1]);
@@ -4766,7 +4807,7 @@ Object.assign(Scene.prototype,{
   },
   buildLayerTile(L,i,s,t,tint,o){
     const t0=performance.now(),sc=this.scratch(s),TW=TWP/s,TM=TMP/s,Ws=TW+2*TM,lx=i*TW-TM,b=this.tileStart(sc,s);
-    this.collect={fairies:[],eyes:[],decos:[]};STAR_LOG.length=0;CLEAR_LOG.length=0;   // kit: the logs are the design rounds' tests, kept from growing
+    this.collect={fairies:[],eyes:[],decos:[]};STAR_LOG.length=0;if(!CLEAR_KEEP)CLEAR_LOG.length=0;   // kit: the logs are the design rounds' tests, kept from growing
     this.layer(b,sc.a,s,Ws,t,lx,L,tint,o);
     const col=this.collect;this.collect=null;
     // version 10: in a place with clouds, layers 1 and 2 also keep the layer's own picture (Scene.layer's off, before layer 2's haze
@@ -4893,8 +4934,10 @@ Object.assign(Scene.prototype,{
     const tiles=this.kitTiles("L"+L,lx,W,s,i=>this.buildLayerTile(L,i,s,t,tint,o));
     this.drawTiles(ctx,tiles,lx,s,dy);
     ctx.setTransform(s,0,0,s,0,dy);
+    const strs=o.level==="yule"&&TRIAL.str;   // kit 0.76.0: the hamlet's coloured strings, every tile's at once
+    if(strs){const all=[];for(const tl of tiles)for(const f of tl.fairies)all.push(f);if(all.length)drawStrings(ctx,all,t,s,-lx);}
     for(const tl of tiles){
-      for(const f of tl.fairies)drawFairyKit(ctx,f,t,o.level,s,-lx);   // kit 0.20.0: moved by -lx as they're drawn, not copied every frame
+      if(!strs)for(const f of tl.fairies)drawFairyKit(ctx,f,t,o.level,s,-lx);   // kit 0.20.0: moved by -lx as they're drawn, not copied every frame
       if(tl.eyes.length)drawTreeEyes(ctx,tl.eyes,t,L,o.rm,-lx);
       if(tl.decos&&!HAM_OFF.eyes)for(const d of tl.decos)drawFirDeco(ctx,d[0],d[1]-lx,d[2],d[3],d[4],t,d[6]||0,d[5],"eyes");   // design system 31: a snowman's eyes blink
     }
@@ -6759,6 +6802,10 @@ function lvTerrain(lv,order){const ord=order||LV_ORDER[lv],id=lv+(ord===LV_ORDER
   const kept=pits.filter(q=>!cps.some(c=>q[1]>c.x-LV_CP_CLEAR[0]&&q[0]<c.x+LV_CP_CLEAR[1]));
   return _lvT[id]={key:"level-"+id,lv,order:ord,pts,pits:kept,max:RL_MAX[lv],seed:RL_SEED[lv]+100,rough:RL_ROUGH[lv],len,arena,secs,cps};}
 // each place's pieces (the same as round 5d's), one on each section's crest or plateau in turn, and its scenery scattered
+// kit 0.75.0 (Barney, 28 November 2026: monsters were trapped between the hamlet's props and its pits, "I want to make the pile of presents and
+// the cart of presents walk through for both monsters and wanderer (not climbable)"): these two of the hamlet's four pieces are drawn exactly
+// as before, where they were, but are no longer pieces to stand on: level.pieces() leaves them out and level.thru() lists them
+const YULE_THRU={cart:1,presents:1};
 const _lvP={};
 function lvBuild(T,S){const key=T.key+"@"+S.toFixed(3);if(_lvP[key])return _lvP[key];const lv=T.lv,G=x=>tGround(T,x); // the kit: built from a level (lvTerrain), at the picture's sharpness S
   const B=(k,seed,o)=>building(k,mvRng(seed),Object.assign({detail:2},o),S),sp=(w,h,ox,oy,fn)=>c2Sprite(S,w,h,ox,oy,fn),onFlat=(fn,wx)=>x=>{x.save();x.translate(0,-gY(wx));fn(x);x.restore();};
@@ -6766,7 +6813,7 @@ function lvBuild(T,S){const key=T.key+"@"+S.toFixed(3);if(_lvP[key])return _lvP[
   let kinds;
   if(lv==="night"){const a=sp(150,90,10,80,x=>drawWall(x,0,0,130,58,3)),b=sp(100,60,10,52,rlBoxTomb),c=sp(130,80,10,70,x=>drawWall(x,0,0,100,44,8));kinds=[[X=>put(a,X,130),130],[X=>put(b,X,80),80],[X=>put(c,X,100),100]];}
   else if(lv==="storm"){const a=sp(96,64,8,54,x=>{rlCrate(x,0,44,42,51,0.02);rlBarrel(x,45,28,36,52);}),b=sp(176,88,12,78,rlCart),c=sp(64,62,8,56,x=>rlCrate(x,0,48,46,43,0));kinds=[[X=>put(a,X,74),74],[X=>put(b,X,110,1,{wr:[38,100]}),110],[X=>put(c,X,48),48]];}
-  else if(lv==="yule"){const pp=hamletProps(S),one=id=>{const sp=pp[id],w=sp.xl+sp.xr;return[X=>{let y=-1e9;for(let q=X;q<=X+w;q+=4)y=Math.max(y,G(q));return{sp,X:X+sp.xl,Y:y+3,k:1,w:sp.xr,x0:X,x1:X+w,seed:Math.round(X)};},w];};
+  else if(lv==="yule"){const pp=hamletProps(S),one=id=>{const sp=pp[id],w=sp.xl+sp.xr,thru=!!YULE_THRU[id];return[X=>{let y=-1e9;for(let q=X;q<=X+w;q+=4)y=Math.max(y,G(q));return{sp,X:X+sp.xl,Y:y+3,k:1,w:sp.xr,x0:X,x1:X+w,seed:Math.round(X),thru};},w];};
     kinds=[one("cart"),one("presents"),one("train"),one("soldier")];}   // kit 0.46.0 (design system 31): the cart of presents, the pile of presents, the toy train and the fallen soldier
   else if(lv==="dawn"){const b=B("dolmen",21,{w:124,h:62}),c=sp(110,80,10,72,rlBoulders),d=sp(80,80,40,74,x=>drawCairn(x,0,0,1.3));let n=0;kinds=[[X=>rlDryWall(S,X,140,44,G,61+(n++)),140],[X=>put(b,X,124),124],[X=>put(c,X,100),100],[X=>put(d,X,60),60]];}
   else{const a=sp(190,70,20,60,onFlat(x=>drawLog(x,0,150,150,30,2),150)),b=sp(80,70,30,64,x=>drawStumpProp(x,0,0,1.5,1)),c=sp(166,146,26,138,rlGreatStump),d=sp(100,60,10,52,rlMossRock);
@@ -8705,7 +8752,8 @@ function makeTools(env){
           ground:x=>tGround(T,x),                                                         // the ground's line at x, in picture lines (bigger is lower)
           rise:x=>tRise(T,x),                                                             // how far the camera rises with the ground at x
           pit:x=>T.pits.some(q=>x>q[0]&&x<q[1]),
-          pieces:()=>lvBuild(T,env.k()).walks.map(w=>({x0:w.x0,x1:w.x1,y:w.y})),        // the tops of the place's pieces, to stand on; y(x) between x0 and x1
+          pieces:()=>lvBuild(T,env.k()).walks.filter(w=>!w.pl.thru).map(w=>({x0:w.x0,x1:w.x1,y:w.y})),   // the tops of the place's pieces, to stand on; y(x) between x0 and x1
+          thru:()=>lvBuild(T,env.k()).walks.filter(w=>w.pl.thru).map(w=>({x0:w.x0,x1:w.x1,y:w.y})),   // kit 0.75.0: the pieces walked through, not stood on (the hamlet's cart and pile of presents): where each is and its top, for a game that lays things on them
           _T:T};}
       lvBuild(T,env.k()); // paint the pieces now, not in the first frame
       return T.api;
@@ -8728,7 +8776,7 @@ function makeTools(env){
           ground:x=>tGround(T,x),                                                          // the ground's line at x, in picture lines (bigger is lower), beyond the ends too
           rise:x=>tRise(T,x),                                                              // how far the camera rises with the ground at x (held at the ends' own beyond them)
           pit:()=>false,
-          pieces:()=>[],
+          pieces:()=>[],thru:()=>[],
           _T:T};}
       arP(T); // its scenery now, not in the first frame
       return T.api;
@@ -12257,7 +12305,7 @@ return{build,set,setPotion,stickShow,ICON,POT,OPTS,oct,ensureDefs,ROLL_ZONE,inRo
          things on the path in the order they overlap, then world.end(). camX is the path's position at the picture's left
          edge; rise lifts the camera, in lines, above the place's own lift, and each layer rises by its own rate. Things are placed by x along the path;
          y left out stands them on the ground (world.ground(x)). A level (version 8): L = world.level(place, order) gives the place's
-         whole level (L.length, L.arena, L.sections, L.checkpoints, L.pits, L.banks, L.ground(x), L.rise(x), L.pit(x), L.pieces());
+         whole level (L.length, L.arena, L.sections, L.checkpoints, L.pits, L.banks, L.ground(x), L.rise(x), L.pit(x), L.pieces(), and since kit 0.75.0 L.thru(), the pieces walked through);
          world.begin(ctx, { level: L, camX }) draws it in place of the flat strip, rising with its ground, and y left out stands
          things on its ground. Kit 0.29.0 (design system version 23, Ground): A = world.arena(place, points) gives The Endless Rot's
          arena for a place (world.arenas: the four in the story's order), the design's slope-only shape unless the game passes its own
@@ -14426,6 +14474,7 @@ function loadPlace(g, lb, p, ci, back) {   // the place's level and its checkpoi
   g.p = p;
   g.L = g.orders ? lb.world.level(PLACES[p], g.orders[p]) : lb.world.level(placeKey(g, p));   // step 5e-5: the second loop's shuffled sections (The Wretched Noel: the hamlet's)
   g.pieces = g.L.pieces();
+  g.thru = g.L.thru();                // kit 0.75.0: the hamlet's cart and pile of presents, walked through by him and by monsters (Barney, 28 November 2026)
   g.cps = g.L.checkpoints.map((c, k) => ({ x: c.x, lit: k < ci || ((ci > 0 || back) && k === ci) ? true : null }));
   g.lastCp = ci; g.present = null;   // (step G2: no present left from before)
   g.x = ci > 0 || back ? g.cps[ci].x + RETURN_AT : 60;
@@ -14868,7 +14917,7 @@ const arenaWaves = (first) => 'Waves ' + first + ' to ' + (first + 2);   // the 
 function loadArena(g, lb, a) {       // an arena: a = 0, 1, 2, 3 for the four in turn; he stands in its middle, as the design draws him
   g.arena = a; g.p = a % PLACES.length;
   g.L = lb.world.arena(PLACES[g.p]);
-  g.pieces = []; g.cps = []; g.glass = []; g.lastCp = 0; g.walls = [];
+  g.pieces = []; g.thru = []; g.cps = []; g.glass = []; g.lastCp = 0; g.walls = [];
   g.x = g.L.length / 2; g.y = surfaceAt(g, g.x); g.on = null; g.vy = 0; g.facing = 1; g.walkDist = 0;
   g.mons = []; g.boss = null;
   g.loot = []; g.shots = []; g.zaps = []; g.sprays = []; g.patches = []; g.gobs = []; g.splats = [];
@@ -15694,9 +15743,12 @@ function placeLoot(g, lb) {            // the scenery potions made real: on abou
   g.loot = []; g.shots = []; g.zaps = []; g.sprays = []; g.patches = []; g.gobs = []; g.splats = [];
   // the setting's fewer (Barney, 16 November 2026): that many fewer on average in each place, taken off the pieces' chance by the
   // number of pieces the place has before its arena (15 or 16); each big hill's crest keeps its own
-  const D = diffOk(g.diff) ? DIFF[g.diff] : null, on = g.pieces.filter((p) => !(p.x0 > g.L.arena)).length;
+  // the hamlet's cart and pile of presents are walked through (kit 0.75.0), and keep their chance of a potion on top, where it was (Barney,
+  // 28 November 2026: "The potions spells etc can stay on top"). all: every piece in the path's order, as the kit listed them before
+  const all = g.thru.length ? g.pieces.concat(g.thru).sort((a, b) => a.x0 - b.x0) : g.pieces;
+  const D = diffOk(g.diff) ? DIFF[g.diff] : null, on = all.filter((p) => !(p.x0 > g.L.arena)).length;
   const chance = D && D.fewer && on ? Math.max(0, PIECE_POTION - D.fewer / on) : PIECE_POTION;
-  g.pieces.forEach((p, k) => {
+  all.forEach((p, k) => {
     if (lb.rand() >= chance || p.x0 > g.L.arena) return;
     const x = (p.x0 + p.x1) / 2; g.loot.push({ kind: 'health', x, y: p.y(x), seed: 100 + k });
   });
