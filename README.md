@@ -115,3 +115,5 @@ Since kit 0.71.2 a test of small pictures by size (?check=noelsize, seven parts,
 Since kit 0.72.0 the trial word flysheet matches the picture (each wing picture copied into the sheet); the card the Hamlet's parts, with the day's gains runs the twelve-part test with the eleven words that keep the picture.
 
 Since kit 0.73.0 the trial words fly3 and fly4 (the sleigh and bats made in two working canvases, or one) and a test of them (?check=noellean, five parts, the card the sleigh and bats, leaner).
+
+Since kit 0.74.0 the speed work's twelve trial words (snowsheet, moonbox, moonhalf, moonone, flysheet, fly4, thru4, ripple, foretrim, sky, leanpaint, leanedge) are the normal way and need no word; ?trial=old draws as before, and a word beside old switches its own back on.
